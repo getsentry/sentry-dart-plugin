@@ -9,7 +9,13 @@ The project currently requires you run Dart version >= `2.12.0`.
 
 # Run
 
-To run the build:
+To build:
+
+```shell
+dart compile aot-snapshot bin/sentry_dart_plugin.dart
+```
+
+To run:
 
 ```shell
 dart run
