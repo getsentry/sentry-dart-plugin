@@ -10,12 +10,19 @@ import 'utils/log.dart';
 class Configuration {
   // cannot use ${Directory.current.path}/build since --split-debug-info allows
   // setting a custom path which is a sibling of build
+  /// The Build folder, defaults to Directory.current
   String buildFilesFolder = Directory.current.path;
 
+  /// Rather upload native debug symbols, defaults to true
   late bool uploadNativeSymbols;
+
+  /// Rather upload source maps, defaults to false
   late bool uploadSourceMaps;
+
+  /// Rather upload native source code, defaults to false
   late bool includeNativeSources;
-  late bool wait;
+
+  late bool waitForProcessing;
   late String? project;
   late String? org;
   late String? authToken;
@@ -33,6 +40,7 @@ class Configuration {
     return pubspec;
   }
 
+  /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
@@ -57,7 +65,7 @@ class Configuration {
 
     project = config?['project']?.toString(); // or env. var. SENTRY_PROJECT
     org = config?['org']?.toString(); // or env. var. SENTRY_ORG
-    wait = config?['wait_for_processing'] ?? false;
+    waitForProcessing = config?['wait_for_processing'] ?? false;
     authToken =
         config?['auth_token']?.toString(); // or env. var. SENTRY_AUTH_TOKEN
     logLevel =
@@ -66,6 +74,8 @@ class Configuration {
     Log.taskCompleted(taskName);
   }
 
+  /// Validates the configuration values and log an error if required fields
+  /// are missing
   void validateConfigValues() {
     const taskName = 'validating config values';
     Log.startingTask(taskName);
