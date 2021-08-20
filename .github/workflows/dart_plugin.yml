@@ -8,9 +8,6 @@ jobs:
   build:
     name: Analyze and Format
     runs-on: 'ubuntu-latest'
-    defaults:
-      run:
-        working-directory: ./sentry_dart_plugin
     strategy:
       fail-fast: false
       matrix:
