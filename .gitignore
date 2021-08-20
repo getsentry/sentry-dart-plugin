@@ -25,3 +25,5 @@ flutter/coverage/*
 
 .gradle
 flutter/.gradle
+
+*.aot
