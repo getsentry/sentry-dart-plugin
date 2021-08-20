@@ -1,5 +1,6 @@
 # Example of the 'pubspec.yaml' file
 
+```yaml
 name: sentry_example
 description: Demonstrates how to use the sentry_dart_plugin plugin.
 version: 0.1.2+3
@@ -41,4 +42,5 @@ sentry:
 
   # default to name@version from pubspec
   #release: ...
+  ```
   
