@@ -1,4 +1,4 @@
-name: Sentry Dart Plugin
+name: "Sentry Dart Plugin"
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
   pull_request:
 jobs:
   build:
-    name: Analyze, Format and Build
+    name: "Analyze, Format and Build"
     runs-on: 'ubuntu-latest'
     strategy:
       fail-fast: false
@@ -18,7 +18,7 @@ jobs:
           with:
             sdk: ${{ matrix.sdk }}
         - uses: actions/checkout@v2
-        - name: Analyze and Format 
+        - name: "Analyze and Format"
           run: |
             dart pub get
             dart analyze --fatal-infos
