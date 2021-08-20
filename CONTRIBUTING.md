@@ -19,6 +19,10 @@ To run:
 
 ```shell
 dart run
+
+// or
+
+dartaotruntime bin/sentry_dart_plugin.aot
 ```
 
 # CI
