@@ -22,16 +22,33 @@ class Configuration {
   /// Rather upload native source code, defaults to false
   late bool includeNativeSources;
 
+  /// Wait for processing or not, defaults to false
   late bool waitForProcessing;
+
+  /// The project name, or set via env. var. SENTRY_PROJECT
   late String? project;
+
+  /// The Org slug, or set via env. var. SENTRY_ORG
   late String? org;
+
+  /// The Auth token, or set via env. var. SENTRY_AUTH_TOKEN
   late String? authToken;
+
+  // The log level (trace, debug, info, warn, error), defaults to warn, or set env. var. SENTRY_LOG_LEVEL
   late String? logLevel;
   String? _assetsPath;
+
+  // the Sentry CLI path, defaults to the assets folder
   late String? cliPath;
   final String _fileSeparator = Platform.pathSeparator;
+
+  /// The Apps version, defaults to version from pubspec
   late String version;
+
+  /// The Apps name, defaults to name from pubspec
   late String name;
+
+  /// the Web Build folder, defaults to build/web
   late String webBuildFilesFolder;
 
   dynamic _getPubspec() {
