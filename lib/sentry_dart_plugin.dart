@@ -4,13 +4,18 @@ import 'src/configuration.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 
+/// Class responsible to load the configurations and upload the
+/// debug symbols and source maps
 class SentryDartPlugin {
   late Configuration _configuration;
 
+  /// SentryDartPlugin ctor. that inits the injectors
   SentryDartPlugin() {
     initInjector();
   }
 
+  /// Method responsible to load the configurations and upload the
+  /// debug symbols and source maps
   Future<void> run(List<String> cliArguments) async {
     _configuration = injector.get<Configuration>();
 
@@ -168,7 +173,7 @@ class SentryDartPlugin {
   }
 
   void _addWait(List<String> params) {
-    if (_configuration.wait) {
+    if (_configuration.waitForProcessing) {
       params.add('--wait');
     }
   }
