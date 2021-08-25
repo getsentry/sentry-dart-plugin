@@ -51,15 +51,7 @@ class SentryDartPlugin {
       Log.info('includeNativeSources is disabled, not uploading sources.');
     }
 
-    if (_configuration.org != null) {
-      params.add('--org');
-      params.add(_configuration.org!);
-    }
-
-    if (_configuration.project != null) {
-      params.add('--project');
-      params.add(_configuration.project!);
-    }
+    _addOrgAndProject(params);
 
     params.add(_configuration.buildFilesFolder);
 
@@ -79,6 +71,8 @@ class SentryDartPlugin {
     _setTokenAndLog(params);
 
     params.add('releases');
+
+    _addOrgAndProject(params);
 
     List<String> releaseFinalizeParams = [];
     releaseFinalizeParams.addAll(params);
@@ -175,6 +169,18 @@ class SentryDartPlugin {
   void _addWait(List<String> params) {
     if (_configuration.waitForProcessing) {
       params.add('--wait');
+    }
+  }
+
+  void _addOrgAndProject(List<String> params) {
+    if (_configuration.org != null) {
+      params.add('--org');
+      params.add(_configuration.org!);
+    }
+
+    if (_configuration.project != null) {
+      params.add('--project');
+      params.add(_configuration.project!);
     }
   }
 }
