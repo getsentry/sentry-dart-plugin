@@ -28,7 +28,7 @@ dart run sentry_dart_plugin
 
 ## Configuration (Optional)
 
-This tool comes with default configuration, you can configure it to suit your needs.
+This tool comes with a default configuration. You can configure it to suit your needs.
 
 Add `sentry:` configuration at the end of your `pubspec.yaml` file:
 
