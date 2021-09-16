@@ -22,8 +22,14 @@ The `flutter build apk`, `flutter build ios` (or _macos_) or `flutter build web`
 
 ## Run
 
+### Dart
 ```bash
 dart run sentry_dart_plugin
+```
+
+### Flutter
+```bash
+flutter packages pub run sentry_dart_plugin
 ```
 
 ## Configuration (Optional)
