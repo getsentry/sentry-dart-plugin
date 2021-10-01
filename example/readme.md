@@ -16,7 +16,7 @@ dependencies:
     sdk: flutter
 
 dev_dependencies:
-  sentry_dart_plugin: ^1.0.0-alpha.2
+  sentry_dart_plugin: ^1.0.0-alpha.3
 
 sentry:
   # enabled by default

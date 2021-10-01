@@ -1,4 +1,4 @@
-# Unreleased
+# 1.0.0-alpha.3
 
 * Bump sentry-cli 1.69.1 which includes a fix for Dart debug symbols (#8)
 
