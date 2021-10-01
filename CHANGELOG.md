@@ -1,5 +1,7 @@
 # Unreleased
 
+* Bump sentry-cli 1.69.1 which includes a fix for Dart debug symbols (#8)
+
 # 1.0.0-alpha.2
 
 * Fix: Add org and project when creating releases (#2)
