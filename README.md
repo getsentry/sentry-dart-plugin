@@ -73,6 +73,6 @@ Sentry's `auth_token` requires the `project:releases` or `project:write` scope, 
 
 Dart's `--obfuscate` option is required to be paired with `--split-debug-info` to generate a symbol map, See [docs](https://github.com/flutter/flutter/wiki/Obfuscating-Dart-Code).
 
-The `--split-debug-info` option requires setting a folder output, the folder output must be an inner folder of the project's folder, See [docs](https://flutter.dev/docs/deployment/obfuscate#obfuscating-your-app).
+The `--split-debug-info` option requires setting a output directory, the directory must be an inner folder of the project's folder, See [docs](https://flutter.dev/docs/deployment/obfuscate#obfuscating-your-app).
 
 The `--split-debug-info` and `--obfuscate` are not supported for iOS and Desktop Apps yet, See [docs](https://docs.sentry.io/platforms/flutter/upload-debug/#when-to-upload)
