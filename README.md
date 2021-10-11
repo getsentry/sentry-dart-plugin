@@ -66,3 +66,11 @@ sentry:
 | log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
 | release | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)  | no | - |
 | web_build_path | The web build folder | default: build/web (string)  | no | - |
+
+## Troubleshooting
+
+Sentry's `auth_token` requires the `project:releases` or `project:write` scope, See [docs](https://docs.sentry.io/product/cli/dif/#permissions).
+
+Dart's `--obfuscate` option is required to be paired with `--split-debug-info` to generate a symbol map, See [docs](https://github.com/flutter/flutter/wiki/Obfuscating-Dart-Code).
+
+The `--split-debug-info` option requires setting a folder output, the folder output must be an inner folder of the project's folder, See [docs](https://flutter.dev/docs/deployment/obfuscate#obfuscating-your-app).
