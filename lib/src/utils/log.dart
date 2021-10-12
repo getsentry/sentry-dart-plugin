@@ -101,14 +101,14 @@ class Log {
   static void processResult(ProcessResult result) {
     // stderr and stdout can be a String if there were a value or
     // List<int> if null was used.
-    final stderr = (result.stderr != null && result.stderr is String)
+    String? stderr = (result.stderr != null && result.stderr is String)
         ? result.stderr
         : null;
-    final stdout = (result.stdout != null && result.stdout is String)
+    String? stdout = (result.stdout != null && result.stdout is String)
         ? result.stdout
         : null;
 
-    if (stderr != null) {
+    if (stderr != null && stderr.isNotEmpty) {
       Log.error('stdout: $stdout');
       Log.errorAndExit('stderr: $stderr', exitCode: result.exitCode);
     } else if (result.exitCode != 0) {
