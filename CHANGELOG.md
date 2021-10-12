@@ -1,6 +1,6 @@
 # Unreleased
 
-* Fix: Log real exitCode, stdout and stdout if available
+* Fix: Log real exitCode, stdout and stdout if available (#13)
 
 # 1.0.0-alpha.3
 
