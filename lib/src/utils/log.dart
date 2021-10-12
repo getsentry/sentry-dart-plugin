@@ -110,12 +110,12 @@ class Log {
 
     if (stderr != null) {
       Log.error('stdout: $stdout');
-      Log.errorAndExit(stderr, exitCode: result.exitCode);
+      Log.errorAndExit('stderr: $stderr', exitCode: result.exitCode);
     } else if (result.exitCode != 0) {
       Log.error('stdout: $stdout');
-      Log.errorAndExit(stderr ?? 'no given stderr', exitCode: result.exitCode);
+      Log.errorAndExit('stderr: $stderr', exitCode: result.exitCode);
     } else {
-      Log.success(stdout ?? 'success');
+      Log.success('stdout: $stdout');
     }
   }
 }
