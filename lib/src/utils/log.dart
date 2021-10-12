@@ -25,9 +25,12 @@ class Log {
   static void error(String message) => _write(message, withColor: _red);
 
   /// Write `error` log and exit the program
-  static void errorAndExit(String message) {
+  static void errorAndExit(
+    String message, {
+    int exitCode = 1,
+  }) {
     error(message);
-    exit(1);
+    exit(exitCode);
   }
 
   /// Warning log with `yellow` color
@@ -96,13 +99,23 @@ class Log {
 
   /// Logs the ProcessResult depending if it's an error or success
   static void processResult(ProcessResult result) {
-    if (result.stderr.toString().isNotEmpty) {
-      Log.error(result.stdout);
-      Log.errorAndExit(result.stderr);
+    // stderr and stdout can be a String if there were a value or
+    // List<int> if null was used.
+    String? stderr = (result.stderr != null && result.stderr is String)
+        ? result.stderr
+        : null;
+    String? stdout = (result.stdout != null && result.stdout is String)
+        ? result.stdout
+        : null;
+
+    if (stderr != null && stderr.isNotEmpty) {
+      Log.error('stdout: $stdout');
+      Log.errorAndExit('stderr: $stderr', exitCode: result.exitCode);
     } else if (result.exitCode != 0) {
-      Log.errorAndExit(result.stdout);
+      Log.error('stdout: $stdout');
+      Log.errorAndExit('stderr: $stderr', exitCode: result.exitCode);
     } else {
-      Log.success(result.stdout);
+      Log.success('stdout: $stdout');
     }
   }
 }
