@@ -88,8 +88,7 @@ class Configuration {
     waitForProcessing = config?['wait_for_processing'] ?? false;
     authToken =
         config?['auth_token']?.toString(); // or env. var. SENTRY_AUTH_TOKEN
-    url =
-        config?['url']?.toString(); // or env. var. SENTRY_URL
+    url = config?['url']?.toString(); // or env. var. SENTRY_URL
     logLevel =
         config?['log_level']?.toString(); // or env. var. SENTRY_LOG_LEVEL
 

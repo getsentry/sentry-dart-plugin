@@ -1,4 +1,6 @@
-# Unreleased
+# 1.0.0-alpha.5
+
+* Feat: Ability to configure url for on-premise server (#17)
 
 # 1.0.0-alpha.4
 
