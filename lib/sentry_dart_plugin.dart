@@ -41,7 +41,7 @@ class SentryDartPlugin {
 
     List<String> params = [];
 
-    _setTokenAndLog(params);
+    _setUrlAndTokenAndLog(params);
 
     params.add('upload-dif');
 
@@ -68,7 +68,7 @@ class SentryDartPlugin {
 
     List<String> params = [];
 
-    _setTokenAndLog(params);
+    _setUrlAndTokenAndLog(params);
 
     params.add('releases');
 
@@ -118,7 +118,12 @@ class SentryDartPlugin {
     Log.taskCompleted(taskName);
   }
 
-  void _setTokenAndLog(List<String> params) {
+  void _setUrlAndTokenAndLog(List<String> params) {
+    if (_configuration.url != null) {
+      params.add('--url');
+      params.add(_configuration.url!);
+    }
+
     if (_configuration.authToken != null) {
       params.add('--auth-token');
       params.add(_configuration.authToken!);

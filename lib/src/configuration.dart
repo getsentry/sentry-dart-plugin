@@ -34,6 +34,9 @@ class Configuration {
   /// The Auth token, or set via env. var. SENTRY_AUTH_TOKEN
   late String? authToken;
 
+  /// The url, or set via env. var. SENTRY_URL
+  late String? url;
+
   // The log level (trace, debug, info, warn, error), defaults to warn, or set env. var. SENTRY_LOG_LEVEL
   late String? logLevel;
   String? _assetsPath;
@@ -85,6 +88,7 @@ class Configuration {
     waitForProcessing = config?['wait_for_processing'] ?? false;
     authToken =
         config?['auth_token']?.toString(); // or env. var. SENTRY_AUTH_TOKEN
+    url = config?['url']?.toString(); // or env. var. SENTRY_URL
     logLevel =
         config?['log_level']?.toString(); // or env. var. SENTRY_LOG_LEVEL
 
