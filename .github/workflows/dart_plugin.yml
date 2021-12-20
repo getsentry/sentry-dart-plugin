@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: [stable, beta, dev]
+        sdk: [stable, beta]
 
     steps:
         - uses: dart-lang/setup-dart@v1
