@@ -78,3 +78,5 @@ Dart's `--obfuscate` option is required to be paired with `--split-debug-info` t
 The `--split-debug-info` option requires setting a output directory, the directory must be an inner folder of the project's folder, See [docs](https://flutter.dev/docs/deployment/obfuscate#obfuscating-your-app).
 
 The `--split-debug-info` and `--obfuscate` are not supported for iOS and Desktop Apps yet, See [docs](https://docs.sentry.io/platforms/flutter/upload-debug/#when-to-upload)
+
+Flutter's `build web` command requires setting the `--source-maps` parameter to generate source maps, See [Issue](https://github.com/flutter/flutter/issues/72150#issuecomment-755541599)
