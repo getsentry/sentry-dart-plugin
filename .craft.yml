@@ -1,0 +1,7 @@
+minVersion: 0.29.2
+changelogPolicy: auto
+artifactProvider:
+  name: none
+targets:
+  - name: pub-dev
+  - name: github
