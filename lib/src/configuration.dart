@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:package_config/package_config.dart';
-import 'package:system_info/system_info.dart';
+import 'package:system_info2/system_info2.dart';
 import 'package:yaml/yaml.dart';
 
 import 'utils/extensions.dart';
