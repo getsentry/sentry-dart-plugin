@@ -12,8 +12,8 @@ dependencies:
   yaml: ^3.1.0
   injector: ^2.0.0
   ansicolor: ^2.0.1
-  package_config: ^2.0.0
-  system_info: ^1.0.1
+  package_config: ^2.0.2
+  system_info2: ^2.0.3
 
 dev_dependencies:
   lints: ^1.0.1
