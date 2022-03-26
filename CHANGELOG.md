@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Fix: Early exit when providing lower log level (#)
+* Fix: Early exit when providing lower log level (#31)
 
 ## 1.0.0-beta.1
 
