@@ -108,14 +108,13 @@ class Log {
         ? result.stdout
         : null;
 
-    if (stderr != null && stderr.isNotEmpty) {
-      Log.error('stdout: $stdout');
-      Log.errorAndExit('stderr: $stderr', exitCode: result.exitCode);
-    } else if (result.exitCode != 0) {
-      Log.error('stdout: $stdout');
-      Log.errorAndExit('stderr: $stderr', exitCode: result.exitCode);
+    final isError = result.exitCode != 0;
+
+    if (isError) {
+      Log.errorAndExit('stderr: $stderr\nstdout: $stdout',
+          exitCode: result.exitCode);
     } else {
-      Log.success('stdout: $stdout');
+      Log.success('stderr: $stderr\nstdout: $stdout');
     }
   }
 }
