@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Early exit when providing lower log level (#)
+
 ## 1.0.0-beta.1
 
 * Feat: Ability to configure url for on-premise server (#17)
