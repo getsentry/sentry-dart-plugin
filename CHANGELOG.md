@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-beta.2
 
 * Fix: Early exit when providing lower log level (#31)
 
