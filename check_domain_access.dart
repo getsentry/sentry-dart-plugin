@@ -23,6 +23,7 @@ Future<void> main(List<String> args) async {
   client.close();
 
   print('Done.');
+  exit(0);
 }
 
 final timeLimit = Duration(seconds: 15);
