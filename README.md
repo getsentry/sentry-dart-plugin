@@ -1,6 +1,7 @@
 # Sentry Dart Plugin
 [![Sentry Dart Plugin](https://github.com/getsentry/sentry-dart-plugin/actions/workflows/dart_plugin.yml/badge.svg)](https://github.com/getsentry/sentry-dart-plugin/actions/workflows/dart_plugin.yml)
-[![pub package](https://img.shields.io/pub/v/sentry_dart_plugin.svg)](https://pub.dev/packages/sentry_dart_plugin) 
+[![pub package](https://img.shields.io/pub/v/sentry_dart_plugin.svg)](https://pub.dev/packages/sentry_dart_plugin) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fgetsentry%2Fsentry-dart-plugin.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fgetsentry%2Fsentry-dart-plugin?ref=badge_shield)
+
 [![pub points](https://badges.bar/sentry_dart_plugin/pub%20points)](https://pub.dev/packages/sentry_dart_plugin/score)
 
 A Dart Build Plugin that uploads debug symbols for Android, iOS/macOS and source maps for Web to Sentry via [sentry-cli](https://docs.sentry.io/product/cli/).
@@ -80,3 +81,7 @@ The `--split-debug-info` option requires setting a output directory, the directo
 The `--split-debug-info` and `--obfuscate` are not supported for iOS and Desktop Apps yet, See [docs](https://docs.sentry.io/platforms/flutter/upload-debug/#when-to-upload)
 
 Flutter's `build web` command requires setting the `--source-maps` parameter to generate source maps, See [Issue](https://github.com/flutter/flutter/issues/72150#issuecomment-755541599)
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fgetsentry%2Fsentry-dart-plugin.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fgetsentry%2Fsentry-dart-plugin?ref=badge_large)
