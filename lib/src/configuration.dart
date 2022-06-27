@@ -149,7 +149,7 @@ class Configuration {
 
   void _findAndSetCliPath() {
     if (Platform.isMacOS) {
-      _setCliPath("Darwin-x86_64");
+      _setCliPath("Darwin-universal");
     } else if (Platform.isWindows) {
       _setCliPath("Windows-i686.exe");
     } else if (Platform.isLinux) {
