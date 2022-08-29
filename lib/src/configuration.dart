@@ -62,6 +62,7 @@ class Configuration {
 
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
+    final environments = Platform.environment;
     const taskName = 'reading config values';
     Log.startingTask(taskName);
 
@@ -70,7 +71,9 @@ class Configuration {
     final pubspec = _getPubspec();
     final config = pubspec['sentry'];
 
-    version = config?['release']?.toString() ?? pubspec['version'].toString();
+    version = config?['release']?.toString() ??
+        environments['SENTRY_RELEASE'] ??
+        pubspec['version'].toString(); // or env. var. SENTRY_RELEASE
     name = pubspec['name'].toString();
 
     uploadNativeSymbols = config?['upload_native_symbols'] ?? true;
