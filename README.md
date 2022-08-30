@@ -1,7 +1,7 @@
 # Sentry Dart Plugin
 
 [![Sentry Dart Plugin](https://github.com/getsentry/sentry-dart-plugin/actions/workflows/dart_plugin.yml/badge.svg)](https://github.com/getsentry/sentry-dart-plugin/actions/workflows/dart_plugin.yml)
-[![pub package](https://img.shields.io/pub/v/sentry_dart_plugin.svg)](https://pub.dev/packages/sentry_dart_plugin)
+[![pub package](https://img.shields.io/pub/v/sentry_dart_plugin.svg)](https://pub.dev/packages/sentry_dart_plugin) 
 [![pub points](https://badges.bar/sentry_dart_plugin/pub%20points)](https://pub.dev/packages/sentry_dart_plugin/score)
 
 A Dart Build Plugin that uploads debug symbols for Android, iOS/macOS and source maps for Web to Sentry via [sentry-cli](https://docs.sentry.io/product/cli/).
@@ -58,19 +58,19 @@ sentry:
 
 ###### Available Configuration Fields:
 
-| Configuration Name     | Description                                                                     | Default Value And Type                        | Required | Alternative Environment variable |
-| ---------------------- | ------------------------------------------------------------------------------- | --------------------------------------------- | -------- | -------------------------------- |
-| upload_native_symbols  | Enables or disables the automatic upload of debug symbols                       | true (boolean)                                | no       | -                                |
-| upload_source_maps     | Enables or disables the automatic upload of source maps                         | false (boolean)                               | no       | -                                |
-| include_native_sources | Does or doesn't include the source code of native code                          | false (boolean)                               | no       | -                                |
-| project                | Project's name                                                                  | e.g. sentry-flutter (string)                  | yes      | SENTRY_PROJECT                   |
-| org                    | Organization's slug                                                             | e.g. sentry-sdks (string)                     | yes      | SENTRY_ORG                       |
-| auth_token             | Auth Token                                                                      | e.g. 64 random characteres (string)           | yes      | SENTRY_AUTH_TOKEN                |
-| url                    | URL                                                                             | e.g. https<area>://mysentry.invalid/ (string) | no       | SENTRY_URL                       |
-| wait_for_processing    | Wait for server-side processing of uploaded files                               | false (boolean)                               | no       | -                                |
-| log_level              | Configures the log level for sentry-cli                                         | warn (string)                                 | no       | SENTRY_LOG_LEVEL                 |
-| release                | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)   | no       | SENTRY_RELEASE                   |
-| web_build_path         | The web build folder                                                            | default: build/web (string)                   | no       | -                                |
+| Configuration Name | Description | Default Value And Type | Required | Alternative Environment variable |
+| - | - | - | - | - |
+| upload_native_symbols | Enables or disables the automatic upload of debug symbols | true (boolean) | no | - |
+| upload_source_maps | Enables or disables the automatic upload of source maps | false (boolean) | no | - |
+| include_native_sources | Does or doesn't include the source code of native code | false (boolean) | no | - |
+| project | Project's name | e.g. sentry-flutter (string) | yes | SENTRY_PROJECT |
+| org | Organization's slug | e.g. sentry-sdks (string) | yes | SENTRY_ORG |
+| auth_token | Auth Token | e.g. 64 random characteres (string)  | yes | SENTRY_AUTH_TOKEN |
+| url | URL | e.g. https<area>://mysentry.invalid/ (string)  | no | SENTRY_URL |
+| wait_for_processing | Wait for server-side processing of uploaded files | false (boolean)  | no | - |
+| log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
+| release | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)  | SENTRY_RELEASE | - |
+| web_build_path | The web build folder | default: build/web (string)  | no | - |
 
 ## Troubleshooting
 
