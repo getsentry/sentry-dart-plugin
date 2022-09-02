@@ -1,4 +1,5 @@
 # Sentry Dart Plugin
+
 [![Sentry Dart Plugin](https://github.com/getsentry/sentry-dart-plugin/actions/workflows/dart_plugin.yml/badge.svg)](https://github.com/getsentry/sentry-dart-plugin/actions/workflows/dart_plugin.yml)
 [![pub package](https://img.shields.io/pub/v/sentry_dart_plugin.svg)](https://pub.dev/packages/sentry_dart_plugin) 
 [![pub points](https://badges.bar/sentry_dart_plugin/pub%20points)](https://pub.dev/packages/sentry_dart_plugin/score)
@@ -23,11 +24,13 @@ The `flutter build apk`, `flutter build ios` (or _macos_) or `flutter build web`
 ## Run
 
 ### Dart
+
 ```bash
 dart run sentry_dart_plugin
 ```
 
 ### Flutter
+
 ```bash
 flutter packages pub run sentry_dart_plugin
 ```
@@ -66,7 +69,7 @@ sentry:
 | url | URL | e.g. https<area>://mysentry.invalid/ (string)  | no | SENTRY_URL |
 | wait_for_processing | Wait for server-side processing of uploaded files | false (boolean)  | no | - |
 | log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
-| release | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)  | no | - |
+| release | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)  | SENTRY_RELEASE | - |
 | web_build_path | The web build folder | default: build/web (string)  | no | - |
 
 ## Troubleshooting
