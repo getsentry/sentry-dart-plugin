@@ -69,7 +69,7 @@ sentry:
 | url | URL | e.g. https<area>://mysentry.invalid/ (string)  | no | SENTRY_URL |
 | wait_for_processing | Wait for server-side processing of uploaded files | false (boolean)  | no | - |
 | log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
-| release | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)  | SENTRY_RELEASE | - |
+| release | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)  | no | SENTRY_RELEASE |
 | web_build_path | The web build folder | default: build/web (string)  | no | - |
 
 ## Troubleshooting
