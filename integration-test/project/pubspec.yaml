@@ -1,0 +1,26 @@
+name: project
+description: A sample flutter application for sentry-cli integration test.
+version: 1.0.0
+
+environment:
+  sdk: '>=2.18.0 <3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  sentry_dart_plugin: ^1.0.0-beta.1
+
+flutter:
+  uses-material-design: true
+
+sentry:
+  upload_native_symbols: false
+  include_native_sources: false
+  upload_source_maps: true
+  auth_token: sentry-dart-plugin-auth-token
+  project: sentry-dart-plugin
+  org: sentry-sdks
+  url: http://127.0.0.1:8000
+  log_level: debug
