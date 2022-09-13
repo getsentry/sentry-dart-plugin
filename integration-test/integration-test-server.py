@@ -11,8 +11,8 @@ import json
 apiOrg = 'sentry-sdks'
 apiProject = 'sentry-dart-plugin'
 uri = urlparse(sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8000')
-version='project@1.1.0'
-appIdentifier='com.sentry.dart.app'
+version='1.1.0'
+appIdentifier='project'
 
 class Handler(BaseHTTPRequestHandler):
     body = None
@@ -86,6 +86,8 @@ class Handler(BaseHTTPRequestHandler):
         self.start_response(HTTPStatus.OK)
 
         if self.isApi('/api/0/organizations/{}/releases/{}/'.format(apiOrg, version)):
+            self.writeJSONFile("integration-test/assets/release.json")
+        if self.isApi('/api/0/projects/{}/{}/releases/{}@{}/'.format(apiOrg, apiProject, appIdentifier, version)):
             self.writeJSONFile("integration-test/assets/release.json")
         else:
             self.end_headers()
