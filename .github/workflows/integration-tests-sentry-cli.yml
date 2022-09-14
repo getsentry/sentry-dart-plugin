@@ -23,15 +23,15 @@ jobs:
         run: scripts/download-sentry-cli.sh
 
       - name: Run pub get
-          working-directory: integration-test/project
+          working-directory: ./integration-test/project
           run: dart pub get
 
       - name: Build apk
-          working-directory: integration-test/project
+          working-directory: ./integration-test/project
           run: flutter build apk
             
       - name: Start server and run integration tests
-          working-directory: integration-test/project
+          working-directory: ./integration-test/project
           run: |
             ../integration-test-server-start.sh &
             ../../bin/sentry_dart_plugin.dart
