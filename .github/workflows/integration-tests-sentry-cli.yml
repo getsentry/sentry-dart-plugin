@@ -27,12 +27,12 @@ jobs:
         run: ../../scripts/download-sentry-cli.sh
 
       - name: Run pub get
-          run: dart pub get
+        run: dart pub get
 
       - name: Build apk
-          run: flutter build apk
+        run: flutter build apk
             
       - name: Start server and run integration tests
-          run: |
-            ../integration-test-server-start.sh &
-            ../../bin/sentry_dart_plugin.dart
+        run: |
+          ../integration-test-server-start.sh &
+          ../../bin/sentry_dart_plugin.dart
