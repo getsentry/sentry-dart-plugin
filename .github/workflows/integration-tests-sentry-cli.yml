@@ -30,8 +30,10 @@ jobs:
       - name: Download sentry-cli binaries
         run: ../../scripts/download-sentry-cli.sh
 
-      - name: Run pub get
-        run: dart pub get
+      - name: flutter pub get
+        run: |
+          flutter clean
+          flutter pub get
 
       - name: Build apk
         run: flutter build apk
