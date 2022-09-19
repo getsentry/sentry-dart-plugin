@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-python3 integration-test/integration-test-server.py
+# Relative from project folder
+python3 ../integration-test-server.py
