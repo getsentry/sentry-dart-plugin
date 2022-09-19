@@ -11,7 +11,9 @@ pubspec.lock
 .idea/workspace.xml
 *.iml
 android/
+!integration-test/project/android/
 ios/
+!integration-test/project/ios/
 build/
 .cxx/
 .vscode/
