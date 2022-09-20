@@ -31,11 +31,11 @@ class Handler(BaseHTTPRequestHandler):
                            '"maxRequestSize":33554432,"concurrency":1,"hashAlgorithm":"sha1","compression":["gzip"],'
                            '"accept":["debug_files","release_files","pdbs","sources","bcsymbolmaps"]}')
         elif self.isApi('/api/0/organizations/{}/repos/?cursor='.format(apiOrg)):
-            self.writeJSONFile("integration-test/assets/repos.json")
+            self.writeJSONFile("../assets/repos.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}/previous-with-commits/'.format(apiOrg, version)):
-            self.writeJSONFile("integration-test/assets/release.json")
+            self.writeJSONFile("../assets/release.json")
         elif self.isApi('/api/0/projects/{}/{}/releases/{}/files/?cursor='.format(apiOrg, apiProject, version)):
-            self.writeJSONFile("integration-test/assets/artifacts.json")
+            self.writeJSONFile("../assets/artifacts.json")
         else:
             self.end_headers()
 
@@ -66,17 +66,17 @@ class Handler(BaseHTTPRequestHandler):
             jsonResponse = jsonResponse.rstrip(',') + '}'
             self.writeJSON(jsonResponse)
         elif self.isApi('api/0/projects/{}/{}/releases/'.format(apiOrg, apiProject)):
-            self.writeJSONFile("integration-test/assets/release.json")
+            self.writeJSONFile("../assets/release.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}@{}/deploys/'.format(apiOrg, appIdentifier, version)):
-            self.writeJSONFile("integration-test/assets/deploy.json")
+            self.writeJSONFile("../assets/deploy.json")
         elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/files/'.format(apiOrg, apiProject, appIdentifier, version)):
-            self.writeJSONFile("integration-test/assets/artifact.json")
+            self.writeJSONFile("../assets/artifact.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}/assemble/'.format(apiOrg, version)):
-            self.writeJSONFile("integration-test/assets/assemble-artifacts-response.json")
+            self.writeJSONFile("../assets/assemble-artifacts-response.json")
         elif self.isApi('/api/0/projects/{}/{}/files/dsyms/'.format(apiOrg, apiProject)):
-            self.writeJSONFile("integration-test/assets/debug-info-files.json")
+            self.writeJSONFile("../assets/debug-info-files.json")
         elif self.isApi('/api/0/projects/{}/{}/files/dsyms/associate/'.format(apiOrg, apiProject)):
-            self.writeJSONFile("integration-test/assets/associate-dsyms-response.json")
+            self.writeJSONFile("../assets/associate-dsyms-response.json")
         else:
             self.end_headers()
 
@@ -86,9 +86,9 @@ class Handler(BaseHTTPRequestHandler):
         self.start_response(HTTPStatus.OK)
 
         if self.isApi('/api/0/organizations/{}/releases/{}/'.format(apiOrg, version)):
-            self.writeJSONFile("integration-test/assets/release.json")
+            self.writeJSONFile("../assets/release.json")
         if self.isApi('/api/0/projects/{}/{}/releases/{}@{}/'.format(apiOrg, apiProject, appIdentifier, version)):
-            self.writeJSONFile("integration-test/assets/release.json")
+            self.writeJSONFile("../assets/release.json")
         else:
             self.end_headers()
 
