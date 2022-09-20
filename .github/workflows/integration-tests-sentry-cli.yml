@@ -41,4 +41,4 @@ jobs:
       - name: Start server and run integration tests
         run: |
           ../integration-test-server-start.sh &
-          dart ../../bin/sentry_dart_plugin.dart
+          dart lib/plugin.dart
