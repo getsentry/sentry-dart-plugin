@@ -40,5 +40,5 @@ jobs:
             
       - name: Start server and run integration tests
         run: |
-          integration-test-server-start.sh &
+          ./integration-test-server-start.sh &
           dart lib/plugin.dart
