@@ -11,7 +11,7 @@ dependencies:
 
 dev_dependencies:
   sentry_dart_plugin:
-    path: ./../../
+    path: ./../
 
 flutter:
   uses-material-design: true
