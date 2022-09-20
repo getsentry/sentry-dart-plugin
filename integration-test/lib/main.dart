@@ -24,14 +24,12 @@ class ProjectWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Project"),
-      ),
-      body: Center(
-        child: Text(
+        appBar: AppBar(
+          title: Text("Project"),
+        ),
+        body: Center(
+            child: Text(
           'Sample Project',
-        )
-      )
-    );
+        )));
   }
 }
