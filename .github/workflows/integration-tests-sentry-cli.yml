@@ -8,7 +8,7 @@ on:
 
 defaults:
   run:
-    working-directory: integration-test/project
+    working-directory: integration-test
 
 jobs:
   integration-test:
@@ -28,7 +28,7 @@ jobs:
           java-version: '11'
 
       - name: Download sentry-cli binaries
-        run: ../../scripts/download-sentry-cli.sh
+        run: ../scripts/download-sentry-cli.sh
 
       - name: flutter pub get
         run: |
@@ -40,5 +40,5 @@ jobs:
             
       - name: Start server and run integration tests
         run: |
-          ../integration-test-server-start.sh &
+          integration-test-server-start.sh &
           dart lib/plugin.dart
