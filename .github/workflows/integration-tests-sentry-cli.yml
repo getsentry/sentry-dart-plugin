@@ -37,6 +37,9 @@ jobs:
 
       - name: Build apk
         run: flutter build apk
+
+      - name: Build web
+        run: flutter build web
             
       - name: Start server and run integration tests
         run: |
