@@ -39,7 +39,7 @@ jobs:
         run: flutter build apk
 
       - name: Build web
-        run: flutter build web
+        run: flutter build web --source-maps
             
       - name: Start server and run integration tests
         run: |
