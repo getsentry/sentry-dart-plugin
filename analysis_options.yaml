@@ -3,3 +3,6 @@
 # https://github.com/dart-lang/pedantic#enabled-lints.
 
 include: package:lints/recommended.yaml
+
+analyzer:
+  exclude: [integration-test/**]
