@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [macos-latest, ubuntu-latest] # TODO windows
     steps:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
