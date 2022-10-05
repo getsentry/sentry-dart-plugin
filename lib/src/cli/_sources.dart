@@ -1,3 +1,4 @@
+// TODO generate this file through an updater script
 import 'package:sentry_dart_plugin/src/cli/sources.dart';
 
 import 'host_platform.dart';
