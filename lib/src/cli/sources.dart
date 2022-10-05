@@ -1,5 +1,3 @@
-import 'host_platform.dart';
-
 class CLISource {
   final Uri downloadUrl;
   final String hash;
