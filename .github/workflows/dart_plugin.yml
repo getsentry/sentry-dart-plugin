@@ -1,4 +1,4 @@
-name: "Sentry Dart Plugin"
+name: 'Sentry Dart Plugin'
 on:
   push:
     branches:
@@ -7,7 +7,7 @@ on:
   pull_request:
 jobs:
   build:
-    name: "Analyze, Format and Build"
+    name: 'Analyze, Format and Build'
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -15,24 +15,26 @@ jobs:
         sdk: [stable, beta]
 
     steps:
-        - uses: dart-lang/setup-dart@v1
-          with:
-            sdk: ${{ matrix.sdk }}
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
 
-        - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-        - name: "Pub Get"
-          run: |
-            dart pub get
+      - name: 'Pub Get'
+        run: |
+          dart pub get
 
-        - name: "Analyze and Format"
-          run: |
-            dart analyze --fatal-infos
-            dart format --set-exit-if-changed ./
+      - name: 'Analyze and Format'
+        run: |
+          dart analyze --fatal-infos
+          dart format --set-exit-if-changed ./
 
-        - name: Build
-          run: |
-            dart compile aot-snapshot bin/sentry_dart_plugin.dart
+      - run: dart test
+
+      - name: Build
+        run: |
+          dart compile aot-snapshot bin/sentry_dart_plugin.dart
 
   package-analysis:
     runs-on: ubuntu-latest

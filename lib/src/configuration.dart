@@ -1,9 +1,12 @@
 import 'dart:io';
 
-import 'package:package_config/package_config.dart';
+import 'package:file/local.dart';
+import 'package:sentry_dart_plugin/src/cli/_sources.dart';
 import 'package:system_info2/system_info2.dart';
 import 'package:yaml/yaml.dart';
 
+import 'cli/host_platform.dart';
+import 'cli/setup.dart';
 import 'utils/extensions.dart';
 import 'utils/log.dart';
 
@@ -39,7 +42,6 @@ class Configuration {
 
   // The log level (trace, debug, info, warn, error), defaults to warn, or set env. var. SENTRY_LOG_LEVEL
   late String? logLevel;
-  String? _assetsPath;
 
   // the Sentry CLI path, defaults to the assets folder
   late String? cliPath;
@@ -66,8 +68,7 @@ class Configuration {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
 
-    await _getAssetsFolderPath();
-    _findAndSetCliPath();
+    await _findAndSetCliPath();
     final pubspec = _getPubspec();
     final config = pubspec['sentry'];
 
@@ -129,59 +130,48 @@ class Configuration {
     Log.taskCompleted(taskName);
   }
 
-  /// Get the assets folder path from the .packages file
-  Future<void> _getAssetsFolderPath() async {
-    final packagesConfig = await loadPackageConfig(File(
-        '${Directory.current.path}$_fileSeparator.dart_tool${_fileSeparator}package_config.json'));
-
-    final packages = packagesConfig.packages
-        .where((package) => package.name == "sentry_dart_plugin");
-
-    if (packages.isNotEmpty) {
-      final path =
-          packages.first.packageUriRoot.toString().replaceAll('file://', '') +
-              'assets';
-
-      _assetsPath = Uri.decodeFull(path);
-    }
-
-    if (_assetsPath.isNull) {
-      Log.info('Can not find the assets folder.');
-    }
-  }
-
-  void _findAndSetCliPath() {
+  Future<void> _findAndSetCliPath() async {
+    final fs = LocalFileSystem();
+    final cliSetup = CLISetup(fs, currentCLISources);
+    HostPlatform? platform;
     if (Platform.isMacOS) {
-      _setCliPath("Darwin-universal");
+      platform = HostPlatform.darwinUniversal;
     } else if (Platform.isWindows) {
-      _setCliPath("Windows-i686.exe");
+      platform = SysInfo.kernelBitness == 32
+          ? HostPlatform.windows32bit
+          : HostPlatform.windows64bit;
     } else if (Platform.isLinux) {
-      final arch = SysInfo.kernelArchitecture;
-      if (arch == "amd64") {
-        _setCliPath("Linux-x86_64");
-      } else {
-        _setCliPath("Linux-$arch");
+      switch (SysInfo.kernelArchitecture.toLowerCase()) {
+        case 'arm':
+        case 'armv6':
+        case 'armv7':
+          platform = HostPlatform.linuxArmv7;
+          break;
+        case 'aarch64':
+          platform = HostPlatform.linuxAarch64;
+          break;
+        case 'amd64':
+        case 'x86_64':
+          platform = HostPlatform.linux64bit;
+          break;
       }
     }
 
-    if (cliPath != null) {
-      final cliFile = File(cliPath!);
-
-      if (!cliFile.existsSync()) {
-        _setPreInstalledCli();
-      }
-    } else {
-      _setPreInstalledCli();
+    if (platform == null) {
+      Log.errorAndExit(
+          'Host platform not supported - cannot download Sentry CLI for ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
     }
-  }
 
-  void _setPreInstalledCli() {
-    Log.info(
-        'sentry-cli is not available under the assets folder, using pre-installed sentry-cli');
-    cliPath = 'sentry-cli';
-  }
+    try {
+      cliPath = await cliSetup.download(platform);
+    } catch (e) {
+      Log.errorAndExit("Failed to download Sentry CLI: $e");
+    }
 
-  void _setCliPath(String suffix) {
-    cliPath = "$_assetsPath${_fileSeparator}sentry-cli-$suffix";
+    var result = await Process.run('chmod', ['+x', cliPath!]);
+    if (result.exitCode != 0) {
+      Log.errorAndExit(
+          "Failed to make Sentry CLI executable: ${result.stdout}\n${result.stderr}");
+    }
   }
 }
