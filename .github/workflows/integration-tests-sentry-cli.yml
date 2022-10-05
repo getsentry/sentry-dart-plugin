@@ -14,6 +14,7 @@ jobs:
   integration-test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest] # TODO windows
     steps:
