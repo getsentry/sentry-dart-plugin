@@ -158,20 +158,31 @@ class Configuration {
     }
 
     if (platform == null) {
-      Log.errorAndExit(
+      Log.error(
           'Host platform not supported - cannot download Sentry CLI for ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
+      return _setPreInstalledCli();
     }
 
     try {
       cliPath = await cliSetup.download(platform);
     } catch (e) {
-      Log.errorAndExit("Failed to download Sentry CLI: $e");
+      Log.error("Failed to download Sentry CLI: $e");
+      return _setPreInstalledCli();
     }
 
-    var result = await Process.run('chmod', ['+x', cliPath!]);
-    if (result.exitCode != 0) {
-      Log.errorAndExit(
-          "Failed to make Sentry CLI executable: ${result.stdout}\n${result.stderr}");
+    if (!Platform.isWindows) {
+      var result = await Process.run('chmod', ['+x', cliPath!]);
+      if (result.exitCode != 0) {
+        Log.error(
+            "Failed to make downloaded Sentry CLI executable: ${result.stdout}\n${result.stderr}");
+        return _setPreInstalledCli();
+      }
     }
+  }
+
+  void _setPreInstalledCli() {
+    cliPath = Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
+    Log.info(
+        'Trying to fallback to preinstalled Sentry CLI, if available on PATH: $cliPath');
   }
 }
