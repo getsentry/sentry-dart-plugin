@@ -17,9 +17,7 @@ class CLISetup {
   Future<String> download(HostPlatform platform) async {
     final dir = _fs.directory(_directory);
     await dir.create(recursive: true);
-    final file = dir.childFile(platform == HostPlatform.windows64bit
-        ? 'sentry-cli.exe'
-        : 'sentry-cli');
+    final file = dir.childFile('sentry-cli${platform.executableExtension}');
 
     final source = _sources[platform]!;
 
