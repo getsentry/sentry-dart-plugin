@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:file/local.dart';
+import 'package:file/file.dart';
 import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/cli/_sources.dart';
 import 'package:system_info2/system_info2.dart';
@@ -13,10 +13,11 @@ import 'utils/injector.dart';
 import 'utils/log.dart';
 
 class Configuration {
+  late final FileSystem _fs = injector.get<FileSystem>();
   // cannot use ${Directory.current.path}/build since --split-debug-info allows
   // setting a custom path which is a sibling of build
-  /// The Build folder, defaults to Directory.current
-  String buildFilesFolder = Directory.current.path;
+  /// The Build folder, defaults to the current directory.
+  late final String buildFilesFolder = _fs.currentDirectory.path;
 
   /// Rather upload native debug symbols, defaults to true
   late bool uploadNativeSymbols;
@@ -47,7 +48,6 @@ class Configuration {
 
   // the Sentry CLI path, defaults to the assets folder
   late String? cliPath;
-  final String _fileSeparator = Platform.pathSeparator;
 
   /// The Apps version, defaults to version from pubspec
   late String version;
@@ -59,7 +59,12 @@ class Configuration {
   late String webBuildFilesFolder;
 
   dynamic _getPubspec() {
-    final pubspecString = File("pubspec.yaml").readAsStringSync();
+    final file = injector.get<FileSystem>().file("pubspec.yaml");
+    if (!file.existsSync()) {
+      Log.error("Pubspec not found: ${file.absolute.path}");
+      return {};
+    }
+    final pubspecString = file.readAsStringSync();
     final pubspec = loadYaml(pubspecString);
     return pubspec;
   }
@@ -87,7 +92,7 @@ class Configuration {
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.
     final webBuildPath = config?['web_build_path']?.toString() ?? 'build/web';
-    webBuildFilesFolder = '$buildFilesFolder$_fileSeparator$webBuildPath';
+    webBuildFilesFolder = '$buildFilesFolder/$webBuildPath';
 
     project = config?['project']?.toString(); // or env. var. SENTRY_PROJECT
     org = config?['org']?.toString(); // or env. var. SENTRY_ORG
@@ -127,7 +132,7 @@ class Configuration {
     }
 
     try {
-      Process.runSync(cliPath!, ['help']);
+      injector.get<ProcessManager>().runSync([cliPath!, 'help']);
     } on Exception catch (exception) {
       Log.error(
           'sentry-cli is not available, please follow https://docs.sentry.io/product/cli/installation/ \n$exception');
@@ -141,8 +146,7 @@ class Configuration {
   }
 
   Future<void> _findAndSetCliPath() async {
-    final fs = LocalFileSystem();
-    final cliSetup = CLISetup(fs, currentCLISources);
+    final cliSetup = CLISetup(currentCLISources);
     HostPlatform? platform;
     if (Platform.isMacOS) {
       platform = HostPlatform.darwinUniversal;

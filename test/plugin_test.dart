@@ -8,19 +8,22 @@ import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 
 void main() {
-  late SentryDartPlugin plugin;
+  final plugin = SentryDartPlugin();
   late MockProcessManager pm;
 
   setUp(() {
-    plugin = SentryDartPlugin();
     // override process manager
     pm = MockProcessManager();
     injector.registerSingleton<ProcessManager>(() => pm, override: true);
   });
 
-  test('no commands with no args', () async {
+  test('fails without args', () async {
     final exitCode = await plugin.run([]);
     expect(exitCode, 1);
+    expect(pm.commandLog, const [
+      'chmod +x .dart_tool/pub/bin/sentry_dart_plugin/sentry-cli',
+      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli help'
+    ]);
   });
 }
 
@@ -52,7 +55,7 @@ class MockProcessManager implements ProcessManager {
       bool runInShell = false,
       covariant Encoding? stdoutEncoding = systemEncoding,
       covariant Encoding? stderrEncoding = systemEncoding}) {
-    commandLog.add(command.toString());
+    commandLog.add(command.join(' '));
     return ProcessResult(-1, 0, null, null);
   }
 
