@@ -103,33 +103,41 @@ class Configuration {
 
   /// Validates the configuration values and log an error if required fields
   /// are missing
-  void validateConfigValues() {
+  bool validateConfigValues() {
     const taskName = 'validating config values';
     Log.startingTask(taskName);
 
     final environments = Platform.environment;
 
+    var successful = true;
     if (project.isNull && environments['SENTRY_PROJECT'].isNull) {
-      Log.errorAndExit(
+      Log.error(
           'Project is empty, check \'project\' at pubspec.yaml or SENTRY_PROJECT env. var.');
+      successful = false;
     }
     if (org.isNull && environments['SENTRY_ORG'].isNull) {
-      Log.errorAndExit(
+      Log.error(
           'Organization is empty, check \'org\' at pubspec.yaml or SENTRY_ORG env. var.');
+      successful = false;
     }
     if (authToken.isNull && environments['SENTRY_AUTH_TOKEN'].isNull) {
-      Log.errorAndExit(
+      Log.error(
           'Auth Token is empty, check \'auth_token\' at pubspec.yaml or SENTRY_AUTH_TOKEN env. var.');
+      successful = false;
     }
 
     try {
       Process.runSync(cliPath!, ['help']);
-    } catch (exception) {
-      Log.errorAndExit(
+    } on Exception catch (exception) {
+      Log.error(
           'sentry-cli is not available, please follow https://docs.sentry.io/product/cli/installation/ \n$exception');
+      successful = false;
     }
 
-    Log.taskCompleted(taskName);
+    if (successful) {
+      Log.taskCompleted(taskName);
+    }
+    return successful;
   }
 
   Future<void> _findAndSetCliPath() async {
@@ -167,7 +175,7 @@ class Configuration {
 
     try {
       cliPath = await cliSetup.download(platform);
-    } catch (e) {
+    } on Exception catch (e) {
       Log.error("Failed to download Sentry CLI: $e");
       return _setPreInstalledCli();
     }
