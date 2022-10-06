@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file/local.dart';
+import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/cli/_sources.dart';
 import 'package:system_info2/system_info2.dart';
 import 'package:yaml/yaml.dart';
@@ -8,6 +9,7 @@ import 'package:yaml/yaml.dart';
 import 'cli/host_platform.dart';
 import 'cli/setup.dart';
 import 'utils/extensions.dart';
+import 'utils/injector.dart';
 import 'utils/log.dart';
 
 class Configuration {
@@ -171,7 +173,8 @@ class Configuration {
     }
 
     if (!Platform.isWindows) {
-      var result = await Process.run('chmod', ['+x', cliPath!]);
+      final result =
+          await injector.get<ProcessManager>().run(['chmod', '+x', cliPath!]);
       if (result.exitCode != 0) {
         Log.error(
             "Failed to make downloaded Sentry CLI executable: ${result.stdout}\n${result.stderr}");

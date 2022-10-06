@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:process/process.dart';
+
 import 'src/configuration.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
@@ -138,7 +140,9 @@ class SentryDartPlugin {
   void _executeAndLog(String errorMessage, List<String> params) {
     ProcessResult? processResult;
     try {
-      processResult = Process.runSync(_configuration.cliPath!, params);
+      processResult = injector
+          .get<ProcessManager>()
+          .runSync([_configuration.cliPath!, ...params]);
     } catch (exception) {
       Log.error('$errorMessage: \n$exception');
     }
