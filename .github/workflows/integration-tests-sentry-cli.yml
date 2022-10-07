@@ -3,7 +3,7 @@ name: integration-tests-sentry-cli
 on:
   push:
     branches:
-      -master
+      - main
   pull_request:
 
 defaults:
@@ -14,8 +14,9 @@ jobs:
   integration-test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest]
+        os: [macos-latest, ubuntu-latest] # TODO windows
     steps:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
@@ -27,9 +28,6 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Download sentry-cli binaries
-        run: ../scripts/download-sentry-cli.sh
-
       - name: flutter pub get
         run: |
           flutter clean
@@ -40,7 +38,7 @@ jobs:
 
       - name: Build web
         run: flutter build web --source-maps
-            
+
       - name: Start server and run integration tests
         run: |
           ./integration-test-server-start.sh &

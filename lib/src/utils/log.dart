@@ -25,7 +25,7 @@ class Log {
   static void error(String message) => _write(message, withColor: _red);
 
   /// Write `error` log and exit the program
-  static void errorAndExit(
+  static Never errorAndExit(
     String message, {
     int exitCode = 1,
   }) {

@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Feat: Add support to load release variable from environment(#40)
+* Change: Download Sentry CLI on first run (#49)
 
 ## 1.0.0-beta.2
 
