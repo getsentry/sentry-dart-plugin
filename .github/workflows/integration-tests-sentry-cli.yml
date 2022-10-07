@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v3.1.0
       - uses: subosito/flutter-action@v2
@@ -40,6 +40,7 @@ jobs:
         run: flutter build web --source-maps
 
       - name: Start server and run integration tests
+        shell: bash
         run: |
           ./integration-test-server-start.sh &
           dart run sentry_dart_plugin
