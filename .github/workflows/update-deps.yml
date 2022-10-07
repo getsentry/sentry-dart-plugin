@@ -15,6 +15,5 @@ jobs:
     with:
       path: scripts/update-cli.sh
       name: CLI
-      pattern: '^v[0-9.]+$' # only match non-preview versions
     secrets:
       api-token: ${{ secrets.CI_DEPLOY_KEY }}
