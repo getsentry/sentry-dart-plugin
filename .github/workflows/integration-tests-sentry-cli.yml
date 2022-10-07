@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest] # TODO windows
+        os: [macos-latest]
     steps:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
