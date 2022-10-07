@@ -53,7 +53,7 @@ sentry:
       '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli help',
       '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug upload-dif --include-sources --org o --project p /',
       '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p new project@1.1.0',
-      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p files project@1.1.0 upload-sourcemaps //build/web --ext map --ext js',
+      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p files project@1.1.0 upload-sourcemaps /build/web --ext map --ext js',
       '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p files project@1.1.0 upload-sourcemaps / --ext dart',
       '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p finalize project@1.1.0'
     ]);

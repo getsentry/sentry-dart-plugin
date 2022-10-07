@@ -91,8 +91,9 @@ class Configuration {
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.
-    final webBuildPath = config?['web_build_path']?.toString() ?? 'build/web';
-    webBuildFilesFolder = '$buildFilesFolder/$webBuildPath';
+    final webBuildPath =
+        config?['web_build_path']?.toString() ?? _fs.path.join('build', 'web');
+    webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
 
     project = config?['project']?.toString(); // or env. var. SENTRY_PROJECT
     org = config?['org']?.toString(); // or env. var. SENTRY_ORG
