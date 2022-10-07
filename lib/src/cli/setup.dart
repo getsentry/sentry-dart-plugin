@@ -2,6 +2,7 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:file/file.dart';
 import 'package:http/http.dart' as http;
+import 'package:sentry_dart_plugin/src/utils/injector.dart';
 
 import '../utils/log.dart';
 import 'host_platform.dart';
@@ -9,13 +10,12 @@ import 'sources.dart';
 
 class CLISetup {
   final /*CLISources*/ Map<HostPlatform, CLISource> _sources;
-  final FileSystem _fs;
   final _directory = '.dart_tool/pub/bin/sentry_dart_plugin';
 
-  CLISetup(this._fs, this._sources);
+  CLISetup(this._sources);
 
   Future<String> download(HostPlatform platform) async {
-    final dir = _fs.directory(_directory);
+    final dir = injector.get<FileSystem>().directory(_directory);
     await dir.create(recursive: true);
     final file = dir.childFile('sentry-cli${platform.executableExtension}');
 
@@ -25,7 +25,7 @@ class CLISetup {
       await _download(source, file);
     }
 
-    return file.absolute.path;
+    return file.path;
   }
 
   Future<void> _download(CLISource source, File file) async {

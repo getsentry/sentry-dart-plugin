@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:file/local.dart';
+import 'package:file/file.dart';
+import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/cli/_sources.dart';
 import 'package:system_info2/system_info2.dart';
 import 'package:yaml/yaml.dart';
@@ -8,13 +9,15 @@ import 'package:yaml/yaml.dart';
 import 'cli/host_platform.dart';
 import 'cli/setup.dart';
 import 'utils/extensions.dart';
+import 'utils/injector.dart';
 import 'utils/log.dart';
 
 class Configuration {
+  late final FileSystem _fs = injector.get<FileSystem>();
   // cannot use ${Directory.current.path}/build since --split-debug-info allows
   // setting a custom path which is a sibling of build
-  /// The Build folder, defaults to Directory.current
-  String buildFilesFolder = Directory.current.path;
+  /// The Build folder, defaults to the current directory.
+  late final String buildFilesFolder = _fs.currentDirectory.path;
 
   /// Rather upload native debug symbols, defaults to true
   late bool uploadNativeSymbols;
@@ -45,7 +48,6 @@ class Configuration {
 
   // the Sentry CLI path, defaults to the assets folder
   late String? cliPath;
-  final String _fileSeparator = Platform.pathSeparator;
 
   /// The Apps version, defaults to version from pubspec
   late String version;
@@ -57,7 +59,12 @@ class Configuration {
   late String webBuildFilesFolder;
 
   dynamic _getPubspec() {
-    final pubspecString = File("pubspec.yaml").readAsStringSync();
+    final file = injector.get<FileSystem>().file("pubspec.yaml");
+    if (!file.existsSync()) {
+      Log.error("Pubspec not found: ${file.absolute.path}");
+      return {};
+    }
+    final pubspecString = file.readAsStringSync();
     final pubspec = loadYaml(pubspecString);
     return pubspec;
   }
@@ -84,8 +91,9 @@ class Configuration {
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.
-    final webBuildPath = config?['web_build_path']?.toString() ?? 'build/web';
-    webBuildFilesFolder = '$buildFilesFolder$_fileSeparator$webBuildPath';
+    final webBuildPath =
+        config?['web_build_path']?.toString() ?? _fs.path.join('build', 'web');
+    webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
 
     project = config?['project']?.toString(); // or env. var. SENTRY_PROJECT
     org = config?['org']?.toString(); // or env. var. SENTRY_ORG
@@ -101,38 +109,45 @@ class Configuration {
 
   /// Validates the configuration values and log an error if required fields
   /// are missing
-  void validateConfigValues() {
+  bool validateConfigValues() {
     const taskName = 'validating config values';
     Log.startingTask(taskName);
 
     final environments = Platform.environment;
 
+    var successful = true;
     if (project.isNull && environments['SENTRY_PROJECT'].isNull) {
-      Log.errorAndExit(
+      Log.error(
           'Project is empty, check \'project\' at pubspec.yaml or SENTRY_PROJECT env. var.');
+      successful = false;
     }
     if (org.isNull && environments['SENTRY_ORG'].isNull) {
-      Log.errorAndExit(
+      Log.error(
           'Organization is empty, check \'org\' at pubspec.yaml or SENTRY_ORG env. var.');
+      successful = false;
     }
     if (authToken.isNull && environments['SENTRY_AUTH_TOKEN'].isNull) {
-      Log.errorAndExit(
+      Log.error(
           'Auth Token is empty, check \'auth_token\' at pubspec.yaml or SENTRY_AUTH_TOKEN env. var.');
+      successful = false;
     }
 
     try {
-      Process.runSync(cliPath!, ['help']);
-    } catch (exception) {
-      Log.errorAndExit(
+      injector.get<ProcessManager>().runSync([cliPath!, 'help']);
+    } on Exception catch (exception) {
+      Log.error(
           'sentry-cli is not available, please follow https://docs.sentry.io/product/cli/installation/ \n$exception');
+      successful = false;
     }
 
-    Log.taskCompleted(taskName);
+    if (successful) {
+      Log.taskCompleted(taskName);
+    }
+    return successful;
   }
 
   Future<void> _findAndSetCliPath() async {
-    final fs = LocalFileSystem();
-    final cliSetup = CLISetup(fs, currentCLISources);
+    final cliSetup = CLISetup(currentCLISources);
     HostPlatform? platform;
     if (Platform.isMacOS) {
       platform = HostPlatform.darwinUniversal;
@@ -165,13 +180,14 @@ class Configuration {
 
     try {
       cliPath = await cliSetup.download(platform);
-    } catch (e) {
+    } on Exception catch (e) {
       Log.error("Failed to download Sentry CLI: $e");
       return _setPreInstalledCli();
     }
 
     if (!Platform.isWindows) {
-      var result = await Process.run('chmod', ['+x', cliPath!]);
+      final result =
+          await injector.get<ProcessManager>().run(['chmod', '+x', cliPath!]);
       if (result.exitCode != 0) {
         Log.error(
             "Failed to make downloaded Sentry CLI executable: ${result.stdout}\n${result.stderr}");

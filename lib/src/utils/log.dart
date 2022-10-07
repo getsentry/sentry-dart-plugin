@@ -24,15 +24,6 @@ class Log {
   /// Error log with `red` color
   static void error(String message) => _write(message, withColor: _red);
 
-  /// Write `error` log and exit the program
-  static Never errorAndExit(
-    String message, {
-    int exitCode = 1,
-  }) {
-    error(message);
-    exit(exitCode);
-  }
-
   /// Warning log with `yellow` color
   static void warn(String message) => _write(message, withColor: _yellow);
 
@@ -111,10 +102,18 @@ class Log {
     final isError = result.exitCode != 0;
 
     if (isError) {
-      Log.errorAndExit('stderr: $stderr\nstdout: $stdout',
-          exitCode: result.exitCode);
+      Log.error(
+          'exitCode: ${result.exitCode}\nstderr: $stderr\nstdout: $stdout');
+      throw ExitError(result.exitCode);
     } else {
       Log.success('stderr: $stderr\nstdout: $stdout');
     }
   }
+}
+
+// Thrown instead of exit() for testability.
+class ExitError {
+  final int code;
+
+  ExitError(this.code);
 }

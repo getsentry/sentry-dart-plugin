@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:process/process.dart';
+
 import 'src/configuration.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
@@ -16,23 +18,30 @@ class SentryDartPlugin {
 
   /// Method responsible to load the configurations and upload the
   /// debug symbols and source maps
-  Future<void> run(List<String> cliArguments) async {
+  Future<int> run(List<String> cliArguments) async {
     _configuration = injector.get<Configuration>();
 
-    await _configuration.getConfigValues(cliArguments);
-    _configuration.validateConfigValues();
+    try {
+      await _configuration.getConfigValues(cliArguments);
+      if (!_configuration.validateConfigValues()) {
+        return 1;
+      }
 
-    if (_configuration.uploadNativeSymbols) {
-      _executeCliForDebugSymbols();
-    } else {
-      Log.info('uploadNativeSymbols is disabled.');
-    }
+      if (_configuration.uploadNativeSymbols) {
+        _executeCliForDebugSymbols();
+      } else {
+        Log.info('uploadNativeSymbols is disabled.');
+      }
 
-    if (_configuration.uploadSourceMaps) {
-      _executeCliForSourceMaps();
-    } else {
-      Log.info('uploadSourceMaps is disabled.');
+      if (_configuration.uploadSourceMaps) {
+        _executeCliForSourceMaps();
+      } else {
+        Log.info('uploadSourceMaps is disabled.');
+      }
+    } on ExitError catch (e) {
+      return e.code;
     }
+    return 0;
   }
 
   void _executeCliForDebugSymbols() {
@@ -138,8 +147,10 @@ class SentryDartPlugin {
   void _executeAndLog(String errorMessage, List<String> params) {
     ProcessResult? processResult;
     try {
-      processResult = Process.runSync(_configuration.cliPath!, params);
-    } catch (exception) {
+      processResult = injector
+          .get<ProcessManager>()
+          .runSync([_configuration.cliPath!, ...params]);
+    } on Exception catch (exception) {
       Log.error('$errorMessage: \n$exception');
     }
     if (processResult != null) {
