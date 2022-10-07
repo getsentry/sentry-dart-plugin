@@ -2,29 +2,43 @@
 
 ## Unreleased
 
-* Feat: Add support to load release variable from environment(#40)
-* Change: Download Sentry CLI on first run (#49)
+### Features
+
+* Add support to load release variable from environment ([#40](https://github.com/getsentry/sentry-dart-plugin/pull/40))
+* Download Sentry CLI on first run ([#49](https://github.com/getsentry/sentry-dart-plugin/pull/49))
 
 ## 1.0.0-beta.2
 
-* Fix: Early exit when providing lower log level (#31)
+### Fixes
+
+* Early exit when providing lower log level ([#31](https://github.com/getsentry/sentry-dart-plugin/pull/31))
 
 ## 1.0.0-beta.1
 
-* Feat: Ability to configure url for on-premise server (#17)
+### Features
+
+* Ability to configure url for on-premise server ([#17](https://github.com/getsentry/sentry-dart-plugin/pull/17))
 
 ## 1.0.0-alpha.4
 
-* Fix: Log real exitCode, stdout and stdout if available (#13)
+### Fixes
+
+* Log real exitCode, stdout and stdout if available ([#13](https://github.com/getsentry/sentry-dart-plugin/pull/13))
 
 ## 1.0.0-alpha.3
 
-* Bump sentry-cli 1.69.1 which includes a fix for Dart debug symbols (#8)
+### Dependencies
+
+* Bump sentry-cli 1.69.1 which includes a fix for Dart debug symbols ([#8](https://github.com/getsentry/sentry-dart-plugin/pull/8))
 
 ## 1.0.0-alpha.2
 
-* Fix: Add org and project when creating releases (#2)
+### Fixes
+
+* Add org and project when creating releases ([#2](https://github.com/getsentry/sentry-dart-plugin/pull/2))
 
 ## 1.0.0-alpha.1
 
-* Feat: Sentry Dart Plugin
+### Features
+
+* Sentry Dart Plugin
