@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/cli/_sources.dart';
 import 'package:system_info2/system_info2.dart';
 import 'package:yaml/yaml.dart';
 

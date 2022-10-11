@@ -27,6 +27,30 @@ void main() {
 
   const cli = MockCLI.name;
   const orgAndProject = '--org o --project p';
+  const project = 'project';
+  const version = '1.1.0';
+  const release = '$project@$version';
+
+  Future<List<String>> runWith(String config) async {
+    // properly indent the configuration for the `sentry` section in the yaml
+    final configIndented =
+        config.trim().split('\n').map((l) => '  ${l.trim()}').join('\n');
+
+    fs.file('pubspec.yaml').writeAsStringSync('''
+name: $project
+version: $version
+
+sentry:
+  auth_token: t # TODO: support not specifying this, let sentry-cli use the value it can find in its configs
+  project: p
+  org: o
+$configIndented
+''');
+
+    final exitCode = await plugin.run([]);
+    expect(exitCode, 0);
+    return pm.commandLog;
+  }
 
   test('fails without args and pubspec', () async {
     final exitCode = await plugin.run([]);
@@ -35,47 +59,29 @@ void main() {
   });
 
   test('works with pubspec', () async {
-    fs.file('pubspec.yaml').writeAsStringSync('''
-name: project
-version: 1.1.0
-
-sentry:
-  upload_native_symbols: true
-  include_native_sources: true
-  upload_source_maps: true
-  auth_token: t
-  project: p
-  org: o
-  url: http://127.0.0.1 # TODO: because this param affects all commands, make it a test-group argument and run all test cases with/without it.
-  log_level: debug
-''');
-    final exitCode = await plugin.run([]);
-    expect(exitCode, 0);
+    // TODO: because `url` param affects all commands, make it a test-group argument and run all test cases with/without it.
+    final commandLog = await runWith('''
+      upload_native_symbols: true
+      include_native_sources: true
+      upload_source_maps: true
+      url: http://127.0.0.1
+      log_level: debug
+    ''');
     const args = '--url http://127.0.0.1 --auth-token t --log-level debug';
-    expect(pm.commandLog, const [
+    expect(commandLog, const [
       'chmod +x $cli',
       '$cli help',
       '$cli $args upload-dif --include-sources $orgAndProject /',
-      '$cli $args releases $orgAndProject new project@1.1.0',
-      '$cli $args releases $orgAndProject files project@1.1.0 upload-sourcemaps /build/web --ext map --ext js',
-      '$cli $args releases $orgAndProject files project@1.1.0 upload-sourcemaps / --ext dart',
-      '$cli $args releases $orgAndProject finalize project@1.1.0'
+      '$cli $args releases $orgAndProject new $release',
+      '$cli $args releases $orgAndProject files $release upload-sourcemaps /build/web --ext map --ext js',
+      '$cli $args releases $orgAndProject files $release upload-sourcemaps / --ext dart',
+      '$cli $args releases $orgAndProject finalize $release'
     ]);
   });
 
   test('defaults', () async {
-    fs.file('pubspec.yaml').writeAsStringSync('''
-name: project
-version: 1.1.0
-
-sentry:
-  auth_token: t # TODO: support not specifying this, let sentry-cli use the value it can find in its configs
-  project: p
-  org: o
-''');
-    final exitCode = await plugin.run([]);
-    expect(exitCode, 0);
-    expect(pm.commandLog, const [
+    final commandLog = await runWith('');
+    expect(commandLog, const [
       'chmod +x $cli',
       '$cli help',
       '$cli --auth-token t upload-dif $orgAndProject /',
