@@ -16,22 +16,24 @@ void main() {
   late MockProcessManager pm;
   late FileSystem fs;
 
-  setUp(() {
-    // override dependencies for testing
-    pm = MockProcessManager();
-    injector.registerSingleton<ProcessManager>(() => pm, override: true);
-    fs = MemoryFileSystem.test();
-    injector.registerSingleton<FileSystem>(() => fs, override: true);
-    injector.registerSingleton<CLISetup>(() => MockCLI(), override: true);
-  });
-
   const cli = MockCLI.name;
   const orgAndProject = '--org o --project p';
   const project = 'project';
   const version = '1.1.0';
   const release = '$project@$version';
+  const buildDir = '/subdir';
 
-  Future<List<String>> runWith(String config) async {
+  setUp(() {
+    // override dependencies for testing
+    pm = MockProcessManager();
+    injector.registerSingleton<ProcessManager>(() => pm, override: true);
+    fs = MemoryFileSystem.test();
+    fs.currentDirectory = fs.directory(buildDir)..createSync();
+    injector.registerSingleton<FileSystem>(() => fs, override: true);
+    injector.registerSingleton<CLISetup>(() => MockCLI(), override: true);
+  });
+
+  Future<Iterable<String>> runWith(String config) async {
     // properly indent the configuration for the `sentry` section in the yaml
     final configIndented =
         config.trim().split('\n').map((l) => '  ${l.trim()}').join('\n');
@@ -49,7 +51,8 @@ $configIndented
 
     final exitCode = await plugin.run([]);
     expect(exitCode, 0);
-    return pm.commandLog;
+    expect(pm.commandLog.take(2), const ['chmod +x $cli', '$cli help']);
+    return pm.commandLog.skip(2);
   }
 
   test('fails without args and pubspec', () async {
@@ -69,12 +72,10 @@ $configIndented
     ''');
     const args = '--url http://127.0.0.1 --auth-token t --log-level debug';
     expect(commandLog, const [
-      'chmod +x $cli',
-      '$cli help',
-      '$cli $args upload-dif --include-sources $orgAndProject /',
+      '$cli $args upload-dif --include-sources $orgAndProject $buildDir',
       '$cli $args releases $orgAndProject new $release',
-      '$cli $args releases $orgAndProject files $release upload-sourcemaps /build/web --ext map --ext js',
-      '$cli $args releases $orgAndProject files $release upload-sourcemaps / --ext dart',
+      '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
+      '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
       '$cli $args releases $orgAndProject finalize $release'
     ]);
   });
@@ -82,9 +83,7 @@ $configIndented
   test('defaults', () async {
     final commandLog = await runWith('');
     expect(commandLog, const [
-      'chmod +x $cli',
-      '$cli help',
-      '$cli --auth-token t upload-dif $orgAndProject /',
+      '$cli --auth-token t upload-dif $orgAndProject $buildDir',
     ]);
   });
 }
