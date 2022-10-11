@@ -147,7 +147,6 @@ class Configuration {
   }
 
   Future<void> _findAndSetCliPath() async {
-    final cliSetup = CLISetup(currentCLISources);
     HostPlatform? platform;
     if (Platform.isMacOS) {
       platform = HostPlatform.darwinUniversal;
@@ -179,7 +178,7 @@ class Configuration {
     }
 
     try {
-      cliPath = await cliSetup.download(platform);
+      cliPath = await injector.get<CLISetup>().download(platform);
     } on Exception catch (e) {
       Log.error("Failed to download Sentry CLI: $e");
       return _setPreInstalledCli();

@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:file/file.dart';
 import 'package:file/memory.dart';
 import 'package:process/process.dart';
+import 'package:sentry_dart_plugin/src/cli/host_platform.dart';
+import 'package:sentry_dart_plugin/src/cli/setup.dart';
 import 'package:test/test.dart';
 
 import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
@@ -20,15 +22,16 @@ void main() {
     injector.registerSingleton<ProcessManager>(() => pm, override: true);
     fs = MemoryFileSystem.test();
     injector.registerSingleton<FileSystem>(() => fs, override: true);
+    injector.registerSingleton<CLISetup>(() => MockCLI(), override: true);
   });
+
+  const cli = MockCLI.name;
+  const orgAndProject = '--org o --project p';
 
   test('fails without args and pubspec', () async {
     final exitCode = await plugin.run([]);
     expect(exitCode, 1);
-    expect(pm.commandLog, const [
-      'chmod +x .dart_tool/pub/bin/sentry_dart_plugin/sentry-cli',
-      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli help'
-    ]);
+    expect(pm.commandLog, const ['chmod +x $cli', '$cli help']);
   });
 
   test('works with pubspec', () async {
@@ -43,19 +46,39 @@ sentry:
   auth_token: t
   project: p
   org: o
-  url: http://127.0.0.1
+  url: http://127.0.0.1 # TODO: because this param affects all commands, make it a test-group argument and run all test cases with/without it.
   log_level: debug
 ''');
     final exitCode = await plugin.run([]);
     expect(exitCode, 0);
+    const args = '--url http://127.0.0.1 --auth-token t --log-level debug';
     expect(pm.commandLog, const [
-      'chmod +x .dart_tool/pub/bin/sentry_dart_plugin/sentry-cli',
-      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli help',
-      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug upload-dif --include-sources --org o --project p /',
-      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p new project@1.1.0',
-      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p files project@1.1.0 upload-sourcemaps /build/web --ext map --ext js',
-      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p files project@1.1.0 upload-sourcemaps / --ext dart',
-      '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli --url http://127.0.0.1 --auth-token t --log-level debug releases --org o --project p finalize project@1.1.0'
+      'chmod +x $cli',
+      '$cli help',
+      '$cli $args upload-dif --include-sources $orgAndProject /',
+      '$cli $args releases $orgAndProject new project@1.1.0',
+      '$cli $args releases $orgAndProject files project@1.1.0 upload-sourcemaps /build/web --ext map --ext js',
+      '$cli $args releases $orgAndProject files project@1.1.0 upload-sourcemaps / --ext dart',
+      '$cli $args releases $orgAndProject finalize project@1.1.0'
+    ]);
+  });
+
+  test('defaults', () async {
+    fs.file('pubspec.yaml').writeAsStringSync('''
+name: project
+version: 1.1.0
+
+sentry:
+  auth_token: t # TODO: support not specifying this, let sentry-cli use the value it can find in its configs
+  project: p
+  org: o
+''');
+    final exitCode = await plugin.run([]);
+    expect(exitCode, 0);
+    expect(pm.commandLog, const [
+      'chmod +x $cli',
+      '$cli help',
+      '$cli --auth-token t upload-dif $orgAndProject /',
     ]);
   });
 }
@@ -101,4 +124,11 @@ class MockProcessManager implements ProcessManager {
       ProcessStartMode mode = ProcessStartMode.normal}) {
     throw UnimplementedError();
   }
+}
+
+class MockCLI implements CLISetup {
+  static const name = 'mock-cli';
+
+  @override
+  Future<String> download(HostPlatform platform) => Future.value(name);
 }

@@ -3,6 +3,8 @@ import 'package:file/local.dart';
 import 'package:injector/injector.dart';
 import 'package:process/process.dart';
 
+import '../cli/_sources.dart';
+import '../cli/setup.dart';
 import '../configuration.dart';
 
 /// Injector singleton instance
@@ -13,4 +15,5 @@ void initInjector() {
   injector.registerSingleton<Configuration>(() => Configuration());
   injector.registerSingleton<ProcessManager>(() => LocalProcessManager());
   injector.registerSingleton<FileSystem>(() => LocalFileSystem());
+  injector.registerSingleton<CLISetup>(() => CLISetup(currentCLISources));
 }
