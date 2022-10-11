@@ -57,6 +57,8 @@ class Configuration {
   /// the Web Build folder, defaults to build/web
   late String webBuildFilesFolder;
 
+  late String commits;
+
   dynamic _getPubspec() {
     final file = injector.get<FileSystem>().file("pubspec.yaml");
     if (!file.existsSync()) {
@@ -86,6 +88,7 @@ class Configuration {
     uploadNativeSymbols = config?['upload_native_symbols'] ?? true;
     uploadSourceMaps = config?['upload_source_maps'] ?? false;
     includeNativeSources = config?['include_native_sources'] ?? false;
+    commits = (config?['commits'] ?? 'auto').toString();
 
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
