@@ -18,8 +18,8 @@ class Handler(BaseHTTPRequestHandler):
     body = None
 
     def do_GET(self):
-        self.start_response(HTTPStatus.OK)
-        
+        self.start_response()
+
         if self.path == "/STOP":
             print("HTTP server stopping!")
             threading.Thread(target=self.server.shutdown).start()
@@ -32,17 +32,17 @@ class Handler(BaseHTTPRequestHandler):
                            '"accept":["debug_files","release_files","pdbs","sources","bcsymbolmaps"]}')
         elif self.isApi('/api/0/organizations/{}/repos/?cursor='.format(apiOrg)):
             self.writeJSONFile("assets/repos.json")
-        elif self.isApi('/api/0/organizations/{}/releases/{}/previous-with-commits/'.format(apiOrg, version)):
-            self.writeJSONFile("assets/release.json")
+        elif self.isApi('/api/0/organizations/{}/releases/{}@{}/previous-with-commits/'.format(apiOrg, appIdentifier, version)):
+            self.writeJSON('{ }')
         elif self.isApi('/api/0/projects/{}/{}/releases/{}/files/?cursor='.format(apiOrg, apiProject, version)):
             self.writeJSONFile("assets/artifacts.json")
         else:
-            self.end_headers()
+            self.noApi()
 
         self.flushLogs()
 
     def do_POST(self):
-        self.start_response(HTTPStatus.OK)
+        self.start_response()
 
         if self.isApi('api/0/projects/{}/{}/files/difs/assemble/'.format(apiOrg, apiProject)):
             # Request body example:
@@ -77,36 +77,37 @@ class Handler(BaseHTTPRequestHandler):
             self.writeJSONFile("assets/debug-info-files.json")
         elif self.isApi('/api/0/projects/{}/{}/files/dsyms/associate/'.format(apiOrg, apiProject)):
             self.writeJSONFile("assets/associate-dsyms-response.json")
+        elif self.isApi('/api/0/projects/{}/{}/reprocessing/'.format(apiOrg, apiProject)):
+            self.writeJSON('{ }')
+        elif self.isApi('api/0/organizations/{}/chunk-upload/'.format(apiOrg)):
+            self.writeJSON('{ }')
         else:
-            self.end_headers()
+            self.noApi()
 
         self.flushLogs()
 
     def do_PUT(self):
-        self.start_response(HTTPStatus.OK)
+        self.start_response()
 
-        if self.isApi('/api/0/organizations/{}/releases/{}/'.format(apiOrg, version)):
+        if self.isApi('/api/0/organizations/{}/releases/{}@{}/'.format(apiOrg, appIdentifier, version)):
             self.writeJSONFile("assets/release.json")
-        if self.isApi('/api/0/projects/{}/{}/releases/{}@{}/'.format(apiOrg, apiProject, appIdentifier, version)):
+        elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/'.format(apiOrg, apiProject, appIdentifier, version)):
             self.writeJSONFile("assets/release.json")
         else:
-            self.end_headers()
+            self.noApi()
 
         self.flushLogs()
 
-    def start_response(self, code):
+    def start_response(self):
         self.body = None
-        self.log_request(code)
-        self.send_response_only(code)
+        self.log_request()
 
-    def log_request(self, code=None, size=None):
-        if isinstance(code, HTTPStatus):
-            code = code.value
+    def log_request(self, size=None):
         body = self.body = self.requestBody()
         if body:
             body = self.body[0:min(1000, len(body))]
-        self.log_message('"%s" %s %s%s',
-                         self.requestline, str(code), "({} bytes)".format(size) if size else '', body)
+        self.log_message('"%s" %s%s',
+                         self.requestline, "({} bytes)".format(size) if size else '', body)
 
     # Note: this may only be called once during a single request - can't `.read()` the same stream again.
     def requestBody(self):
@@ -125,12 +126,21 @@ class Handler(BaseHTTPRequestHandler):
             return True
         return False
 
+    def noApi(self):
+        err = "Error: no API matched {} '{}'".format(self.command, self.path)
+        self.log_error(err)
+        self.send_response_only(HTTPStatus.NOT_IMPLEMENTED)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(str.encode(err));
+
     def writeJSONFile(self, file_name: str):
         json_file = open(file_name, "r")
         self.writeJSON(json_file.read())
         json_file.close()
 
     def writeJSON(self, string: str):
+        self.send_response_only(HTTPStatus.OK)
         self.send_header("Content-type", "application/json")
         self.end_headers()
         self.wfile.write(str.encode(string))

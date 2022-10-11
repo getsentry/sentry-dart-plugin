@@ -70,31 +70,30 @@ $configIndented
       url: http://127.0.0.1
       log_level: debug
     ''');
-    const args =
-        '--url http://127.0.0.1 --auth-token t --log-level debug $orgAndProject';
+    const args = '--url http://127.0.0.1 --auth-token t --log-level debug';
     expect(commandLog, const [
-      '$cli $args upload-dif --include-sources $buildDir',
-      '$cli $args releases new $release',
-      '$cli $args releases files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
-      '$cli $args releases files $release upload-sourcemaps $buildDir --ext dart',
-      '$cli $args releases set-commits $release --auto',
-      '$cli $args releases finalize $release'
+      '$cli $args upload-dif $orgAndProject --include-sources $buildDir',
+      '$cli $args releases $orgAndProject new $release',
+      '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
+      '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
+      '$cli $args releases $orgAndProject set-commits $release --auto',
+      '$cli $args releases $orgAndProject finalize $release'
     ]);
   });
 
   test('defaults', () async {
     final commandLog = await runWith('');
-    const args = '--auth-token t $orgAndProject';
+    const args = '--auth-token t';
     expect(commandLog, const [
-      '$cli $args upload-dif $buildDir',
-      '$cli $args releases new $release',
-      '$cli $args releases set-commits $release --auto',
-      '$cli $args releases finalize $release'
+      '$cli $args upload-dif $orgAndProject $buildDir',
+      '$cli $args releases $orgAndProject new $release',
+      '$cli $args releases $orgAndProject set-commits $release --auto',
+      '$cli $args releases $orgAndProject finalize $release'
     ]);
   });
 
   group('commits', () {
-    const args = '--auth-token t $orgAndProject';
+    const args = '--auth-token t';
 
     // https://docs.sentry.io/product/cli/releases/#sentry-cli-commit-integration
     for (final value in const [
@@ -112,10 +111,10 @@ $configIndented
                 ? '--auto'
                 : '--commit $value';
         expect(commandLog, [
-          '$cli $args upload-dif $buildDir',
-          '$cli $args releases new $release',
-          '$cli $args releases set-commits $release $expectedArgs',
-          '$cli $args releases finalize $release'
+          '$cli $args upload-dif $orgAndProject $buildDir',
+          '$cli $args releases $orgAndProject new $release',
+          '$cli $args releases $orgAndProject set-commits $release $expectedArgs',
+          '$cli $args releases $orgAndProject finalize $release'
         ]);
       });
     }
@@ -124,9 +123,9 @@ $configIndented
     test('false', () async {
       final commandLog = await runWith('commits: false');
       expect(commandLog, [
-        '$cli $args upload-dif $buildDir',
-        '$cli $args releases new $release',
-        '$cli $args releases finalize $release'
+        '$cli $args upload-dif $orgAndProject $buildDir',
+        '$cli $args releases $orgAndProject new $release',
+        '$cli $args releases $orgAndProject finalize $release'
       ]);
     });
   });

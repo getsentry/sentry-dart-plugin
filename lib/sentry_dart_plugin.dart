@@ -61,9 +61,10 @@ class SentryDartPlugin {
     List<String> params = [];
 
     _setUrlAndTokenAndLog(params);
-    _addOrgAndProject(params);
 
     params.add('upload-dif');
+
+    _addOrgAndProject(params);
 
     if (_configuration.includeNativeSources) {
       params.add('--include-sources');
@@ -83,8 +84,8 @@ class SentryDartPlugin {
   List<String> _releasesCliParams() {
     final params = <String>[];
     _setUrlAndTokenAndLog(params);
-    _addOrgAndProject(params);
     params.add('releases');
+    _addOrgAndProject(params);
     return params;
   }
 
