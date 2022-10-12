@@ -6,6 +6,8 @@
 
 * Add support to load release variable from environment ([#40](https://github.com/getsentry/sentry-dart-plugin/pull/40))
 * Download Sentry CLI on first run ([#49](https://github.com/getsentry/sentry-dart-plugin/pull/49))
+* Support release commits ([#62](https://github.com/getsentry/sentry-dart-plugin/pull/62))
+
 
 ### Dependencies
 
