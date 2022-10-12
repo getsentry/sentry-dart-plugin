@@ -1,2 +1,3 @@
+.craft.yml
+integration-test
 scripts
-dangerfile.js
