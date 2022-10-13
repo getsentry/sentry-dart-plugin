@@ -11,8 +11,9 @@ import json
 apiOrg = 'sentry-sdks'
 apiProject = 'sentry-dart-plugin'
 uri = urlparse(sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8000')
-version='1.1.0'
-appIdentifier='project'
+version = '1.1.0'
+appIdentifier = 'project'
+
 
 class Handler(BaseHTTPRequestHandler):
     body = None
@@ -37,7 +38,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.isApi('/api/0/projects/{}/{}/releases/{}/files/?cursor='.format(apiOrg, apiProject, version)):
             self.writeJSONFile("assets/artifacts.json")
         else:
-            self.noApi()
+            self.writeNoApiMatchesError()
 
         self.flushLogs()
 
@@ -82,7 +83,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.isApi('api/0/organizations/{}/chunk-upload/'.format(apiOrg)):
             self.writeJSON('{ }')
         else:
-            self.noApi()
+            self.writeNoApiMatchesError()
 
         self.flushLogs()
 
@@ -94,7 +95,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/'.format(apiOrg, apiProject, appIdentifier, version)):
             self.writeJSONFile("assets/release.json")
         else:
-            self.noApi()
+            self.writeNoApiMatchesError()
 
         self.flushLogs()
 
@@ -126,13 +127,11 @@ class Handler(BaseHTTPRequestHandler):
             return True
         return False
 
-    def noApi(self):
+    def writeNoApiMatchesError(self):
         err = "Error: no API matched {} '{}'".format(self.command, self.path)
         self.log_error(err)
-        self.send_response_only(HTTPStatus.NOT_IMPLEMENTED)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-        self.wfile.write(str.encode(err));
+        self.writeResponse(HTTPStatus.NOT_IMPLEMENTED,
+                           "text/plain", err)
 
     def writeJSONFile(self, file_name: str):
         json_file = open(file_name, "r")
@@ -140,10 +139,14 @@ class Handler(BaseHTTPRequestHandler):
         json_file.close()
 
     def writeJSON(self, string: str):
-        self.send_response_only(HTTPStatus.OK)
-        self.send_header("Content-type", "application/json")
+        self.writeResponse(HTTPStatus.OK, "application/json", string)
+
+    def writeResponse(self, code: HTTPStatus, type: str, body: str):
+        self.send_response_only(code)
+        self.send_header("Content-type", type)
+        self.send_header("Content-Length", len(body))
         self.end_headers()
-        self.wfile.write(str.encode(string))
+        self.wfile.write(str.encode(body))
 
     def flushLogs(self):
         sys.stdout.flush()
