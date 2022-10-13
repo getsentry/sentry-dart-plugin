@@ -8,7 +8,6 @@
 * Download Sentry CLI on first run ([#49](https://github.com/getsentry/sentry-dart-plugin/pull/49))
 * Support release commits ([#62](https://github.com/getsentry/sentry-dart-plugin/pull/62))
 
-
 ### Dependencies
 
 * Bump CLI from v2.6.0 to v2.7.0 ([#57](https://github.com/getsentry/sentry-dart-plugin/pull/57))
