@@ -54,8 +54,5 @@ jobs:
         with:
           name: build
 
-      - name: Start server and run integration tests
-        shell: bash
-        run: |
-          ./integration-test-server-start.sh &
-          dart run sentry_dart_plugin
+      - run: scripts/test.ps1
+        shell: pwsh
