@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/cli/_sources.dart';
 import 'package:system_info2/system_info2.dart';
 import 'package:yaml/yaml.dart';
 
@@ -58,6 +57,13 @@ class Configuration {
   /// the Web Build folder, defaults to build/web
   late String webBuildFilesFolder;
 
+  /// Associate commits with the release. Defaults to `auto` which will discover
+  /// commits from the current project and compare them with the ones associated
+  /// to the previous release. See docs for other options:
+  /// https://docs.sentry.io/product/cli/releases/#sentry-cli-commit-integration
+  /// Set to `false` to disable this feature completely.
+  late String commits;
+
   dynamic _getPubspec() {
     final file = injector.get<FileSystem>().file("pubspec.yaml");
     if (!file.existsSync()) {
@@ -87,6 +93,7 @@ class Configuration {
     uploadNativeSymbols = config?['upload_native_symbols'] ?? true;
     uploadSourceMaps = config?['upload_source_maps'] ?? false;
     includeNativeSources = config?['include_native_sources'] ?? false;
+    commits = (config?['commits'] ?? 'auto').toString();
 
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
@@ -147,7 +154,6 @@ class Configuration {
   }
 
   Future<void> _findAndSetCliPath() async {
-    final cliSetup = CLISetup(currentCLISources);
     HostPlatform? platform;
     if (Platform.isMacOS) {
       platform = HostPlatform.darwinUniversal;
@@ -179,7 +185,7 @@ class Configuration {
     }
 
     try {
-      cliPath = await cliSetup.download(platform);
+      cliPath = await injector.get<CLISetup>().download(platform);
     } on Exception catch (e) {
       Log.error("Failed to download Sentry CLI: $e");
       return _setPreInstalledCli();

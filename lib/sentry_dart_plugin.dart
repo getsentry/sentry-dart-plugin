@@ -33,11 +33,21 @@ class SentryDartPlugin {
         Log.info('uploadNativeSymbols is disabled.');
       }
 
+      _executeNewRelease();
+
       if (_configuration.uploadSourceMaps) {
         _executeCliForSourceMaps();
       } else {
         Log.info('uploadSourceMaps is disabled.');
       }
+
+      if (_configuration.commits.toLowerCase() != 'false') {
+        _executeSetCommits();
+      } else {
+        Log.info('Commit integration is disabled.');
+      }
+
+      _executeFinalizeRelease();
     } on ExitError catch (e) {
       return e.code;
     }
@@ -54,13 +64,13 @@ class SentryDartPlugin {
 
     params.add('upload-dif');
 
+    _addOrgAndProject(params);
+
     if (_configuration.includeNativeSources) {
       params.add('--include-sources');
     } else {
       Log.info('includeNativeSources is disabled, not uploading sources.');
     }
-
-    _addOrgAndProject(params);
 
     params.add(_configuration.buildFilesFolder);
 
@@ -71,36 +81,52 @@ class SentryDartPlugin {
     Log.taskCompleted(taskName);
   }
 
+  List<String> _releasesCliParams() {
+    final params = <String>[];
+    _setUrlAndTokenAndLog(params);
+    params.add('releases');
+    _addOrgAndProject(params);
+    return params;
+  }
+
+  void _executeNewRelease() {
+    _executeAndLog('Failed to create a new release',
+        [..._releasesCliParams(), 'new', _release]);
+  }
+
+  void _executeFinalizeRelease() {
+    _executeAndLog('Failed to finalize the new release',
+        [..._releasesCliParams(), 'finalize', _release]);
+  }
+
+  void _executeSetCommits() {
+    final params = [
+      ..._releasesCliParams(),
+      'set-commits',
+      _release,
+    ];
+
+    if (['auto', 'true', ''].contains(_configuration.commits.toLowerCase())) {
+      params.add('--auto');
+    } else {
+      params.add('--commit');
+      params.add(_configuration.commits);
+    }
+
+    _executeAndLog('Failed to set commits', params);
+  }
+
   void _executeCliForSourceMaps() {
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
 
-    List<String> params = [];
-
-    _setUrlAndTokenAndLog(params);
-
-    params.add('releases');
-
-    _addOrgAndProject(params);
-
-    List<String> releaseFinalizeParams = [];
-    releaseFinalizeParams.addAll(params);
-
-    // create new release
-    List<String> releaseNewParams = [];
-    releaseNewParams.addAll(params);
-    releaseNewParams.add('new');
-
-    final release = _getRelease();
-    releaseNewParams.add(release);
-
-    _executeAndLog('Failed to create new release', releaseNewParams);
+    List<String> params = _releasesCliParams();
 
     // upload source maps (js and map)
     List<String> releaseJsFilesParams = [];
     releaseJsFilesParams.addAll(params);
 
-    _addExtensionToParams(['map', 'js'], releaseJsFilesParams, release,
+    _addExtensionToParams(['map', 'js'], releaseJsFilesParams, _release,
         _configuration.webBuildFilesFolder);
 
     _addWait(releaseJsFilesParams);
@@ -111,18 +137,12 @@ class SentryDartPlugin {
     List<String> releaseDartFilesParams = [];
     releaseDartFilesParams.addAll(params);
 
-    _addExtensionToParams(['dart'], releaseDartFilesParams, release,
+    _addExtensionToParams(['dart'], releaseDartFilesParams, _release,
         _configuration.buildFilesFolder);
 
     _addWait(releaseDartFilesParams);
 
     _executeAndLog('Failed to upload source maps', releaseDartFilesParams);
-
-    // finalize new release
-    releaseFinalizeParams.add('finalize');
-    releaseFinalizeParams.add(release);
-
-    _executeAndLog('Failed to create new release', releaseFinalizeParams);
 
     Log.taskCompleted(taskName);
   }
@@ -178,9 +198,7 @@ class SentryDartPlugin {
     }
   }
 
-  String _getRelease() {
-    return '${_configuration.name}@${_configuration.version}';
-  }
+  String get _release => '${_configuration.name}@${_configuration.version}';
 
   void _addWait(List<String> params) {
     if (_configuration.waitForProcessing) {

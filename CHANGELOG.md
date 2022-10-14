@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* Support release commits ([#62](https://github.com/getsentry/sentry-dart-plugin/pull/62))
+
 ## 1.0.0-beta.3
 
 ### Features
