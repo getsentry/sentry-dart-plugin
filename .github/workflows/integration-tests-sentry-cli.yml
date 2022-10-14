@@ -11,8 +11,12 @@ defaults:
     working-directory: integration-test
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  integration-test:
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos, ubuntu, windows]
     steps:
       - uses: actions/checkout@v3
 
@@ -28,30 +32,6 @@ jobs:
       - run: flutter build apk
 
       - run: flutter build web --source-maps
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: build
-          if-no-files-found: error
-          path: integration-test/build
-
-  run:
-    runs-on: ${{ matrix.os }}-latest
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos, ubuntu, windows]
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: subosito/flutter-action@v2
-
-      - name: Download built apps
-        uses: actions/download-artifact@v3
-        with:
-          name: build
-          path: integration-test/build
 
       - run: scripts/test.ps1
         shell: pwsh
