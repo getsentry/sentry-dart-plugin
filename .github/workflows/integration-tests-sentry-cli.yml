@@ -29,13 +29,11 @@ jobs:
 
       - run: flutter build web --source-maps
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: build
           if-no-files-found: error
-          path: |
-            integration-test/build/app/outputs
-            integration-test/build/web
+          path: integration-test/build
 
   run:
     runs-on: ${{ matrix.os }}-latest
@@ -50,9 +48,10 @@ jobs:
       - uses: subosito/flutter-action@v2
 
       - name: Download built apps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: build
+          path: integration-test/build
 
       - run: scripts/test.ps1
         shell: pwsh
