@@ -1,12 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* Support release commits ([#62](https://github.com/getsentry/sentry-dart-plugin/pull/62))
+
 ## 1.0.0-beta.3
 
 ### Features
 
 * Add support to load release variable from environment ([#40](https://github.com/getsentry/sentry-dart-plugin/pull/40))
 * Download Sentry CLI on first run ([#49](https://github.com/getsentry/sentry-dart-plugin/pull/49))
-* Support release commits ([#62](https://github.com/getsentry/sentry-dart-plugin/pull/62))
 
 ### Dependencies
 
