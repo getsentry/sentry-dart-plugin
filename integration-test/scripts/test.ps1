@@ -83,12 +83,25 @@ function CheckSymbolServerOutput([string] $symbolServerOutput)
 {
     Write-Host "Checking symbol server output" -ForegroundColor Yellow
 
-    $expectedFiles = @(
-        "libapp.so: count=6",
-        'libflutter.so: count=6',
-        "libhello_santry.so: count=12",
-        "libhello_santry.so.sym: count=4"
-    )
+    if ($IsWindows)
+    {
+        $expectedFiles = @(
+            "libapp.so: count=6",
+            'libflutter.so: count=6',
+            "libhello_santry.so: count=12",
+            "libhello_santry.so.sym: count=4"
+        )
+    }
+    else
+    {
+        $expectedFiles = @(
+            "app.so: count=3",
+            "libapp.so: count=3",
+            'libflutter.so: count=6',
+            "libhello_santry.so: count=12",
+            "libhello_santry.so.sym: count=4"
+        )
+    }
 
     Write-Host 'Verifying debug symbol upload...'
     $successful = $true
