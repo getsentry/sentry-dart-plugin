@@ -12,34 +12,26 @@ defaults:
 
 jobs:
   integration-test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]
+        os: [macos, ubuntu, windows]
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v3
+
       - uses: subosito/flutter-action@v2
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10.5'
+
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: flutter pub get
-        run: |
-          flutter clean
-          flutter pub get
+      - run: flutter pub get
 
-      - name: Build apk
-        run: flutter build apk
+      - run: flutter build apk
 
-      - name: Build web
-        run: flutter build web --source-maps
+      - run: flutter build web --source-maps
 
-      - name: Start server and run integration tests
-        run: |
-          ./integration-test-server-start.sh &
-          dart run sentry_dart_plugin
+      - run: scripts/test.ps1
+        shell: pwsh

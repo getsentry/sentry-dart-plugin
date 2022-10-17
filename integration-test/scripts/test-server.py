@@ -13,6 +13,16 @@ apiProject = 'sentry-dart-plugin'
 uri = urlparse(sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8000')
 version = '1.1.0'
 appIdentifier = 'project'
+uploads = {}
+
+
+def registerUpload(name: str, chunks: int):
+    if name not in uploads:
+        uploads[name] = \
+            {'count': 1, 'chunks': chunks}
+    else:
+        uploads[name]['count'] += 1
+        uploads[name]['chunks'] += chunks
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -57,13 +67,11 @@ class Handler(BaseHTTPRequestHandler):
             #   "4185e454...":{"state":"ok","missingChunks":[]}
             # }
             jsonRequest = json.loads(self.body)
-
             jsonResponse = '{'
             for key, value in jsonRequest.items():
-                jsonResponse += '"{}":{{"state":"ok","missingChunks":[]}},'.format(
-                    key)
-                self.log_message('Received: %40s %40s %s', key,
-                                 value['debug_id'], value['name'])
+                jsonResponse += '"{}"'.format(key)
+                jsonResponse += ':{"state":"ok","missingChunks":[]},'
+                registerUpload(value['name'], len(value['chunks']))
             jsonResponse = jsonResponse.rstrip(',') + '}'
             self.writeJSON(jsonResponse)
         elif self.isApi('api/0/projects/{}/{}/releases/'.format(apiOrg, apiProject)):
@@ -155,5 +163,14 @@ class Handler(BaseHTTPRequestHandler):
 
 print("HTTP server listening on {}".format(uri.geturl()))
 print("To stop the server, execute a GET request to {}/STOP".format(uri.geturl()))
-httpd = ThreadingHTTPServer((uri.hostname, uri.port), Handler)
-target = httpd.serve_forever()
+
+try:
+    httpd = ThreadingHTTPServer((uri.hostname, uri.port), Handler)
+    target = httpd.serve_forever()
+except KeyboardInterrupt:
+    pass
+finally:
+    print('Upload stats:')
+    for k in sorted(uploads):
+        v = uploads[k]
+        print('  {}: count={} chunks={}'.format(k, v['count'], v['chunks']))
