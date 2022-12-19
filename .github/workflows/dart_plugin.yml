@@ -19,7 +19,7 @@ jobs:
         with:
           sdk: ${{ matrix.sdk }}
 
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v3.2.0
 
       - name: 'Pub Get'
         run: |
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v3.2.0
       - uses: axel-op/dart-package-analyzer@v3
         id: analysis
         with:
