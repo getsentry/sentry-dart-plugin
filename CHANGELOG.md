@@ -4,9 +4,9 @@
 
 ### Dependencies
 
-* Bump CLI from v2.7.0 to v2.10.0 ([#65](https://github.com/getsentry/sentry-dart-plugin/pull/65), [#67](https://github.com/getsentry/sentry-dart-plugin/pull/67), [#69](https://github.com/getsentry/sentry-dart-plugin/pull/69), [#72](https://github.com/getsentry/sentry-dart-plugin/pull/72))
-  * [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2100)
-  * [diff](https://github.com/getsentry/sentry-cli/compare/2.7.0...2.10.0)
+* Bump CLI from v2.7.0 to v2.11.0 ([#65](https://github.com/getsentry/sentry-dart-plugin/pull/65), [#67](https://github.com/getsentry/sentry-dart-plugin/pull/67), [#69](https://github.com/getsentry/sentry-dart-plugin/pull/69), [#72](https://github.com/getsentry/sentry-dart-plugin/pull/72), [#74](https://github.com/getsentry/sentry-dart-plugin/pull/74))
+  * [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2110)
+  * [diff](https://github.com/getsentry/sentry-cli/compare/2.7.0...2.11.0)
 
 ## 1.0.0-beta.4
 
