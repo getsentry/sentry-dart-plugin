@@ -162,7 +162,7 @@ class Configuration {
           ? HostPlatform.windows32bit
           : HostPlatform.windows64bit;
     } else if (Platform.isLinux) {
-      switch (SysInfo.kernelArchitecture.toLowerCase()) {
+      switch (SysInfo.kernelArchitecture.name.toLowerCase()) {
         case 'arm':
         case 'armv6':
         case 'armv7':
