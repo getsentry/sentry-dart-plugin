@@ -20,7 +20,7 @@ dev_dependencies:
 
 sentry:
   # enabled by default
-  #upload_native_symbols: true
+  #upload_debug_symbols: true
   # disabled by default
   upload_sources: true
   # disabled by default
@@ -43,4 +43,3 @@ sentry:
   # default to name@version from pubspec
   #release: ...
   ```
-

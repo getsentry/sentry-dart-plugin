@@ -43,7 +43,7 @@ Add `sentry:` configuration at the end of your `pubspec.yaml` file:
 
 ```yaml
 sentry:
-  upload_native_symbols: true
+  upload_debug_symbols: true
   upload_source_maps: false
   upload_sources: false
   project: ...
@@ -61,7 +61,7 @@ sentry:
 
 | Configuration Name | Description | Default Value And Type | Required | Alternative Environment variable |
 | - | - | - | - | - |
-| upload_native_symbols | Enables or disables the automatic upload of debug symbols | true (boolean) | no | - |
+| upload_debug_symbols | Enables or disables the automatic upload of debug symbols | true (boolean) | no | - |
 | upload_source_maps | Enables or disables the automatic upload of source maps | false (boolean) | no | - |
 | upload_sources | Does or doesn't include the source code of native code | false (boolean) | no | - |
 | project | Project's name | e.g. sentry-flutter (string) | yes | SENTRY_PROJECT |

@@ -18,14 +18,14 @@ class Configuration {
   /// The Build folder, defaults to the current directory.
   late final String buildFilesFolder = _fs.currentDirectory.path;
 
-  /// Whether to upload native debug symbols, defaults to true
-  late bool uploadNativeSymbols;
+  /// Whether to upload debug symbols, defaults to true
+  late bool uploadDebugSymbols;
 
   /// Whether to upload source maps, defaults to false
   late bool uploadSourceMaps;
 
   /// Whether to upload source code, defaults to false
-  late bool includeSources;
+  late bool uploadSources;
 
   /// Wait for processing or not, defaults to false
   late bool waitForProcessing;
@@ -83,24 +83,18 @@ class Configuration {
 
     await _findAndSetCliPath();
     final pubspec = _getPubspec();
-    final config = pubspec['sentry'];
+    final config = pubspec['sentry'] as YamlMap?;
 
     version = config?['release']?.toString() ??
         environments['SENTRY_RELEASE'] ??
         pubspec['version'].toString(); // or env. var. SENTRY_RELEASE
     name = pubspec['name'].toString();
 
-    uploadNativeSymbols = config?['upload_native_symbols'] ?? true;
+    uploadDebugSymbols =
+        config?.get('upload_debug_symbols', 'upload_native_symbols') ?? true;
     uploadSourceMaps = config?['upload_source_maps'] ?? false;
-    if (config?['upload_sources'] != null) {
-      includeSources = config?['upload_sources'];
-    } else {
-      includeSources = config?['include_native_sources'] ?? false;
-    }
-    if (config?['include_native_sources'] != null) {
-      Log.warn(
-          'Your pubspec.yaml contains `include_native_sources` which is deprecated. Consider switching to `upload_sources`.');
-    }
+    uploadSources =
+        config?.get('upload_sources', 'include_native_sources') ?? false;
     commits = (config?['commits'] ?? 'auto').toString();
 
     // uploading JS and Map files need to have the correct folder structure
@@ -214,5 +208,21 @@ class Configuration {
     cliPath = Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
     Log.info(
         'Trying to fallback to preinstalled Sentry CLI, if available on PATH: $cliPath');
+  }
+}
+
+extension _Config on YamlMap {
+  T? get<T>(String name, String? deprecatedName) {
+    if (deprecatedName != null && containsKey(deprecatedName)) {
+      Log.warn(
+          'Your pubspec.yaml contains `$deprecatedName` which is deprecated. Consider switching to `$name`.');
+    }
+    if (containsKey(name)) {
+      return this[name];
+    } else if (deprecatedName != null && containsKey(deprecatedName)) {
+      return this[deprecatedName];
+    } else {
+      return null;
+    }
   }
 }
