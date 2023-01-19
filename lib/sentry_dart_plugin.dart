@@ -66,10 +66,10 @@ class SentryDartPlugin {
 
     _addOrgAndProject(params);
 
-    if (_configuration.includeNativeSources) {
+    if (_configuration.includeSources) {
       params.add('--include-sources');
     } else {
-      Log.info('includeNativeSources is disabled, not uploading sources.');
+      Log.info('includeSources is disabled, not uploading sources.');
     }
 
     params.add(_configuration.buildFilesFolder);

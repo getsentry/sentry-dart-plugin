@@ -76,7 +76,7 @@ $configIndented
       test('works with pubspec', () async {
         final commandLog = await runWith('''
       upload_native_symbols: true
-      include_native_sources: true
+      upload_sources: true
       upload_source_maps: true
       log_level: debug
     ''');

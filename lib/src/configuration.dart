@@ -18,14 +18,14 @@ class Configuration {
   /// The Build folder, defaults to the current directory.
   late final String buildFilesFolder = _fs.currentDirectory.path;
 
-  /// Rather upload native debug symbols, defaults to true
+  /// Whether to upload native debug symbols, defaults to true
   late bool uploadNativeSymbols;
 
-  /// Rather upload source maps, defaults to false
+  /// Whether to upload source maps, defaults to false
   late bool uploadSourceMaps;
 
-  /// Rather upload native source code, defaults to false
-  late bool includeNativeSources;
+  /// Whether to upload source code, defaults to false
+  late bool includeSources;
 
   /// Wait for processing or not, defaults to false
   late bool waitForProcessing;
@@ -92,7 +92,15 @@ class Configuration {
 
     uploadNativeSymbols = config?['upload_native_symbols'] ?? true;
     uploadSourceMaps = config?['upload_source_maps'] ?? false;
-    includeNativeSources = config?['include_native_sources'] ?? false;
+    if (config?['upload_sources'] != null) {
+      includeSources = config?['upload_sources'];
+    } else {
+      includeSources = config?['include_native_sources'] ?? false;
+    }
+    if (config?['include_native_sources'] != null) {
+      Log.warn(
+          'Your pubspec.yaml contains `include_native_sources` which is deprecated. Consider switching to `upload_sources`.');
+    }
     commits = (config?['commits'] ?? 'auto').toString();
 
     // uploading JS and Map files need to have the correct folder structure
