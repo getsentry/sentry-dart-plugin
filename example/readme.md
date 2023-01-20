@@ -20,9 +20,9 @@ dev_dependencies:
 
 sentry:
   # enabled by default
-  #upload_native_symbols: true
+  #upload_debug_symbols: true
   # disabled by default
-  include_native_sources: true
+  upload_sources: true
   # disabled by default
   upload_source_maps: true
   project: sentry-flutter
@@ -43,4 +43,3 @@ sentry:
   # default to name@version from pubspec
   #release: ...
   ```
-  

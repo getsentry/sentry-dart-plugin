@@ -17,8 +17,8 @@ flutter:
   uses-material-design: true
 
 sentry:
-  upload_native_symbols: true
-  include_native_sources: true
+  upload_debug_symbols: true
+  upload_sources: true
   upload_source_maps: true
   auth_token: sentry-dart-plugin-auth-token
   project: sentry-dart-plugin

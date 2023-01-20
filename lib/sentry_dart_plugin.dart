@@ -27,7 +27,7 @@ class SentryDartPlugin {
         return 1;
       }
 
-      if (_configuration.uploadNativeSymbols) {
+      if (_configuration.uploadDebugSymbols) {
         _executeCliForDebugSymbols();
       } else {
         Log.info('uploadNativeSymbols is disabled.');
@@ -66,10 +66,10 @@ class SentryDartPlugin {
 
     _addOrgAndProject(params);
 
-    if (_configuration.includeNativeSources) {
+    if (_configuration.uploadSources) {
       params.add('--include-sources');
     } else {
-      Log.info('includeNativeSources is disabled, not uploading sources.');
+      Log.info('includeSources is disabled, not uploading sources.');
     }
 
     params.add(_configuration.buildFilesFolder);

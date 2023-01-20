@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+
+* Rename configuration `include_native_sources` to `upload_sources` ([#78](https://github.com/getsentry/sentry-dart-plugin/pull/78))
+* Rename configuration `upload_native_symbols` to `upload_debug_symbols` ([#78](https://github.com/getsentry/sentry-dart-plugin/pull/78))
+
 ## 1.0.0-beta.5
 
 ### Dependencies
