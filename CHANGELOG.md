@@ -7,6 +7,12 @@
 * Rename configuration `include_native_sources` to `upload_sources` ([#78](https://github.com/getsentry/sentry-dart-plugin/pull/78))
 * Rename configuration `upload_native_symbols` to `upload_debug_symbols` ([#78](https://github.com/getsentry/sentry-dart-plugin/pull/78))
 
+### Dependencies
+
+* Bump CLI from v2.11.0 to v2.12.0 ([#79](https://github.com/getsentry/sentry-dart-plugin/pull/79))
+  * [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2120)
+  * [diff](https://github.com/getsentry/sentry-cli/compare/2.11.0...2.12.0)
+
 ## 1.0.0-beta.5
 
 ### Dependencies
