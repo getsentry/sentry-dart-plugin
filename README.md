@@ -78,6 +78,8 @@ sentry:
 
 Sentry's `auth_token` requires the `project:releases` or `project:write` scope, See [docs](https://docs.sentry.io/product/cli/dif/#permissions).
 
+For the `commits` feature, Sentry's `auth_token` also requires the `org:read` scope, See [docs](https://docs.sentry.io/api/permissions/#releases).
+
 Dart's `--obfuscate` option is required to be paired with `--split-debug-info` to generate a symbol map, See [docs](https://github.com/flutter/flutter/wiki/Obfuscating-Dart-Code).
 
 The `--split-debug-info` option requires setting a output directory, the directory must be an inner folder of the project's folder, See [docs](https://flutter.dev/docs/deployment/obfuscate#obfuscating-your-app).
