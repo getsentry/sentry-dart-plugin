@@ -79,6 +79,7 @@ $configIndented
       upload_sources: true
       upload_source_maps: true
       log_level: debug
+      ignore_missing: true
     ''');
         final args = '$commonArgs --log-level debug';
         expect(commandLog, [
@@ -86,7 +87,7 @@ $configIndented
           '$cli $args releases $orgAndProject new $release',
           '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
           '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
-          '$cli $args releases $orgAndProject set-commits $release --auto',
+          '$cli $args releases $orgAndProject set-commits $release --auto --ignore-missing',
           '$cli $args releases $orgAndProject finalize $release'
         ]);
       });

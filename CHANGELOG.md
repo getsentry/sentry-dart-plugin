@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* Add configuration `ignore_missing` ([#85](https://github.com/getsentry/sentry-dart-plugin/pull/85))
+
 ## 1.0.0
 
 ### Dependencies

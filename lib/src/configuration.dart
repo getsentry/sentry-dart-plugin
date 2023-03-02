@@ -64,6 +64,11 @@ class Configuration {
   /// Set to `false` to disable this feature completely.
   late String commits;
 
+  /// Dealing With Missing Commits
+  /// There are scenarios in which your repositories may be missing commits previously used in the release.
+  /// https://docs.sentry.io/product/cli/releases/#dealing-with-missing-commits
+  late bool ignoreMissing;
+
   dynamic _getPubspec() {
     final file = injector.get<FileSystem>().file("pubspec.yaml");
     if (!file.existsSync()) {
@@ -96,6 +101,7 @@ class Configuration {
     uploadSources =
         config?.get('upload_sources', 'include_native_sources') ?? false;
     commits = (config?['commits'] ?? 'auto').toString();
+    ignoreMissing = config?['ignore_missing'] ?? false;
 
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
