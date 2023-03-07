@@ -4,23 +4,23 @@ import 'package:sentry_dart_plugin/src/cli/sources.dart';
 
 import 'host_platform.dart';
 
-const _version = '2.14.3';
+const _version = '2.14.4';
 const _urlPrefix = 'https://downloads.sentry-cdn.com/sentry-cli/$_version';
 
 final currentCLISources = {
   HostPlatform.darwinUniversal: CLISource(
       '$_urlPrefix/sentry-cli-Darwin-universal',
-      'a4414f01ec058f42992429dc466e1ea863ed2e9779ef9756c5769d167f27946c'),
+      'af6a30deefe29037947f55bcf7903499f28b6c505ab4a63efa59b3a41abb9ace'),
   HostPlatform.linuxAarch64: CLISource('$_urlPrefix/sentry-cli-Linux-aarch64',
-      '7c3982b6b1b1b9b256e73f0d648b41456494e8ea0fe82a5b2d939dfaf5bbb741'),
+      '7e3b5a5b458818dbc60f4cb78b1c7f51e8a0e4b62451e14a8a3c854496b216e5'),
   HostPlatform.linuxArmv7: CLISource('$_urlPrefix/sentry-cli-Linux-armv7',
-      '2b957fac4c8776ae7ec0c8a08f1b273b778472098daf7c750502a8d7f4719e7e'),
+      'ac58c881567f1de0fc347f07ef80a21ad0b15fa5cea7c856a36ae60ba3d89f3b'),
   HostPlatform.linux64bit: CLISource('$_urlPrefix/sentry-cli-Linux-x86_64',
-      '0de8f58be0687d8c0cc78591c3ba33ced93b5976eac1ddb713c1074f1d3403e0'),
+      '61d1c1a34555920d48f2b3439a34b1825403a2f818d7b698159a7df6f7986b45'),
   HostPlatform.windows32bit: CLISource(
       '$_urlPrefix/sentry-cli-Windows-i686.exe',
-      'a5d48ba4145c6be807456e3e24381994b0082746572494155724dd18b1c6330b'),
+      '61a0b5bc17421c1d1e21fe1af979475c214c93f514014b1c43c13da235d4e295'),
   HostPlatform.windows64bit: CLISource(
       '$_urlPrefix/sentry-cli-Windows-x86_64.exe',
-      '981d0a882cca003fd144ce0f91530247f52ecace62e9acf17ad436de578a1a90'),
+      '78295ed9b00f782050c259eae2abf7c9017b19ad01c1445f885a4e6228d811ec'),
 };
