@@ -41,11 +41,11 @@ class Handler(BaseHTTPRequestHandler):
                            '"chunkSize":8388608,"chunksPerRequest":64,"maxFileSize":2147483648,'
                            '"maxRequestSize":33554432,"concurrency":1,"hashAlgorithm":"sha1","compression":["gzip"],'
                            '"accept":["debug_files","release_files","pdbs","sources","bcsymbolmaps"]}')
-        elif self.isApi('/api/0/organizations/{}/repos/?cursor='.format(apiOrg)):
+        elif self.isApi('/api/0/organizations/{}/repos/'.format(apiOrg)):
             self.writeJSONFile("assets/repos.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}@{}/previous-with-commits/'.format(apiOrg, appIdentifier, version)):
             self.writeJSON('{ }')
-        elif self.isApi('/api/0/projects/{}/{}/releases/{}/files/?cursor='.format(apiOrg, apiProject, version)):
+        elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/files/'.format(apiOrg, apiProject, appIdentifier, version)):
             self.writeJSONFile("assets/artifacts.json")
         else:
             self.writeNoApiMatchesError()
@@ -130,7 +130,9 @@ class Handler(BaseHTTPRequestHandler):
         return None
 
     def isApi(self, api: str):
-        if self.path.strip('/') == api.strip('/'):
+        noQueryAPI = api.strip('?')[0]
+        noQueryPath = self.path.strip('?')[0]
+        if noQueryPath.strip('/') == noQueryAPI.strip('/'):
             self.log_message("Matched API endpoint {}".format(api))
             return True
         return False
