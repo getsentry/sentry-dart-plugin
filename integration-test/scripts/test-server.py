@@ -130,8 +130,8 @@ class Handler(BaseHTTPRequestHandler):
         return None
 
     def isApi(self, api: str):
-        noQueryAPI = api.strip('?')[0]
-        noQueryPath = self.path.strip('?')[0]
+        noQueryAPI = api.split('?')[0]
+        noQueryPath = self.path.split('?')[0]
         if noQueryPath.strip('/') == noQueryAPI.strip('/'):
             self.log_message("Matched API endpoint {}".format(api))
             return True
