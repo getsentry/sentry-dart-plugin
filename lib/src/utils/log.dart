@@ -109,25 +109,11 @@ class Log {
     return emptyStr;
   }
 
-  /// Logs the ProcessResult depending if it's an error or success
-  static void processResult(ProcessResult result) {
-    // stderr and stdout can be a String if there were a value or
-    // List<int> if null was used.
-    String? stderr = (result.stderr != null && result.stderr is String)
-        ? result.stderr
-        : null;
-    String? stdout = (result.stdout != null && result.stdout is String)
-        ? result.stdout
-        : null;
-
-    final isError = result.exitCode != 0;
-
-    if (isError) {
-      Log.error(
-          'exitCode: ${result.exitCode}\nstderr: $stderr\nstdout: $stdout');
-      throw ExitError(result.exitCode);
-    } else {
-      Log.success('stderr: $stderr\nstdout: $stdout');
+  /// Logs the Process exitCode depending if it's an error
+  static void processExitCode(int exitCode) {
+    if (exitCode != 0) {
+      Log.error('exitCode: $exitCode');
+      throw ExitError(exitCode);
     }
   }
 }
