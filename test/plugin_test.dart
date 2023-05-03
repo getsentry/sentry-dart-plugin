@@ -180,8 +180,31 @@ class MockProcessManager implements ProcessManager {
       bool includeParentEnvironment = true,
       bool runInShell = false,
       ProcessStartMode mode = ProcessStartMode.normal}) {
+    commandLog.add(command.join(' '));
+    return Future.value(MockProcess());
+  }
+}
+
+class MockProcess implements Process {
+  @override
+  Future<int> get exitCode => Future.value(0);
+
+  @override
+  bool kill([ProcessSignal signal = ProcessSignal.sigterm]) {
     throw UnimplementedError();
   }
+
+  @override
+  int get pid => throw UnimplementedError();
+
+  @override
+  Stream<List<int>> get stderr => Stream.value([]);
+
+  @override
+  IOSink get stdin => throw UnimplementedError();
+
+  @override
+  Stream<List<int>> get stdout => Stream.value([]);
 }
 
 class MockCLI implements CLISetup {
