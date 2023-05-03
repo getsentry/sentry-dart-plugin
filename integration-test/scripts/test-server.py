@@ -36,7 +36,7 @@ class Handler(BaseHTTPRequestHandler):
             threading.Thread(target=self.server.shutdown).start()
             return
 
-        if self.isApi('api/0/organizations/{}/chunk-upload/'.format(apiOrg)):
+        if self.isApi('/api/0/organizations/{}/chunk-upload/'.format(apiOrg)):
             self.writeJSON('{"url":"' + uri.geturl() + self.path + '",'
                            '"chunkSize":8388608,"chunksPerRequest":64,"maxFileSize":2147483648,'
                            '"maxRequestSize":33554432,"concurrency":1,"hashAlgorithm":"sha1","compression":["gzip"],'
