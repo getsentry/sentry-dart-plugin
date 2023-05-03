@@ -178,11 +178,11 @@ class SentryDartPlugin {
           .start([_configuration.cliPath!, ...params]);
 
       process.stdout.transform(utf8.decoder).listen((data) {
-        print(data.trim());
+        Log.info(data.trim());
       });
 
       process.stderr.transform(utf8.decoder).listen((data) {
-        print(data.trim());
+        Log.error(data.trim());
       });
 
       exitCode = await process.exitCode;
