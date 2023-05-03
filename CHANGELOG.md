@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Stream `sentry-cli` output ([#110](https://github.com/getsentry/sentry-dart-plugin/pull/110))
+
 ### Dependencies
 
 * Bump CLI from v2.13.0 to v2.17.4 ([#86](https://github.com/getsentry/sentry-dart-plugin/pull/86), [#89](https://github.com/getsentry/sentry-dart-plugin/pull/89), [#90](https://github.com/getsentry/sentry-dart-plugin/pull/90), [#101](https://github.com/getsentry/sentry-dart-plugin/pull/101), [#103](https://github.com/getsentry/sentry-dart-plugin/pull/103), [#107](https://github.com/getsentry/sentry-dart-plugin/pull/107))
