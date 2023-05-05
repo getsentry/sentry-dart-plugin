@@ -36,16 +36,16 @@ class Handler(BaseHTTPRequestHandler):
             threading.Thread(target=self.server.shutdown).start()
             return
 
-        if self.isApi('api/0/organizations/{}/chunk-upload/'.format(apiOrg)):
+        if self.isApi('/api/0/organizations/{}/chunk-upload/'.format(apiOrg)):
             self.writeJSON('{"url":"' + uri.geturl() + self.path + '",'
                            '"chunkSize":8388608,"chunksPerRequest":64,"maxFileSize":2147483648,'
                            '"maxRequestSize":33554432,"concurrency":1,"hashAlgorithm":"sha1","compression":["gzip"],'
                            '"accept":["debug_files","release_files","pdbs","sources","bcsymbolmaps"]}')
-        elif self.isApi('/api/0/organizations/{}/repos/?cursor='.format(apiOrg)):
+        elif self.isApi('/api/0/organizations/{}/repos/'.format(apiOrg)):
             self.writeJSONFile("assets/repos.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}@{}/previous-with-commits/'.format(apiOrg, appIdentifier, version)):
             self.writeJSON('{ }')
-        elif self.isApi('/api/0/projects/{}/{}/releases/{}/files/?cursor='.format(apiOrg, apiProject, version)):
+        elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/files/'.format(apiOrg, apiProject, appIdentifier, version)):
             self.writeJSONFile("assets/artifacts.json")
         else:
             self.writeNoApiMatchesError()
@@ -80,7 +80,7 @@ class Handler(BaseHTTPRequestHandler):
             self.writeJSONFile("assets/deploy.json")
         elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/files/'.format(apiOrg, apiProject, appIdentifier, version)):
             self.writeJSONFile("assets/artifact.json")
-        elif self.isApi('/api/0/organizations/{}/releases/{}/assemble/'.format(apiOrg, version)):
+        elif self.isApi('/api/0/organizations/{}/releases/{}@{}/assemble/'.format(apiOrg, appIdentifier, version)):
             self.writeJSONFile("assets/assemble-artifacts-response.json")
         elif self.isApi('/api/0/projects/{}/{}/files/dsyms/'.format(apiOrg, apiProject)):
             self.writeJSONFile("assets/debug-info-files.json")
@@ -130,7 +130,9 @@ class Handler(BaseHTTPRequestHandler):
         return None
 
     def isApi(self, api: str):
-        if self.path.strip('/') == api.strip('/'):
+        noQueryAPI = api.split('?')[0]
+        noQueryPath = self.path.split('?')[0]
+        if noQueryPath.strip('/') == noQueryAPI.strip('/'):
             self.log_message("Matched API endpoint {}".format(api))
             return True
         return False

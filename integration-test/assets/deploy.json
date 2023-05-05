@@ -2,7 +2,9 @@
     "id": "1",
     "environment": "production",
     "dateStarted": null,
-    "dateFinished": "2022-01-01T12:00:00.000000Z",
+    "dateCreated": "2022-05-12T11:08:01.496220Z",
+    "dateFinished": "2022-06-01T12:00:00.000000Z",
     "name": "fixture-deploy",
-    "url": null
+    "url": null,
+    "version": "project@1.1.0"
 }
