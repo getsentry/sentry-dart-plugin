@@ -2,11 +2,19 @@
 
 ## Unreleased
 
+### Features
+
+- Dart v3 support ([#112](https://github.com/getsentry/sentry-dart/pull/112))
+
+### Breaking Changes
+
+- Bump Dart min to 2.17.0 ([#112](https://github.com/getsentry/sentry-dart/pull/112))
+
 ### Dependencies
 
-* Bump CLI from v2.13.0 to v2.15.2 ([#86](https://github.com/getsentry/sentry-dart-plugin/pull/86), [#89](https://github.com/getsentry/sentry-dart-plugin/pull/89), [#90](https://github.com/getsentry/sentry-dart-plugin/pull/90))
-  * [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2152)
-  * [diff](https://github.com/getsentry/sentry-cli/compare/2.13.0...2.15.2)
+* Bump CLI from v2.13.0 to v2.17.4 ([#86](https://github.com/getsentry/sentry-dart-plugin/pull/86), [#89](https://github.com/getsentry/sentry-dart-plugin/pull/89), [#90](https://github.com/getsentry/sentry-dart-plugin/pull/90), [#101](https://github.com/getsentry/sentry-dart-plugin/pull/101), [#103](https://github.com/getsentry/sentry-dart-plugin/pull/103), [#107](https://github.com/getsentry/sentry-dart-plugin/pull/107))
+  * [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2174)
+  * [diff](https://github.com/getsentry/sentry-cli/compare/2.13.0...2.17.4)
 
 ## 1.1.0
 
