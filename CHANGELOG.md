@@ -4,11 +4,11 @@
 
 ### Features
 
-- Dart v3 support ([#1180](https://github.com/getsentry/sentry-dart/pull/1180))
+- Dart v3 support ([#112](https://github.com/getsentry/sentry-dart/pull/112))
 
 ### Breaking Changes
 
-- Bump Dart min to 2.17.0 ([#1180](https://github.com/getsentry/sentry-dart/pull/1180))
+- Bump Dart min to 2.17.0 ([#112](https://github.com/getsentry/sentry-dart/pull/112))
 
 ### Dependencies
 
