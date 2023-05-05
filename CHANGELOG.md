@@ -12,9 +12,9 @@
 
 ### Dependencies
 
-* Bump CLI from v2.13.0 to v2.17.4 ([#86](https://github.com/getsentry/sentry-dart-plugin/pull/86), [#89](https://github.com/getsentry/sentry-dart-plugin/pull/89), [#90](https://github.com/getsentry/sentry-dart-plugin/pull/90), [#101](https://github.com/getsentry/sentry-dart-plugin/pull/101), [#103](https://github.com/getsentry/sentry-dart-plugin/pull/103), [#107](https://github.com/getsentry/sentry-dart-plugin/pull/107))
-  * [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2174)
-  * [diff](https://github.com/getsentry/sentry-cli/compare/2.13.0...2.17.4)
+* Bump CLI from v2.13.0 to v2.17.5 ([#86](https://github.com/getsentry/sentry-dart-plugin/pull/86), [#89](https://github.com/getsentry/sentry-dart-plugin/pull/89), [#90](https://github.com/getsentry/sentry-dart-plugin/pull/90), [#101](https://github.com/getsentry/sentry-dart-plugin/pull/101), [#103](https://github.com/getsentry/sentry-dart-plugin/pull/103), [#107](https://github.com/getsentry/sentry-dart-plugin/pull/107), [#109](https://github.com/getsentry/sentry-dart-plugin/pull/109))
+  * [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2175)
+  * [diff](https://github.com/getsentry/sentry-cli/compare/2.13.0...2.17.5)
 
 ## 1.1.0
 
