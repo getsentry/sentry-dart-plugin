@@ -1,10 +1,15 @@
 # Changelog
 
-## 1.2.0
+## Unreleased
 
 ### Features
 
 - Stream `sentry-cli` output ([#110](https://github.com/getsentry/sentry-dart-plugin/pull/110))
+
+## 1.2.0
+
+### Features
+
 - Dart v3 support ([#112](https://github.com/getsentry/sentry-dart/pull/112))
 
 ### Breaking Changes
