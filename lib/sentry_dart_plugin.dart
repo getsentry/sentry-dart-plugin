@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:process/process.dart';
 
@@ -28,33 +28,33 @@ class SentryDartPlugin {
       }
 
       if (_configuration.uploadDebugSymbols) {
-        _executeCliForDebugSymbols();
+        await _executeCliForDebugSymbols();
       } else {
         Log.info('uploadNativeSymbols is disabled.');
       }
 
-      _executeNewRelease();
+      await _executeNewRelease();
 
       if (_configuration.uploadSourceMaps) {
-        _executeCliForSourceMaps();
+        await _executeCliForSourceMaps();
       } else {
         Log.info('uploadSourceMaps is disabled.');
       }
 
       if (_configuration.commits.toLowerCase() != 'false') {
-        _executeSetCommits();
+        await _executeSetCommits();
       } else {
         Log.info('Commit integration is disabled.');
       }
 
-      _executeFinalizeRelease();
+      await _executeFinalizeRelease();
     } on ExitError catch (e) {
       return e.code;
     }
     return 0;
   }
 
-  void _executeCliForDebugSymbols() {
+  Future<void> _executeCliForDebugSymbols() async {
     const taskName = 'uploading debug symbols';
     Log.startingTask(taskName);
 
@@ -76,7 +76,7 @@ class SentryDartPlugin {
 
     _addWait(params);
 
-    _executeAndLog('Failed to upload symbols', params);
+    await _executeAndLog('Failed to upload symbols', params);
 
     Log.taskCompleted(taskName);
   }
@@ -89,17 +89,17 @@ class SentryDartPlugin {
     return params;
   }
 
-  void _executeNewRelease() {
-    _executeAndLog('Failed to create a new release',
+  Future<void> _executeNewRelease() async {
+    await _executeAndLog('Failed to create a new release',
         [..._releasesCliParams(), 'new', _release]);
   }
 
-  void _executeFinalizeRelease() {
-    _executeAndLog('Failed to finalize the new release',
+  Future<void> _executeFinalizeRelease() async {
+    await _executeAndLog('Failed to finalize the new release',
         [..._releasesCliParams(), 'finalize', _release]);
   }
 
-  void _executeSetCommits() {
+  Future<void> _executeSetCommits() async {
     final params = [
       ..._releasesCliParams(),
       'set-commits',
@@ -117,10 +117,10 @@ class SentryDartPlugin {
       params.add('--ignore-missing');
     }
 
-    _executeAndLog('Failed to set commits', params);
+    await _executeAndLog('Failed to set commits', params);
   }
 
-  void _executeCliForSourceMaps() {
+  Future<void> _executeCliForSourceMaps() async {
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
 
@@ -135,7 +135,7 @@ class SentryDartPlugin {
 
     _addWait(releaseJsFilesParams);
 
-    _executeAndLog('Failed to upload source maps', releaseJsFilesParams);
+    await _executeAndLog('Failed to upload source maps', releaseJsFilesParams);
 
     // upload source maps (dart)
     List<String> releaseDartFilesParams = [];
@@ -146,7 +146,8 @@ class SentryDartPlugin {
 
     _addWait(releaseDartFilesParams);
 
-    _executeAndLog('Failed to upload source maps', releaseDartFilesParams);
+    await _executeAndLog(
+        'Failed to upload source maps', releaseDartFilesParams);
 
     Log.taskCompleted(taskName);
   }
@@ -168,17 +169,28 @@ class SentryDartPlugin {
     }
   }
 
-  void _executeAndLog(String errorMessage, List<String> params) {
-    ProcessResult? processResult;
+  Future<void> _executeAndLog(String errorMessage, List<String> params) async {
+    int? exitCode;
+
     try {
-      processResult = injector
+      final process = await injector
           .get<ProcessManager>()
-          .runSync([_configuration.cliPath!, ...params]);
+          .start([_configuration.cliPath!, ...params]);
+
+      process.stdout.transform(utf8.decoder).listen((data) {
+        Log.info(data.trim());
+      });
+
+      process.stderr.transform(utf8.decoder).listen((data) {
+        Log.error(data.trim());
+      });
+
+      exitCode = await process.exitCode;
     } on Exception catch (exception) {
       Log.error('$errorMessage: \n$exception');
     }
-    if (processResult != null) {
-      Log.processResult(processResult);
+    if (exitCode != null) {
+      Log.processExitCode(exitCode);
     }
   }
 
