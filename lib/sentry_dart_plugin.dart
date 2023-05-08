@@ -173,7 +173,7 @@ class SentryDartPlugin {
     int? exitCode;
 
     try {
-      var process = await injector
+      final process = await injector
           .get<ProcessManager>()
           .start([_configuration.cliPath!, ...params]);
 
