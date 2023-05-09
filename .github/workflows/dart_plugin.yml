@@ -7,7 +7,7 @@ on:
   pull_request:
 jobs:
   build:
-    name: 'Analyze, Format and Build'
+    name: 'Format, Fix, Analyze and Build'
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -25,10 +25,16 @@ jobs:
         run: |
           dart pub get
 
-      - name: 'Analyze and Format'
+      - name: 'Format, Fix & Analyze'
         run: |
+          dart format .
+          dart fix --apply
           dart analyze --fatal-infos
-          dart format --set-exit-if-changed ./
+
+      # actions/checkout fetches only a single commit in a detached HEAD state. Therefore
+      # we need to pass the current branch, otherwise we can't commit the changes.
+      # GITHUB_HEAD_REF is the name of the head branch. GitHub Actions only sets this for PRs.
+      - run: scripts/commit-formatted-code.sh $GITHUB_HEAD_REF
 
       - run: dart test
 
