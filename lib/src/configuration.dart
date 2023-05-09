@@ -10,13 +10,15 @@ import 'cli/setup.dart';
 import 'utils/extensions.dart';
 import 'utils/injector.dart';
 import 'utils/log.dart';
+import 'dart:collection';
 
 class Configuration {
   late final FileSystem _fs = injector.get<FileSystem>();
   // cannot use ${Directory.current.path}/build since --split-debug-info allows
   // setting a custom path which is a sibling of build
   /// The Build folder, defaults to the current directory.
-  late final String buildFilesFolder = _fs.currentDirectory.path;
+  late final String buildFilesFolder =
+      _fs.currentDirectory.path;
 
   /// Whether to upload debug symbols, defaults to true
   late bool uploadDebugSymbols;
