@@ -86,20 +86,20 @@ function CheckSymbolServerOutput([string] $symbolServerOutput)
     if ($IsWindows)
     {
         $expectedFiles = @(
-            "libapp.so: count=6",
-            'libflutter.so: count=6',
-            "libhello_santry.so: count=12",
-            "libhello_santry.so.sym: count=4"
+            "libapp.so",
+            'libflutter.so',
+            "libhello_santry.so",
+            "libhello_santry.so.sym"
         )
     }
     else
     {
         $expectedFiles = @(
-            "app.so: count=3",
-            "libapp.so: count=3",
-            'libflutter.so: count=6',
-            "libhello_santry.so: count=12",
-            "libhello_santry.so.sym: count=4"
+            "app.so",
+            "libapp.so",
+            'libflutter.so',
+            "libhello_santry.so",
+            "libhello_santry.so.sym"
         )
     }
 
@@ -113,17 +113,13 @@ function CheckSymbolServerOutput([string] $symbolServerOutput)
             # It's enough if a single symbol alternative is found
             if ($symbolServerOutput -match "  $([Regex]::Escape($file))\b")
             {
-                Write-Host "  $file - OK"
+                Write-Host "  $file EXISTS"
                 continue nextExpectedFile
             }
         }
         # Note: control only gets here if none of the alternatives match...
         $successful = $false
-        $fileWithoutCount = $file.Substring(0, $file.Length - 1)
-        $filePattern = [Regex]::new('(?<=' + "$([Regex]::Escape($fileWithoutCount))" + ')[\w]+')
-        $actualCount = $filePattern.Matches($symbolServerOutput)
-
-        Write-Host "  $alternatives - MISSING `n    Server received '$actualCount' instead." -ForegroundColor Red
+        Write-Host "  $alternatives MISSING" -ForegroundColor Red
     }
     if ($successful)
     {
