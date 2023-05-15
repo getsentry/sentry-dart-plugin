@@ -35,6 +35,7 @@ jobs:
       # we need to pass the current branch, otherwise we can't commit the changes.
       # GITHUB_HEAD_REF is the name of the head branch. GitHub Actions only sets this for PRs.
       - run: scripts/commit-formatted-code.sh $GITHUB_HEAD_REF
+        if: env.GITHUB_HEAD_REF != null
 
       - run: dart test
 
