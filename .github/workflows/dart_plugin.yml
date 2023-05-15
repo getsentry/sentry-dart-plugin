@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: 'Format, Fix, Analyze and Build'
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
