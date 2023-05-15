@@ -16,13 +16,12 @@ appIdentifier = 'project'
 uploads = {}
 
 
-def registerUpload(name: str, chunks: int):
+def registerUpload(name: str):
     if name not in uploads:
         uploads[name] = \
-            {'count': 1, 'chunks': chunks}
+            {'count': 1}
     else:
         uploads[name]['count'] += 1
-        uploads[name]['chunks'] += chunks
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -71,7 +70,7 @@ class Handler(BaseHTTPRequestHandler):
             for key, value in jsonRequest.items():
                 jsonResponse += '"{}"'.format(key)
                 jsonResponse += ':{"state":"ok","missingChunks":[]},'
-                registerUpload(value['name'], len(value['chunks']))
+                registerUpload(value['name'])
             jsonResponse = jsonResponse.rstrip(',') + '}'
             self.writeJSON(jsonResponse)
         elif self.isApi('api/0/projects/{}/{}/releases/'.format(apiOrg, apiProject)):
@@ -175,4 +174,4 @@ finally:
     print('Upload stats:')
     for k in sorted(uploads):
         v = uploads[k]
-        print('  {}: count={} chunks={}'.format(k, v['count'], v['chunks']))
+        print('  {}: count={}'.format(k, v['count']))
