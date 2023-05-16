@@ -42,4 +42,4 @@ sentry:
 
   # default to name@version from pubspec
   #release: ...
-  ```
+```
