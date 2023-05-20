@@ -6,6 +6,12 @@
 
 - Stream `sentry-cli` output ([#110](https://github.com/getsentry/sentry-dart-plugin/pull/110))
 
+### Dependencies
+
+- Bump CLI from v2.17.5 to v2.18.0 ([#121](https://github.com/getsentry/sentry-dart-plugin/pull/121))
+  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2180)
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.17.5...2.18.0)
+
 ## 1.2.0
 
 ### Features
