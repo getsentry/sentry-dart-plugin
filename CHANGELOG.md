@@ -5,6 +5,7 @@
 ### Features
 
 - Stream `sentry-cli` output ([#110](https://github.com/getsentry/sentry-dart-plugin/pull/110))
+- Support `http` >= v1, `system_info2` >= v4, `file` >= v7 ([#110](https://github.com/getsentry/sentry-dart-plugin/pull/110))
 
 ## 1.2.0
 
