@@ -31,9 +31,9 @@ jobs:
       - run: flutter pub get
 
       - run: flutter build apk
-        if: matrix.os.macos
-
+        
       - run: flutter build ipa
+        if: matrix.os.macos
 
       - run: flutter build web --source-maps
 
