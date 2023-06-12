@@ -83,24 +83,38 @@ function CheckSymbolServerOutput([string] $symbolServerOutput)
 {
     Write-Host "Checking symbol server output" -ForegroundColor Yellow
 
-    if ($IsWindows)
+    $expectedFiles = @(
+        "libapp.so",
+        'libflutter.so',
+        "libhello_santry.so",
+        "libhello_santry.so.sym"
+    )
+
+    if ($IsMacOS)
     {
-        $expectedFiles = @(
-            "libapp.so",
-            'libflutter.so',
-            "libhello_santry.so",
-            "libhello_santry.so.sym"
+        $expectedFiles += @(
+            "app.so",
+            "Flutter",
+            "Runner",
+            "libswiftCore.dylib",
+            "libswiftCoreAudio.dylib",
+            "libswiftCoreFoundation.dylib",
+            "libswiftCoreGraphics.dylib",
+            "libswiftCoreImage.dylib",
+            "libswiftCoreMedia.dylib",
+            "libswiftDarwin.dylib",
+            "libswiftDispatch.dylib",
+            "libswiftFoundation.dylib",
+            "libswiftMetal.dylib",
+            "libswiftObjectiveC.dylib",
+            "libswiftQuartzCore.dylib",
+            "libswiftUIKit.dylib",
+            "libswiftos.dylib"
         )
     }
-    else
+    if ($IsLinux)
     {
-        $expectedFiles = @(
-            "app.so",
-            "libapp.so",
-            'libflutter.so',
-            "libhello_santry.so",
-            "libhello_santry.so.sym"
-        )
+        $expectedFiles += "app.so"
     }
 
     Write-Host 'Verifying debug symbol upload...'
