@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Enhancements
+
+- Replace `upload-dif` to `debug-files upload` ([#127](https://github.com/getsentry/sentry-dart-plugin/pull/127))
+
 ### Dependencies
 
 - Bump CLI from v2.17.5 to v2.18.1 ([#123](https://github.com/getsentry/sentry-dart-plugin/pull/123))

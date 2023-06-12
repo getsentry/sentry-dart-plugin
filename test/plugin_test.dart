@@ -83,7 +83,7 @@ $configIndented
     ''');
         final args = '$commonArgs --log-level debug';
         expect(commandLog, [
-          '$cli $args upload-dif $orgAndProject --include-sources $buildDir',
+          '$cli $args debug-files upload $orgAndProject --include-sources $buildDir',
           '$cli $args releases $orgAndProject new $release',
           '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
           '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
@@ -95,7 +95,7 @@ $configIndented
       test('defaults', () async {
         final commandLog = await runWith('');
         expect(commandLog, [
-          '$cli $commonArgs upload-dif $orgAndProject $buildDir',
+          '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
           '$cli $commonArgs releases $orgAndProject new $release',
           '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
           '$cli $commonArgs releases $orgAndProject finalize $release'
@@ -119,7 +119,7 @@ $configIndented
                     ? '--auto'
                     : '--commit $value';
             expect(commandLog, [
-              '$cli $commonArgs upload-dif $orgAndProject $buildDir',
+              '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
               '$cli $commonArgs releases $orgAndProject new $release',
               '$cli $commonArgs releases $orgAndProject set-commits $release $expectedArgs',
               '$cli $commonArgs releases $orgAndProject finalize $release'
@@ -131,7 +131,7 @@ $configIndented
         test('false', () async {
           final commandLog = await runWith('commits: false');
           expect(commandLog, [
-            '$cli $commonArgs upload-dif $orgAndProject $buildDir',
+            '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
             '$cli $commonArgs releases $orgAndProject new $release',
             '$cli $commonArgs releases $orgAndProject finalize $release'
           ]);

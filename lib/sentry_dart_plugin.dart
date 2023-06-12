@@ -62,7 +62,8 @@ class SentryDartPlugin {
 
     _setUrlAndTokenAndLog(params);
 
-    params.add('upload-dif');
+    params.add('debug-files');
+    params.add('upload');
 
     _addOrgAndProject(params);
 
