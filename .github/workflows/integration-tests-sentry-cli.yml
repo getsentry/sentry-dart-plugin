@@ -33,7 +33,7 @@ jobs:
       - run: flutter build apk
         
       - run: flutter build ipa
-        if: matrix.os.macos
+        if: matrix.os == 'macos'
 
       - run: flutter build web --source-maps
 
