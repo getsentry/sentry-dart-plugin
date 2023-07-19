@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Support custom `dist` and `release` has precedence over the pubspec's `name` ([#127](https://github.com/getsentry/sentry-dart-plugin/pull/127))
+- Support custom `dist` and `release` has precedence over the pubspec's `name` ([#139](https://github.com/getsentry/sentry-dart-plugin/pull/139))
 
 ### Dependencies
 
