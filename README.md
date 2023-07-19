@@ -53,6 +53,7 @@ sentry:
   wait_for_processing: false
   log_level: error # possible values: trace, debug, info, warn, error
   release: ...
+  dist: ...
   web_build_path: ...
   commits: auto
   ignore_missing: true
@@ -72,6 +73,7 @@ sentry:
 | wait_for_processing | Wait for server-side processing of uploaded files | false (boolean)  | no | - |
 | log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
 | release | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)  | no | SENTRY_RELEASE |
+| dist | The dist/build number for source maps, it should match the dist set by the SDK | default: the number after the '+' char from 'version' pubspec (string)  | no | SENTRY_DIST |
 | web_build_path | The web build folder | default: build/web (string)  | no | - |
 | commits | Release commits integration | default: auto | no | - |
 | ignore_missing | Ignore missing commits previously used in the release | default: false | no | - |

@@ -33,21 +33,23 @@ class SentryDartPlugin {
         Log.info('uploadNativeSymbols is disabled.');
       }
 
-      await _executeNewRelease();
+      final release = _release;
+
+      await _executeNewRelease(release);
 
       if (_configuration.uploadSourceMaps) {
-        await _executeCliForSourceMaps();
+        await _executeCliForSourceMaps(release);
       } else {
         Log.info('uploadSourceMaps is disabled.');
       }
 
       if (_configuration.commits.toLowerCase() != 'false') {
-        await _executeSetCommits();
+        await _executeSetCommits(release);
       } else {
         Log.info('Commit integration is disabled.');
       }
 
-      await _executeFinalizeRelease();
+      await _executeFinalizeRelease(release);
     } on ExitError catch (e) {
       return e.code;
     }
@@ -90,21 +92,21 @@ class SentryDartPlugin {
     return params;
   }
 
-  Future<void> _executeNewRelease() async {
+  Future<void> _executeNewRelease(String release) async {
     await _executeAndLog('Failed to create a new release',
-        [..._releasesCliParams(), 'new', _release]);
+        [..._releasesCliParams(), 'new', release]);
   }
 
-  Future<void> _executeFinalizeRelease() async {
+  Future<void> _executeFinalizeRelease(String release) async {
     await _executeAndLog('Failed to finalize the new release',
-        [..._releasesCliParams(), 'finalize', _release]);
+        [..._releasesCliParams(), 'finalize', release]);
   }
 
-  Future<void> _executeSetCommits() async {
+  Future<void> _executeSetCommits(String release) async {
     final params = [
       ..._releasesCliParams(),
       'set-commits',
-      _release,
+      release,
     ];
 
     if (['auto', 'true', ''].contains(_configuration.commits.toLowerCase())) {
@@ -121,7 +123,7 @@ class SentryDartPlugin {
     await _executeAndLog('Failed to set commits', params);
   }
 
-  Future<void> _executeCliForSourceMaps() async {
+  Future<void> _executeCliForSourceMaps(String release) async {
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
 
@@ -131,7 +133,7 @@ class SentryDartPlugin {
     List<String> releaseJsFilesParams = [];
     releaseJsFilesParams.addAll(params);
 
-    _addExtensionToParams(['map', 'js'], releaseJsFilesParams, _release,
+    _addExtensionToParams(['map', 'js'], releaseJsFilesParams, release,
         _configuration.webBuildFilesFolder);
 
     _addWait(releaseJsFilesParams);
@@ -142,7 +144,7 @@ class SentryDartPlugin {
     List<String> releaseDartFilesParams = [];
     releaseDartFilesParams.addAll(params);
 
-    _addExtensionToParams(['dart'], releaseDartFilesParams, _release,
+    _addExtensionToParams(['dart'], releaseDartFilesParams, release,
         _configuration.buildFilesFolder);
 
     _addWait(releaseDartFilesParams);
@@ -196,9 +198,9 @@ class SentryDartPlugin {
   }
 
   void _addExtensionToParams(
-      List<String> exts, List<String> params, String version, String folder) {
+      List<String> exts, List<String> params, String release, String folder) {
     params.add('files');
-    params.add(version);
+    params.add(release);
     params.add('upload-sourcemaps');
     params.add(folder);
 
@@ -207,15 +209,44 @@ class SentryDartPlugin {
       params.add(ext);
     }
 
-    // TODO: add support to custom dist
-    if (version.contains('+')) {
+    if (release.contains('+')) {
       params.add('--dist');
-      final values = version.split('+');
+      final values = release.split('+');
       params.add(values.last);
     }
   }
 
-  String get _release => '${_configuration.name}@${_configuration.version}';
+  String get _release {
+    var release = '';
+
+    if (_configuration.release?.isNotEmpty ?? false) {
+      release = _configuration.release!;
+    } else {
+      release = _configuration.name;
+    }
+
+    if (!release.contains('@')) {
+      release += '@${_configuration.version}';
+    }
+
+    final dist = _dist;
+    if (!release.contains('+') && (dist?.isNotEmpty ?? false)) {
+      release += '+${dist!}';
+    }
+    return release;
+  }
+
+  String? get _dist {
+    if (_configuration.dist?.isNotEmpty ?? false) {
+      return _configuration.dist!;
+    }
+
+    if (_configuration.version.contains('+')) {
+      final values = _configuration.version.split('+');
+      return values.last;
+    }
+    return null;
+  }
 
   void _addWait(List<String> params) {
     if (_configuration.waitForProcessing) {
