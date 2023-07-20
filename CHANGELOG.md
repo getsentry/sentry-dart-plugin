@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Support custom `dist` and `release` has precedence over the pubspec's `name` ([#139](https://github.com/getsentry/sentry-dart-plugin/pull/139))
+
 ### Dependencies
 
 - Bump CLI from v2.19.1 to v2.19.4 ([#133](https://github.com/getsentry/sentry-dart-plugin/pull/133))

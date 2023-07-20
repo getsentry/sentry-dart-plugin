@@ -48,10 +48,21 @@ class Configuration {
   // the Sentry CLI path, defaults to the assets folder
   late String? cliPath;
 
-  /// The Apps version, defaults to version from pubspec
+  /// The Apps release name, defaults to 'name@version+buildNumber' from pubspec or set via env. var. SENTRY_RELEASE
+  /// Example, name: 'my_app', version: 2.0.0+1, in this case the release is my_app@2.0.0+1
+  /// This field has precedence over the [name] from pubspec
+  /// If this field has a build number, it has precedence over the [version]'s buid number from pubspec
+  late String? release;
+
+  /// The Apps dist/build number, defaults to the build number after the '+' char from [version]'s pubspec or ser via env. var. SENTRY_DIST
+  /// Example, version: 2.0.0+1, in this case the build number is 1
+  late String? dist;
+
+  /// The Apps version, defaults to [version] from pubspec
+  /// Example, version: 2.0.0+1, in this case the version is 2.0.0+1
   late String version;
 
-  /// The Apps name, defaults to name from pubspec
+  /// The Apps name, defaults to [name] from pubspec
   late String name;
 
   /// the Web Build folder, defaults to build/web
@@ -90,9 +101,9 @@ class Configuration {
     final pubspec = _getPubspec();
     final config = pubspec['sentry'] as YamlMap?;
 
-    version = config?['release']?.toString() ??
-        environments['SENTRY_RELEASE'] ??
-        pubspec['version'].toString(); // or env. var. SENTRY_RELEASE
+    release = config?['release']?.toString() ?? environments['SENTRY_RELEASE'];
+    dist = config?['dist']?.toString() ?? environments['SENTRY_DIST'];
+    version = pubspec['version'].toString();
     name = pubspec['name'].toString();
 
     uploadDebugSymbols =

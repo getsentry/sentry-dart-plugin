@@ -137,6 +137,68 @@ $configIndented
           ]);
         });
       });
+
+      group('custom releases and dists', () {
+        test('custom release with a dist in it', () async {
+          final dist = 'myDist';
+          final customRelease = 'myRelease@myVersion+$dist';
+
+          final commandLog = await runWith('''
+      upload_debug_symbols: false
+      upload_source_maps: true
+      release: $customRelease
+      dist: anotherDist
+    ''');
+          final args = commonArgs;
+          expect(commandLog, [
+            '$cli $args releases $orgAndProject new $customRelease',
+            '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
+            '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
+            '$cli $args releases $orgAndProject set-commits $customRelease --auto',
+            '$cli $args releases $orgAndProject finalize $customRelease'
+          ]);
+        });
+
+        test('custom release with a custom dist', () async {
+          final dist = 'myDist';
+          final customRelease = 'myRelease@myVersion';
+          final fullRelease = '$customRelease+$dist';
+
+          final commandLog = await runWith('''
+      upload_debug_symbols: false
+      upload_source_maps: true
+      release: $customRelease
+      dist: $dist
+    ''');
+          final args = commonArgs;
+          expect(commandLog, [
+            '$cli $args releases $orgAndProject new $fullRelease',
+            '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
+            '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
+            '$cli $args releases $orgAndProject set-commits $fullRelease --auto',
+            '$cli $args releases $orgAndProject finalize $fullRelease'
+          ]);
+        });
+
+        test('custom dist', () async {
+          final dist = 'myDist';
+          final fullRelease = '$release+$dist';
+
+          final commandLog = await runWith('''
+      upload_debug_symbols: false
+      upload_source_maps: true
+      dist: $dist
+    ''');
+          final args = commonArgs;
+          expect(commandLog, [
+            '$cli $args releases $orgAndProject new $fullRelease',
+            '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
+            '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
+            '$cli $args releases $orgAndProject set-commits $fullRelease --auto',
+            '$cli $args releases $orgAndProject finalize $fullRelease'
+          ]);
+        });
+      });
     });
   }
 }
