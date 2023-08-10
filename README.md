@@ -14,7 +14,7 @@ In your `pubspec.yaml`, add `sentry_dart_plugin` as a new dev dependency.
 
 ```yaml
 dev_dependencies:
-  sentry_dart_plugin: ^1.0.0
+  sentry_dart_plugin: ^1.5.0
 ```
 
 ## Build App
