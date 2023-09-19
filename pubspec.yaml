@@ -17,7 +17,7 @@ dependencies:
   http: '>=0.13.0 <2.0.0'
   crypto: ^3.0.2
   convert: ^3.0.2
-  process: ^5.0.0
+  process: ^4.2.4
 
 dev_dependencies:
   lints: ^2.0.0

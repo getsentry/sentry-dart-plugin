@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Revert [process](https://github.com/google/process.dart) from 5.0.0 to 4.2.4 ([#160](https://github.com/getsentry/sentry-dart-plugin/pull/160))
+
 ## 1.6.0
 
 ### Dependencies
