@@ -112,7 +112,7 @@ function CheckSymbolServerOutput([string] $symbolServerOutput)
             "libswiftos.dylib"
         )
     }
-#TODO: Enable agian when https://github.com/getsentry/sentry-dart-plugin/issues/161 is fixed
+# TODO: Enable again when https://github.com/getsentry/sentry-dart-plugin/issues/161 is fixed
 #    if ($IsLinux)
 #    {
 #        $expectedFiles += "app.so"
