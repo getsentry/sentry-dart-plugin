@@ -5,6 +5,9 @@
 ### Dependencies
 
 - Revert [process](https://github.com/google/process.dart) from 5.0.0 to 4.2.4 ([#160](https://github.com/getsentry/sentry-dart-plugin/pull/160))
+- Bump CLI from v2.20.6 to v2.20.7 ([#156](https://github.com/getsentry/sentry-dart-plugin/pull/156))
+  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2207)
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.20.6...2.20.7)
 
 ## 1.6.0
 
