@@ -17,13 +17,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu]
+        os: [macos, ubuntu, windows]
     steps:
       - uses: actions/checkout@v3
 
       - uses: subosito/flutter-action@48cafc24713cca54bbe03cdc3a423187d413aafa #2.10.0
         with:
-          flutter-version: '3.13.2'
+          flutter-version: '3.13.3'
           channel: 'stable'
       - uses: actions/setup-java@v3
         with:
@@ -37,15 +37,7 @@ jobs:
       - run: flutter build ipa --no-codesign
         if: matrix.os == 'macos'
 
-      - name: ls -LR 
-        working-directory: integration-test/build
-        run: ls -LR
-
       - run: flutter build web --source-maps
-
-      - name: ls -LR 
-        working-directory: integration-test/build
-        run: ls -LR
 
       - run: scripts/test.ps1
         shell: pwsh
