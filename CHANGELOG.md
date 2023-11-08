@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fixes org auth tokens with no URL not supported by bumping CLI to v2.21.2 ([#169](https://github.com/getsentry/sentry-dart-plugin/pull/169))
+
 ### Dependencies
 
 - Bump CLI from v2.20.6 to v2.21.2 ([#169](https://github.com/getsentry/sentry-dart-plugin/pull/169))
