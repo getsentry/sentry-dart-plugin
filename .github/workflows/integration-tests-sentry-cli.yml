@@ -19,7 +19,7 @@ jobs:
       matrix:
         os: [macos, ubuntu, windows]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@2783a3f08e1baf891508463f8c6653c258246225 #2.12.0
 
