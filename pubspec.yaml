@@ -18,6 +18,7 @@ dependencies:
   crypto: ^3.0.2
   convert: ^3.0.2
   process: ^4.2.4
+  properties: ^2.1.0
 
 dev_dependencies:
   lints: ^3.0.0
