@@ -1,6 +1,6 @@
 import 'package:file/file.dart';
 
-import 'config_formatter.dart';
+import 'config_file_type.dart';
 
 class ConfigWriter {
   final FileSystem fs;

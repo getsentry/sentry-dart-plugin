@@ -1,0 +1,1 @@
+enum ConfigFileType { pubspecYaml, sentryProperties }

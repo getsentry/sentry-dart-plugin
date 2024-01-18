@@ -1,4 +1,4 @@
-enum ConfigFileType { pubspecYaml, sentryProperties }
+import 'config_file_type.dart';
 
 class ConfigFormatter {
   String formatConfig(String config, ConfigFileType fileType, String? url) {
