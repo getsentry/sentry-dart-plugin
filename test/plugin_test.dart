@@ -23,6 +23,12 @@ void main() {
   const release = '$project@$version';
   const buildDir = '/subdir';
 
+  // Define your configurations
+  const configurations = {
+    'pubspec.yaml': {},
+    'sentry.properties': {},
+  };
+
   setUp(() {
     // override dependencies for testing
     pm = MockProcessManager();
@@ -34,23 +40,28 @@ void main() {
   });
 
   for (final url in const ['http://127.0.0.1', null]) {
-    group('url: $url', () {
-      final commonArgs =
-          '${url == null ? '' : '--url http://127.0.0.1 '}--auth-token t';
-      final commonCommands = [
-        if (!Platform.isWindows) 'chmod +x $cli',
-        '$cli help'
-      ];
+    configurations.forEach((fileName, config) {
+      group('url: $url', () {
+        final commonArgs =
+            '${url == null ? '' : '--url http://127.0.0.1 '}--auth-token t';
+        final commonCommands = [
+          if (!Platform.isWindows) 'chmod +x $cli',
+          '$cli help'
+        ];
 
-      Future<Iterable<String>> runWith(String config) async {
-        // properly indent the configuration for the `sentry` section in the yaml
-        if (url != null) {
-          config = 'url: $url\n$config';
-        }
-        final configIndented =
-            config.trim().split('\n').map((l) => '  ${l.trim()}').join('\n');
+        Future<Iterable<String>> runWith(String config) async {
+          // properly indent the configuration for the `sentry` section in the yaml
+          if (fileName == 'pubspec.yaml') {
+            if (url != null) {
+              config = 'url: $url\n$config';
+            }
+            final configIndented = config
+                .trim()
+                .split('\n')
+                .map((l) => '  ${l.trim()}')
+                .join('\n');
 
-        fs.file('pubspec.yaml').writeAsStringSync('''
+            fs.file('pubspec.yaml').writeAsStringSync('''
 name: $project
 version: $version
 
@@ -60,143 +71,187 @@ sentry:
   org: o
 $configIndented
 ''');
+          } else if (fileName == 'sentry.properties') {
+            if (url != null) {
+              config = 'url=$url\n$config';
+            }
 
-        final exitCode = await plugin.run([]);
-        expect(exitCode, 0);
-        expect(pm.commandLog.take(commonCommands.length), commonCommands);
-        return pm.commandLog.skip(commonCommands.length);
-      }
+            final configIndented = config
+                .trim()
+                .split('\n')
+                .map((l) => l.trim())
+                .join('\n')
+                .replaceAll(': ', '=');
 
-      test('fails without args and pubspec', () async {
-        final exitCode = await plugin.run([]);
-        expect(exitCode, 1);
-        expect(pm.commandLog, commonCommands);
-      });
+            fs.file('pubspec.yaml').writeAsStringSync('''
+name: $project
+version: $version
+''');
+            fs.file('sentry.properties').create();
+            fs.file('sentry.properties').writeAsStringSync('''
+auth_token=t
+project=p
+org=o
+$configIndented
+            ''');
+          }
 
-      test('works with pubspec', () async {
-        final commandLog = await runWith('''
+          final exitCode = await plugin.run([]);
+          expect(exitCode, 0);
+          expect(pm.commandLog.take(commonCommands.length), commonCommands);
+          return pm.commandLog.skip(commonCommands.length);
+        }
+
+        test('works with sentry.properties', () async {
+          final commandLog = await runWith('''
       upload_debug_symbols: true
       upload_sources: true
       upload_source_maps: true
       log_level: debug
       ignore_missing: true
     ''');
-        final args = '$commonArgs --log-level debug';
-        expect(commandLog, [
-          '$cli $args debug-files upload $orgAndProject --include-sources $buildDir',
-          '$cli $args releases $orgAndProject new $release',
-          '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
-          '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
-          '$cli $args releases $orgAndProject set-commits $release --auto --ignore-missing',
-          '$cli $args releases $orgAndProject finalize $release'
-        ]);
-      });
+          final args = '$commonArgs --log-level debug';
+          expect(commandLog, [
+            '$cli $args debug-files upload $orgAndProject --include-sources $buildDir',
+            '$cli $args releases $orgAndProject new $release',
+            '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
+            '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
+            '$cli $args releases $orgAndProject set-commits $release --auto --ignore-missing',
+            '$cli $args releases $orgAndProject finalize $release'
+          ]);
+        });
 
-      test('defaults', () async {
-        final commandLog = await runWith('');
-        expect(commandLog, [
-          '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
-          '$cli $commonArgs releases $orgAndProject new $release',
-          '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
-          '$cli $commonArgs releases $orgAndProject finalize $release'
-        ]);
-      });
+        test('fails without args and pubspec', () async {
+          final exitCode = await plugin.run([]);
+          expect(exitCode, 1);
+          expect(pm.commandLog, commonCommands);
+        });
 
-      group('commits', () {
-        // https://docs.sentry.io/product/cli/releases/#sentry-cli-commit-integration
-        for (final value in const [
-          null, // test the implicit default
-          'true',
-          'auto',
-          'repo_name@293ea41d67225d27a8c212f901637e771d73c0f7',
-          'repo_name@293ea41d67225d27a8c212f901637e771d73c0f7..1e248e5e6c24b79a5c46a2e8be12cef0e41bd58d',
-        ]) {
-          test(value, () async {
-            final commandLog =
-                await runWith(value == null ? '' : 'commits: $value');
-            final expectedArgs =
-                (value == null || value == 'auto' || value == 'true')
-                    ? '--auto'
-                    : '--commit $value';
-            expect(commandLog, [
-              '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
-              '$cli $commonArgs releases $orgAndProject new $release',
-              '$cli $commonArgs releases $orgAndProject set-commits $release $expectedArgs',
-              '$cli $commonArgs releases $orgAndProject finalize $release'
-            ]);
-          });
-        }
+        test('works with pubspec', () async {
+          final commandLog = await runWith('''
+      upload_debug_symbols: true
+      upload_sources: true
+      upload_source_maps: true
+      log_level: debug
+      ignore_missing: true
+    ''');
+          final args = '$commonArgs --log-level debug';
+          expect(commandLog, [
+            '$cli $args debug-files upload $orgAndProject --include-sources $buildDir',
+            '$cli $args releases $orgAndProject new $release',
+            '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
+            '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
+            '$cli $args releases $orgAndProject set-commits $release --auto --ignore-missing',
+            '$cli $args releases $orgAndProject finalize $release'
+          ]);
+        });
 
-        // if explicitly disabled
-        test('false', () async {
-          final commandLog = await runWith('commits: false');
+        test('defaults', () async {
+          final commandLog = await runWith('');
           expect(commandLog, [
             '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
             '$cli $commonArgs releases $orgAndProject new $release',
+            '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
             '$cli $commonArgs releases $orgAndProject finalize $release'
           ]);
         });
-      });
 
-      group('custom releases and dists', () {
-        test('custom release with a dist in it', () async {
-          final dist = 'myDist';
-          final customRelease = 'myRelease@myVersion+$dist';
+        group('commits', () {
+          // https://docs.sentry.io/product/cli/releases/#sentry-cli-commit-integration
+          for (final value in const [
+            null, // test the implicit default
+            'true',
+            'auto',
+            'repo_name@293ea41d67225d27a8c212f901637e771d73c0f7',
+            'repo_name@293ea41d67225d27a8c212f901637e771d73c0f7..1e248e5e6c24b79a5c46a2e8be12cef0e41bd58d',
+          ]) {
+            test(value, () async {
+              final commandLog =
+                  await runWith(value == null ? '' : 'commits: $value');
+              final expectedArgs =
+                  (value == null || value == 'auto' || value == 'true')
+                      ? '--auto'
+                      : '--commit $value';
+              expect(commandLog, [
+                '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
+                '$cli $commonArgs releases $orgAndProject new $release',
+                '$cli $commonArgs releases $orgAndProject set-commits $release $expectedArgs',
+                '$cli $commonArgs releases $orgAndProject finalize $release'
+              ]);
+            });
+          }
 
-          final commandLog = await runWith('''
+          // if explicitly disabled
+          test('false', () async {
+            final commandLog = await runWith('commits: false');
+            expect(commandLog, [
+              '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
+              '$cli $commonArgs releases $orgAndProject new $release',
+              '$cli $commonArgs releases $orgAndProject finalize $release'
+            ]);
+          });
+        });
+
+        group('custom releases and dists', () {
+          test('custom release with a dist in it', () async {
+            final dist = 'myDist';
+            final customRelease = 'myRelease@myVersion+$dist';
+
+            final commandLog = await runWith('''
       upload_debug_symbols: false
       upload_source_maps: true
       release: $customRelease
       dist: anotherDist
     ''');
-          final args = commonArgs;
-          expect(commandLog, [
-            '$cli $args releases $orgAndProject new $customRelease',
-            '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
-            '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
-            '$cli $args releases $orgAndProject set-commits $customRelease --auto',
-            '$cli $args releases $orgAndProject finalize $customRelease'
-          ]);
-        });
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $customRelease',
+              '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
+              '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
+              '$cli $args releases $orgAndProject set-commits $customRelease --auto',
+              '$cli $args releases $orgAndProject finalize $customRelease'
+            ]);
+          });
 
-        test('custom release with a custom dist', () async {
-          final dist = 'myDist';
-          final customRelease = 'myRelease@myVersion';
-          final fullRelease = '$customRelease+$dist';
+          test('custom release with a custom dist', () async {
+            final dist = 'myDist';
+            final customRelease = 'myRelease@myVersion';
+            final fullRelease = '$customRelease+$dist';
 
-          final commandLog = await runWith('''
+            final commandLog = await runWith('''
       upload_debug_symbols: false
       upload_source_maps: true
       release: $customRelease
       dist: $dist
     ''');
-          final args = commonArgs;
-          expect(commandLog, [
-            '$cli $args releases $orgAndProject new $fullRelease',
-            '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
-            '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
-            '$cli $args releases $orgAndProject set-commits $fullRelease --auto',
-            '$cli $args releases $orgAndProject finalize $fullRelease'
-          ]);
-        });
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $fullRelease',
+              '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
+              '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
+              '$cli $args releases $orgAndProject set-commits $fullRelease --auto',
+              '$cli $args releases $orgAndProject finalize $fullRelease'
+            ]);
+          });
 
-        test('custom dist', () async {
-          final dist = 'myDist';
-          final fullRelease = '$release+$dist';
+          test('custom dist', () async {
+            final dist = 'myDist';
+            final fullRelease = '$release+$dist';
 
-          final commandLog = await runWith('''
+            final commandLog = await runWith('''
       upload_debug_symbols: false
       upload_source_maps: true
       dist: $dist
     ''');
-          final args = commonArgs;
-          expect(commandLog, [
-            '$cli $args releases $orgAndProject new $fullRelease',
-            '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
-            '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
-            '$cli $args releases $orgAndProject set-commits $fullRelease --auto',
-            '$cli $args releases $orgAndProject finalize $fullRelease'
-          ]);
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $fullRelease',
+              '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
+              '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
+              '$cli $args releases $orgAndProject set-commits $fullRelease --auto',
+              '$cli $args releases $orgAndProject finalize $fullRelease'
+            ]);
+          });
         });
       });
     });

@@ -19,7 +19,9 @@ abstract class ConfigReader {
       final pubspec = _getPubspec();
       return PubspecConfigReader(pubspec['sentry'] as YamlMap?);
     }
-    return PropertiesConfigReader(Properties(propertiesFile.path));
+    // Reads the string as there are issues loading the file from path if run in the test suite
+    final properties = Properties.fromString(propertiesFile.readAsStringSync());
+    return PropertiesConfigReader(properties);
   }
 }
 
@@ -67,8 +69,7 @@ class PubspecConfigReader implements ConfigReader {
 
   @override
   String? getString(String key, {String? deprecatedKey}) {
-    print(key);
-    return get(key, deprecatedKey, (key) => _pubspec?[key]);
+    return get(key, deprecatedKey, (key) => _pubspec?[key] as String?);
   }
 
   @override

@@ -95,11 +95,11 @@ class Configuration {
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
     final environments = Platform.environment;
-    const taskName = 'reading config values';
+    final reader = ConfigReader();
+    final taskName = 'reading config values from ${reader.toString()}';
     Log.startingTask(taskName);
 
     await _findAndSetCliPath();
-    final reader = ConfigReader();
     final pubspec = _getPubspec();
 
     release = reader.getString('release') ?? environments['SENTRY_RELEASE'];
@@ -112,7 +112,7 @@ class Configuration {
     uploadSourceMaps = reader.getBool('upload_source_maps') ?? false;
     uploadSources =
         reader.getBool('upload_sources', deprecatedKey: 'include_native_sources') ?? false;
-    commits = (reader.getBool('commits') ?? 'auto').toString();
+    commits = (reader.getString('commits') ?? 'auto').toString();
     ignoreMissing = reader.getBool('ignore_missing') ?? false;
 
     // uploading JS and Map files need to have the correct folder structure
