@@ -11,12 +11,12 @@ import 'package:test/test.dart';
 import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 
+import 'utils/config_file_type.dart';
 import 'utils/config_formatter.dart';
 import 'utils/config_writer.dart';
 
 void main() {
   final plugin = SentryDartPlugin();
-  late ConfigFormatter configFormatter;
   late ConfigWriter configWriter;
   late MockProcessManager pm;
   late FileSystem fs;
@@ -42,7 +42,6 @@ void main() {
     fs.currentDirectory = fs.directory(buildDir)..createSync();
     injector.registerSingleton<FileSystem>(() => fs, override: true);
     injector.registerSingleton<CLISetup>(() => MockCLI(), override: true);
-    configFormatter = ConfigFormatter();
     configWriter = ConfigWriter(fs, project, version);
   });
 
@@ -58,7 +57,7 @@ void main() {
 
         Future<Iterable<String>> runWith(String config) async {
           final formattedConfig =
-              configFormatter.formatConfig(config, fileType, url);
+              ConfigFormatter.formatConfig(config, fileType, url);
           configWriter.write(fileType, formattedConfig);
 
           final exitCode = await plugin.run([]);
