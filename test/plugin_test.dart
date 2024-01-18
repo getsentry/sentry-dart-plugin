@@ -11,8 +11,13 @@ import 'package:test/test.dart';
 import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 
+import 'utils/config_formatter.dart';
+import 'utils/config_writer.dart';
+
 void main() {
   final plugin = SentryDartPlugin();
+  late ConfigFormatter configFormatter;
+  late ConfigWriter configWriter;
   late MockProcessManager pm;
   late FileSystem fs;
 
@@ -23,37 +28,26 @@ void main() {
   const release = '$project@$version';
   const buildDir = '/subdir';
 
-  // Define your configurations
-  const configurations = {
-    'pubspec.yaml': {},
-    'sentry.properties': {},
-  };
+  /// File types from which we can read configs.
+  const fileTypes = [
+    ConfigFileType.pubspecYaml,
+    ConfigFileType.sentryProperties,
+  ];
 
   setUp(() {
     // override dependencies for testing
     pm = MockProcessManager();
     injector.registerSingleton<ProcessManager>(() => pm, override: true);
     fs = MemoryFileSystem.test();
-    fs.currentDirectory = fs.directory(buildDir)
-      ..createSync();
+    fs.currentDirectory = fs.directory(buildDir)..createSync();
     injector.registerSingleton<FileSystem>(() => fs, override: true);
     injector.registerSingleton<CLISetup>(() => MockCLI(), override: true);
+    configFormatter = ConfigFormatter();
+    configWriter = ConfigWriter(fs, project, version);
   });
 
-  String configString(String config, String configFile) {
-    if (configFile == 'sentry.properties') {
-      return config
-          .trim()
-          .split('\n')
-          .map((l) => l.trim())
-          .join('\n')
-          .replaceAll(': ', '=');
-    }
-    return config.trim().split('\n').map((l) => '  ${l.trim()}').join('\n');
-  }
-
   for (final url in const ['http://127.0.0.1', null]) {
-    configurations.forEach((configFile, config) {
+    for (var fileType in fileTypes) {
       group('url: $url', () {
         final commonArgs =
             '${url == null ? '' : '--url http://127.0.0.1 '}--auth-token t';
@@ -63,43 +57,9 @@ void main() {
         ];
 
         Future<Iterable<String>> runWith(String config) async {
-          if (url != null) {
-            if (configFile == 'pubspec.yaml') {
-              config = 'url: $url\n$config';
-            }
-            if (configFile == 'sentry.properties') {
-              config = 'url=$url\n$config';
-            }
-          }
-          // properly indent the configuration for the `sentry` section in the yaml
-          if (configFile == 'pubspec.yaml') {
-            final configIndented = configString(config, configFile);
-
-            fs.file('pubspec.yaml').writeAsStringSync('''
-name: $project
-version: $version
-
-sentry:
-  auth_token: t # TODO: support not specifying this, let sentry-cli use the value it can find in its configs
-  project: p
-  org: o
-$configIndented
-''');
-          } else if (configFile == 'sentry.properties') {
-            final configIndented = configString(config, configFile);
-
-            fs.file('pubspec.yaml').writeAsStringSync('''
-name: $project
-version: $version
-''');
-            fs.file('sentry.properties').create();
-            fs.file('sentry.properties').writeAsStringSync('''
-auth_token=t
-project=p
-org=o
-$configIndented
-            ''');
-          }
+          final formattedConfig =
+              configFormatter.formatConfig(config, fileType, url);
+          configWriter.write(fileType, formattedConfig);
 
           final exitCode = await plugin.run([]);
           expect(exitCode, 0);
@@ -107,8 +67,7 @@ $configIndented
           return pm.commandLog.skip(commonCommands.length);
         }
 
-        // todo no need for two as both configs will be run
-        test('works with sentry.properties', () async {
+        test('works with all configuration files', () async {
           final commandLog = await runWith('''
       upload_debug_symbols: true
       upload_sources: true
@@ -133,25 +92,6 @@ $configIndented
           expect(pm.commandLog, commonCommands);
         });
 
-        test('works with pubspec', () async {
-          final commandLog = await runWith('''
-      upload_debug_symbols: true
-      upload_sources: true
-      upload_source_maps: true
-      log_level: debug
-      ignore_missing: true
-    ''');
-          final args = '$commonArgs --log-level debug';
-          expect(commandLog, [
-            '$cli $args debug-files upload $orgAndProject --include-sources $buildDir',
-            '$cli $args releases $orgAndProject new $release',
-            '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
-            '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
-            '$cli $args releases $orgAndProject set-commits $release --auto --ignore-missing',
-            '$cli $args releases $orgAndProject finalize $release'
-          ]);
-        });
-
         test('defaults', () async {
           final commandLog = await runWith('');
           expect(commandLog, [
@@ -172,13 +112,13 @@ $configIndented
             'repo_name@293ea41d67225d27a8c212f901637e771d73c0f7..1e248e5e6c24b79a5c46a2e8be12cef0e41bd58d',
           ]) {
             test(value, () async {
-              print('runs with $configFile and $value');
+              print('runs with $fileType and $value');
               final commandLog =
-              await runWith(value == null ? '' : 'commits: $value');
+                  await runWith(value == null ? '' : 'commits: $value');
               final expectedArgs =
-              (value == null || value == 'auto' || value == 'true')
-                  ? '--auto'
-                  : '--commit $value';
+                  (value == null || value == 'auto' || value == 'true')
+                      ? '--auto'
+                      : '--commit $value';
               expect(commandLog, [
                 '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
                 '$cli $commonArgs releases $orgAndProject new $release',
@@ -261,7 +201,7 @@ $configIndented
           });
         });
       });
-    });
+    }
   }
 }
 
@@ -277,22 +217,22 @@ class MockProcessManager implements ProcessManager {
   @override
   Future<ProcessResult> run(List<Object> command,
       {String? workingDirectory,
-        Map<String, String>? environment,
-        bool includeParentEnvironment = true,
-        bool runInShell = false,
-        covariant Encoding? stdoutEncoding = systemEncoding,
-        covariant Encoding? stderrEncoding = systemEncoding}) {
+      Map<String, String>? environment,
+      bool includeParentEnvironment = true,
+      bool runInShell = false,
+      covariant Encoding? stdoutEncoding = systemEncoding,
+      covariant Encoding? stderrEncoding = systemEncoding}) {
     return Future.value(runSync(command));
   }
 
   @override
   ProcessResult runSync(List<Object> command,
       {String? workingDirectory,
-        Map<String, String>? environment,
-        bool includeParentEnvironment = true,
-        bool runInShell = false,
-        covariant Encoding? stdoutEncoding = systemEncoding,
-        covariant Encoding? stderrEncoding = systemEncoding}) {
+      Map<String, String>? environment,
+      bool includeParentEnvironment = true,
+      bool runInShell = false,
+      covariant Encoding? stdoutEncoding = systemEncoding,
+      covariant Encoding? stderrEncoding = systemEncoding}) {
     commandLog.add(command.join(' '));
     return ProcessResult(-1, 0, null, null);
   }
@@ -300,10 +240,10 @@ class MockProcessManager implements ProcessManager {
   @override
   Future<Process> start(List<Object> command,
       {String? workingDirectory,
-        Map<String, String>? environment,
-        bool includeParentEnvironment = true,
-        bool runInShell = false,
-        ProcessStartMode mode = ProcessStartMode.normal}) {
+      Map<String, String>? environment,
+      bool includeParentEnvironment = true,
+      bool runInShell = false,
+      ProcessStartMode mode = ProcessStartMode.normal}) {
     commandLog.add(command.join(' '));
     return Future.value(MockProcess());
   }
