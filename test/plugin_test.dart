@@ -34,13 +34,26 @@ void main() {
     pm = MockProcessManager();
     injector.registerSingleton<ProcessManager>(() => pm, override: true);
     fs = MemoryFileSystem.test();
-    fs.currentDirectory = fs.directory(buildDir)..createSync();
+    fs.currentDirectory = fs.directory(buildDir)
+      ..createSync();
     injector.registerSingleton<FileSystem>(() => fs, override: true);
     injector.registerSingleton<CLISetup>(() => MockCLI(), override: true);
   });
 
+  String configString(String config, String configFile) {
+    if (configFile == 'sentry.properties') {
+      return config
+          .trim()
+          .split('\n')
+          .map((l) => l.trim())
+          .join('\n')
+          .replaceAll(': ', '=');
+    }
+    return config.trim().split('\n').map((l) => '  ${l.trim()}').join('\n');
+  }
+
   for (final url in const ['http://127.0.0.1', null]) {
-    configurations.forEach((fileName, config) {
+    configurations.forEach((configFile, config) {
       group('url: $url', () {
         final commonArgs =
             '${url == null ? '' : '--url http://127.0.0.1 '}--auth-token t';
@@ -50,16 +63,17 @@ void main() {
         ];
 
         Future<Iterable<String>> runWith(String config) async {
-          // properly indent the configuration for the `sentry` section in the yaml
-          if (fileName == 'pubspec.yaml') {
-            if (url != null) {
+          if (url != null) {
+            if (configFile == 'pubspec.yaml') {
               config = 'url: $url\n$config';
             }
-            final configIndented = config
-                .trim()
-                .split('\n')
-                .map((l) => '  ${l.trim()}')
-                .join('\n');
+            if (configFile == 'sentry.properties') {
+              config = 'url=$url\n$config';
+            }
+          }
+          // properly indent the configuration for the `sentry` section in the yaml
+          if (configFile == 'pubspec.yaml') {
+            final configIndented = configString(config, configFile);
 
             fs.file('pubspec.yaml').writeAsStringSync('''
 name: $project
@@ -71,17 +85,8 @@ sentry:
   org: o
 $configIndented
 ''');
-          } else if (fileName == 'sentry.properties') {
-            if (url != null) {
-              config = 'url=$url\n$config';
-            }
-
-            final configIndented = config
-                .trim()
-                .split('\n')
-                .map((l) => l.trim())
-                .join('\n')
-                .replaceAll(': ', '=');
+          } else if (configFile == 'sentry.properties') {
+            final configIndented = configString(config, configFile);
 
             fs.file('pubspec.yaml').writeAsStringSync('''
 name: $project
@@ -167,13 +172,13 @@ $configIndented
             'repo_name@293ea41d67225d27a8c212f901637e771d73c0f7..1e248e5e6c24b79a5c46a2e8be12cef0e41bd58d',
           ]) {
             test(value, () async {
-              print('runs with $fileName and $value');
+              print('runs with $configFile and $value');
               final commandLog =
-                  await runWith(value == null ? '' : 'commits: $value');
+              await runWith(value == null ? '' : 'commits: $value');
               final expectedArgs =
-                  (value == null || value == 'auto' || value == 'true')
-                      ? '--auto'
-                      : '--commit $value';
+              (value == null || value == 'auto' || value == 'true')
+                  ? '--auto'
+                  : '--commit $value';
               expect(commandLog, [
                 '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
                 '$cli $commonArgs releases $orgAndProject new $release',
@@ -272,22 +277,22 @@ class MockProcessManager implements ProcessManager {
   @override
   Future<ProcessResult> run(List<Object> command,
       {String? workingDirectory,
-      Map<String, String>? environment,
-      bool includeParentEnvironment = true,
-      bool runInShell = false,
-      covariant Encoding? stdoutEncoding = systemEncoding,
-      covariant Encoding? stderrEncoding = systemEncoding}) {
+        Map<String, String>? environment,
+        bool includeParentEnvironment = true,
+        bool runInShell = false,
+        covariant Encoding? stdoutEncoding = systemEncoding,
+        covariant Encoding? stderrEncoding = systemEncoding}) {
     return Future.value(runSync(command));
   }
 
   @override
   ProcessResult runSync(List<Object> command,
       {String? workingDirectory,
-      Map<String, String>? environment,
-      bool includeParentEnvironment = true,
-      bool runInShell = false,
-      covariant Encoding? stdoutEncoding = systemEncoding,
-      covariant Encoding? stderrEncoding = systemEncoding}) {
+        Map<String, String>? environment,
+        bool includeParentEnvironment = true,
+        bool runInShell = false,
+        covariant Encoding? stdoutEncoding = systemEncoding,
+        covariant Encoding? stderrEncoding = systemEncoding}) {
     commandLog.add(command.join(' '));
     return ProcessResult(-1, 0, null, null);
   }
@@ -295,10 +300,10 @@ class MockProcessManager implements ProcessManager {
   @override
   Future<Process> start(List<Object> command,
       {String? workingDirectory,
-      Map<String, String>? environment,
-      bool includeParentEnvironment = true,
-      bool runInShell = false,
-      ProcessStartMode mode = ProcessStartMode.normal}) {
+        Map<String, String>? environment,
+        bool includeParentEnvironment = true,
+        bool runInShell = false,
+        ProcessStartMode mode = ProcessStartMode.normal}) {
     commandLog.add(command.join(' '));
     return Future.value(MockProcess());
   }
