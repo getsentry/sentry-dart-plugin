@@ -15,7 +15,8 @@ abstract class ConfigReader {
   factory ConfigReader() {
     final propertiesFile = injector.get<FileSystem>().file("sentry.properties");
     if (!propertiesFile.existsSync()) {
-      Log.info("sentry.properties not found: ${propertiesFile.absolute.path}, retrieving config from pubspec.yaml instead");
+      Log.info(
+          "sentry.properties not found: ${propertiesFile.absolute.path}, retrieving config from pubspec.yaml instead");
       final pubspec = _getPubspec();
       return PubspecConfigReader(pubspec['sentry'] as YamlMap?);
     }
@@ -79,7 +80,8 @@ class PubspecConfigReader implements ConfigReader {
 }
 
 extension _Config on ConfigReader {
-  T? get<T>(String name, String? deprecatedName, T? Function(String key) resolve) {
+  T? get<T>(
+      String name, String? deprecatedName, T? Function(String key) resolve) {
     if (deprecatedName != null && contains(deprecatedName)) {
       Log.warn(
           'Your pubspec.yaml contains `$deprecatedName` which is deprecated. Consider switching to `$name`.');

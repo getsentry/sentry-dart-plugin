@@ -107,11 +107,13 @@ class Configuration {
     version = pubspec['version'].toString();
     name = pubspec['name'].toString();
 
-    uploadDebugSymbols =
-        reader.getBool('upload_debug_symbols', deprecatedKey: 'upload_native_symbols') ?? true;
+    uploadDebugSymbols = reader.getBool('upload_debug_symbols',
+            deprecatedKey: 'upload_native_symbols') ??
+        true;
     uploadSourceMaps = reader.getBool('upload_source_maps') ?? false;
-    uploadSources =
-        reader.getBool('upload_sources', deprecatedKey: 'include_native_sources') ?? false;
+    uploadSources = reader.getBool('upload_sources',
+            deprecatedKey: 'include_native_sources') ??
+        false;
     commits = (reader.getString('commits') ?? 'auto').toString();
     ignoreMissing = reader.getBool('ignore_missing') ?? false;
 
@@ -128,8 +130,7 @@ class Configuration {
     authToken =
         reader.getString('auth_token'); // or env. var. SENTRY_AUTH_TOKEN
     url = reader.getString('url'); // or env. var. SENTRY_URL
-    logLevel =
-        reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
+    logLevel = reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
 
     Log.taskCompleted(taskName);
   }
