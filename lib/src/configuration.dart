@@ -95,10 +95,9 @@ class Configuration {
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
     final environments = Platform.environment;
-    final reader = ConfigReader();
-    final taskName = 'reading config values from ${reader.toString()}';
+    final taskName = 'reading config values';
     Log.startingTask(taskName);
-
+    final reader = ConfigReader();
     await _findAndSetCliPath();
     final pubspec = _getPubspec();
 

@@ -16,11 +16,13 @@ abstract class ConfigReader {
     final propertiesFile = injector.get<FileSystem>().file("sentry.properties");
     if (!propertiesFile.existsSync()) {
       Log.info(
-          "sentry.properties not found: ${propertiesFile.absolute.path}, retrieving config from pubspec.yaml instead");
+          'sentry.properties not found: ${propertiesFile.absolute.path}, retrieving config from pubspec.yaml instead');
       final pubspec = _getPubspec();
       return PubspecConfigReader(pubspec['sentry'] as YamlMap?);
     }
-    // Reads the string as there are issues loading the file from path if run in the test suite
+    // Loads properties class via string as there are issues loading the file
+    // from path if run in the test suite
+    Log.info('retrieving config from sentry.properties');
     final properties = Properties.fromString(propertiesFile.readAsStringSync());
     return PropertiesConfigReader(properties);
   }
