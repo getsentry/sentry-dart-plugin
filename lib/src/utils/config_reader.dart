@@ -70,7 +70,7 @@ class PubspecConfigReader implements ConfigReader {
 
   @override
   String? getString(String key, {String? deprecatedKey}) {
-    return get(key, deprecatedKey, (key) => _pubspec?[key] as String?);
+    return get(key, deprecatedKey, (key) => (_pubspec?[key]).toString());
   }
 
   @override
