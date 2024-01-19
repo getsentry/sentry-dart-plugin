@@ -1,7 +1,8 @@
 import 'config_file_type.dart';
 
 class ConfigFormatter {
-  static String formatConfig(String config, ConfigFileType fileType, String? url) {
+  static String formatConfig(
+      String config, ConfigFileType fileType, String? url) {
     // Add URL if provided
     if (url != null) {
       config = _addUrlPrefix(config, fileType, url);
@@ -18,7 +19,8 @@ class ConfigFormatter {
     }
   }
 
-  static String _addUrlPrefix(String config, ConfigFileType fileType, String url) {
+  static String _addUrlPrefix(
+      String config, ConfigFileType fileType, String url) {
     final urlLine =
         fileType == ConfigFileType.sentryProperties ? 'url=$url' : 'url: $url';
     return '$urlLine\n$config';

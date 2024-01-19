@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/utils/config_reader.dart';
 import 'package:system_info2/system_info2.dart';
 import 'package:yaml/yaml.dart';
 
 import 'cli/host_platform.dart';
 import 'cli/setup.dart';
+import 'utils/config-reader/config_reader.dart';
 import 'utils/extensions.dart';
 import 'utils/injector.dart';
 import 'utils/log.dart';
@@ -95,7 +95,7 @@ class Configuration {
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
     final environments = Platform.environment;
-    final taskName = 'reading config values';
+    const taskName = 'reading config values';
     Log.startingTask(taskName);
     final reader = ConfigReader();
     await _findAndSetCliPath();
