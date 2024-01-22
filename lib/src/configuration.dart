@@ -81,25 +81,14 @@ class Configuration {
   /// https://docs.sentry.io/product/cli/releases/#dealing-with-missing-commits
   late bool ignoreMissing;
 
-  dynamic _getPubspec() {
-    final file = injector.get<FileSystem>().file("pubspec.yaml");
-    if (!file.existsSync()) {
-      Log.error("Pubspec not found: ${file.absolute.path}");
-      return {};
-    }
-    final pubspecString = file.readAsStringSync();
-    final pubspec = loadYaml(pubspecString);
-    return pubspec;
-  }
-
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
     final environments = Platform.environment;
     const taskName = 'reading config values';
     Log.startingTask(taskName);
+    final pubspec = ConfigReader.getPubspec();
     final reader = ConfigReader();
     await _findAndSetCliPath();
-    final pubspec = _getPubspec();
 
     release = reader.getString('release') ?? environments['SENTRY_RELEASE'];
     dist = reader.getString('dist') ?? environments['SENTRY_DIST'];

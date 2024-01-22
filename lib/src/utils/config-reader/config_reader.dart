@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:properties/properties.dart';
 import 'package:yaml/yaml.dart';
 import 'package:file/file.dart';
@@ -12,24 +14,33 @@ abstract class ConfigReader {
   bool? getBool(String key, {String? deprecatedKey});
   bool contains(String key);
 
-  /// By default this ConfigReader factory will try to load sentry.properties first.
-  /// If sentry.properties doesn't exist it will use pubspec.yaml as fallback.
+  /// By default this ConfigReader factory will try to load pubspec.yaml first.
+  /// If the sentry config doesn't exist on pubspec.yaml it will use sentry.properties as fallback.
   factory ConfigReader() {
-    final propertiesFile = injector.get<FileSystem>().file("sentry.properties");
-    if (!propertiesFile.existsSync()) {
-      Log.info(
-          'sentry.properties not found: ${propertiesFile.absolute.path}, retrieving config from pubspec.yaml instead');
-      final pubspec = _getPubspec();
-      return YamlConfigReader(pubspec['sentry'] as YamlMap?);
+    // Attempt to retrieve the config from pubspec.yaml first
+    final pubspec = getPubspec();
+    final sentryConfig = pubspec['sentry'] as YamlMap?;
+    if (sentryConfig != null) {
+      Log.info('retrieving config from pubspec.yaml');
+      return YamlConfigReader(sentryConfig);
+    } else {
+      Log.info('sentry config not found in pubspec.yaml');
     }
-    // Loads properties class via string as there are issues loading the file
-    // from path if run in the test suite
-    Log.info('retrieving config from sentry.properties');
-    final properties = Properties.fromString(propertiesFile.readAsStringSync());
-    return PropertiesConfigReader(properties);
+
+    // If sentry config is not found in pubspec.yaml, try loading from sentry.properties
+    final propertiesFile = injector.get<FileSystem>().file("sentry.properties");
+    if (propertiesFile.existsSync()) {
+      Log.info('retrieving config from sentry.properties');
+      // Loads properties class via string as there are issues loading the file
+      // from path if run in the test suite
+      final properties = Properties.fromString(propertiesFile.readAsStringSync());
+      return PropertiesConfigReader(properties);
+    }
+    Log.error('sentry.properties not found: ${propertiesFile.absolute.path}');
+    exit(1);
   }
 
-  static dynamic _getPubspec() {
+  static dynamic getPubspec() {
     final file = injector.get<FileSystem>().file("pubspec.yaml");
     if (!file.existsSync()) {
       Log.error("Pubspec not found: ${file.absolute.path}");
@@ -46,7 +57,7 @@ extension Config on ConfigReader {
       String name, String? deprecatedName, T? Function(String key) resolve) {
     if (deprecatedName != null && contains(deprecatedName)) {
       Log.warn(
-          'Your pubspec.yaml contains `$deprecatedName` which is deprecated. Consider switching to `$name`.');
+          'Your config contains `$deprecatedName` which is deprecated. Consider switching to `$name`.');
     }
     if (contains(name)) {
       return resolve(name);
