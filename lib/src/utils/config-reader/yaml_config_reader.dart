@@ -1,6 +1,5 @@
 import 'package:yaml/yaml.dart';
 
-import '../log.dart';
 import 'config_reader.dart';
 
 class YamlConfigReader implements ConfigReader {

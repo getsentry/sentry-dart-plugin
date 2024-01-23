@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:file/file.dart';
 import 'package:process/process.dart';
 import 'package:system_info2/system_info2.dart';
-import 'package:yaml/yaml.dart';
 
 import 'cli/host_platform.dart';
 import 'cli/setup.dart';
@@ -83,12 +82,25 @@ class Configuration {
 
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
-    final environments = Platform.environment;
     const taskName = 'reading config values';
     Log.startingTask(taskName);
-    final pubspec = ConfigReader.getPubspec();
-    final reader = ConfigReader();
     await _findAndSetCliPath();
+
+    try {
+      final reader = ConfigReader();
+      loadConfig(reader);
+    } catch (e) {
+      // Will catch an exception if no proper config could be found e.g sentry.properties or pubspec.yaml
+      Log.error(e.toString());
+      return;
+    }
+
+    Log.taskCompleted(taskName);
+  }
+
+  void loadConfig(ConfigReader reader) {
+    final environments = Platform.environment;
+    final pubspec = ConfigReader.getPubspec();
 
     release = reader.getString('release') ?? environments['SENTRY_RELEASE'];
     dist = reader.getString('dist') ?? environments['SENTRY_DIST'];
@@ -119,8 +131,6 @@ class Configuration {
         reader.getString('auth_token'); // or env. var. SENTRY_AUTH_TOKEN
     url = reader.getString('url'); // or env. var. SENTRY_URL
     logLevel = reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
-
-    Log.taskCompleted(taskName);
   }
 
   /// Validates the configuration values and log an error if required fields

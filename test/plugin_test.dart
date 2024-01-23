@@ -86,7 +86,6 @@ void main() {
         });
 
         test('fails without args and pubspec', () async {
-          print('running with $fileType');
           final exitCode = await plugin.run([]);
           expect(exitCode, 1);
           expect(pm.commandLog, commonCommands);

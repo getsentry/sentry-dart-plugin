@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:properties/properties.dart';
 import 'package:yaml/yaml.dart';
 import 'package:file/file.dart';
@@ -33,11 +31,12 @@ abstract class ConfigReader {
       Log.info('retrieving config from sentry.properties');
       // Loads properties class via string as there are issues loading the file
       // from path if run in the test suite
-      final properties = Properties.fromString(propertiesFile.readAsStringSync());
+      final properties =
+          Properties.fromString(propertiesFile.readAsStringSync());
       return PropertiesConfigReader(properties);
     }
-    Log.error('sentry.properties not found: ${propertiesFile.absolute.path}');
-    exit(1);
+    throw Exception(
+        'no config found, please use sentry.properties or pubspec.yaml.');
   }
 
   static dynamic getPubspec() {
