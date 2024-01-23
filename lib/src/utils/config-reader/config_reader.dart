@@ -4,6 +4,7 @@ import 'package:file/file.dart';
 
 import '../injector.dart';
 import '../log.dart';
+import 'no_op_config_reader.dart';
 import 'properties_config_reader.dart';
 import 'yaml_config_reader.dart';
 
@@ -35,8 +36,8 @@ abstract class ConfigReader {
           Properties.fromString(propertiesFile.readAsStringSync());
       return PropertiesConfigReader(properties);
     }
-    throw Exception(
-        'no config found, please use sentry.properties or pubspec.yaml.');
+    Log.error('no config found, please use sentry.properties or pubspec.yaml.');
+    return NoOpConfigReader();
   }
 
   static dynamic getPubspec() {

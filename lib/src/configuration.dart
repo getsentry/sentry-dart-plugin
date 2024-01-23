@@ -86,14 +86,8 @@ class Configuration {
     Log.startingTask(taskName);
     await _findAndSetCliPath();
 
-    try {
-      final reader = ConfigReader();
-      loadConfig(reader);
-    } catch (e) {
-      // Will catch an exception if no proper config could be found e.g sentry.properties or pubspec.yaml
-      Log.error(e.toString());
-      return;
-    }
+    final reader = ConfigReader();
+    loadConfig(reader);
 
     Log.taskCompleted(taskName);
   }
