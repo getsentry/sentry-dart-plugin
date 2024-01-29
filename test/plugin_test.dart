@@ -111,7 +111,6 @@ void main() {
             'repo_name@293ea41d67225d27a8c212f901637e771d73c0f7..1e248e5e6c24b79a5c46a2e8be12cef0e41bd58d',
           ]) {
             test(value, () async {
-              print('runs with $fileType and $value');
               final commandLog =
                   await runWith(value == null ? '' : 'commits: $value');
               final expectedArgs =
