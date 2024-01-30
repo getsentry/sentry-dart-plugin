@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Support reading config from sentry.properties file ([#191](https://github.com/getsentry/sentry-dart-plugin/pull/191))
+
 ### Dependencies
 
 - Bump CLI from v2.21.2 to v2.22.3 ([#180](https://github.com/getsentry/sentry-dart-plugin/pull/180))

@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:file/file.dart';
 import 'package:process/process.dart';
 import 'package:system_info2/system_info2.dart';
-import 'package:yaml/yaml.dart';
 
 import 'cli/host_platform.dart';
 import 'cli/setup.dart';
+import 'utils/config-reader/config_reader.dart';
 import 'utils/extensions.dart';
 import 'utils/injector.dart';
 import 'utils/log.dart';
@@ -80,57 +80,51 @@ class Configuration {
   /// https://docs.sentry.io/product/cli/releases/#dealing-with-missing-commits
   late bool ignoreMissing;
 
-  dynamic _getPubspec() {
-    final file = injector.get<FileSystem>().file("pubspec.yaml");
-    if (!file.existsSync()) {
-      Log.error("Pubspec not found: ${file.absolute.path}");
-      return {};
-    }
-    final pubspecString = file.readAsStringSync();
-    final pubspec = loadYaml(pubspecString);
-    return pubspec;
-  }
-
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
-    final environments = Platform.environment;
     const taskName = 'reading config values';
     Log.startingTask(taskName);
-
     await _findAndSetCliPath();
-    final pubspec = _getPubspec();
-    final config = pubspec['sentry'] as YamlMap?;
 
-    release = config?['release']?.toString() ?? environments['SENTRY_RELEASE'];
-    dist = config?['dist']?.toString() ?? environments['SENTRY_DIST'];
+    final reader = ConfigReader();
+    loadConfig(reader);
+
+    Log.taskCompleted(taskName);
+  }
+
+  void loadConfig(ConfigReader reader) {
+    final environments = Platform.environment;
+    final pubspec = ConfigReader.getPubspec();
+
+    release = reader.getString('release') ?? environments['SENTRY_RELEASE'];
+    dist = reader.getString('dist') ?? environments['SENTRY_DIST'];
     version = pubspec['version'].toString();
     name = pubspec['name'].toString();
 
-    uploadDebugSymbols =
-        config?.get('upload_debug_symbols', 'upload_native_symbols') ?? true;
-    uploadSourceMaps = config?['upload_source_maps'] ?? false;
-    uploadSources =
-        config?.get('upload_sources', 'include_native_sources') ?? false;
-    commits = (config?['commits'] ?? 'auto').toString();
-    ignoreMissing = config?['ignore_missing'] ?? false;
+    uploadDebugSymbols = reader.getBool('upload_debug_symbols',
+            deprecatedKey: 'upload_native_symbols') ??
+        true;
+    uploadSourceMaps = reader.getBool('upload_source_maps') ?? false;
+    uploadSources = reader.getBool('upload_sources',
+            deprecatedKey: 'include_native_sources') ??
+        false;
+    commits = (reader.getString('commits') ?? 'auto').toString();
+    ignoreMissing = reader.getBool('ignore_missing') ?? false;
 
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.
     final webBuildPath =
-        config?['web_build_path']?.toString() ?? _fs.path.join('build', 'web');
+        reader.getString('web_build_path') ?? _fs.path.join('build', 'web');
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
 
-    project = config?['project']?.toString(); // or env. var. SENTRY_PROJECT
-    org = config?['org']?.toString(); // or env. var. SENTRY_ORG
-    waitForProcessing = config?['wait_for_processing'] ?? false;
+    project = reader.getString('project'); // or env. var. SENTRY_PROJECT
+    org = reader.getString('org'); // or env. var. SENTRY_ORG
+    waitForProcessing = reader.getBool('wait_for_processing') ?? false;
     authToken =
-        config?['auth_token']?.toString(); // or env. var. SENTRY_AUTH_TOKEN
-    url = config?['url']?.toString(); // or env. var. SENTRY_URL
-    logLevel =
-        config?['log_level']?.toString(); // or env. var. SENTRY_LOG_LEVEL
-
-    Log.taskCompleted(taskName);
+        reader.getString('auth_token'); // or env. var. SENTRY_AUTH_TOKEN
+    url = reader.getString('url'); // or env. var. SENTRY_URL
+    logLevel = reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
   }
 
   /// Validates the configuration values and log an error if required fields
@@ -225,21 +219,5 @@ class Configuration {
     cliPath = Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
     Log.info(
         'Trying to fallback to preinstalled Sentry CLI, if available on PATH: $cliPath');
-  }
-}
-
-extension _Config on YamlMap {
-  T? get<T>(String name, String? deprecatedName) {
-    if (deprecatedName != null && containsKey(deprecatedName)) {
-      Log.warn(
-          'Your pubspec.yaml contains `$deprecatedName` which is deprecated. Consider switching to `$name`.');
-    }
-    if (containsKey(name)) {
-      return this[name];
-    } else if (deprecatedName != null && containsKey(deprecatedName)) {
-      return this[deprecatedName];
-    } else {
-      return null;
-    }
   }
 }
