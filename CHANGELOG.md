@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.0
 
 ### Features
 
@@ -10,7 +10,7 @@
 
 - Bump CLI from v2.21.2 to v2.27.0 ([#180](https://github.com/getsentry/sentry-dart-plugin/pull/180), [#195](https://github.com/getsentry/sentry-dart-plugin/pull/195), [#196](https://github.com/getsentry/sentry-dart-plugin/pull/196))
   - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2270) 
-  - [diff](https://github.com/getsentry/sentry-cli/compare/2.21.2...2.27.0) 
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.21.2...2.27.0)
 
 ## 1.6.3
 
