@@ -6,7 +6,7 @@
 
 - Bump CLI from v2.27.0 to v2.28.0 ([#197](https://github.com/getsentry/sentry-dart-plugin/pull/197))
   - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2280)
-  - [diff](https://github.com/getsentry/sentry-cli/compare/2.27.0...2.28.0)
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.27.0...2.28.0) 
 
 ## 1.7.0
 
