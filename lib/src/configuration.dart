@@ -6,6 +6,7 @@ import 'package:system_info2/system_info2.dart';
 
 import 'cli/host_platform.dart';
 import 'cli/setup.dart';
+import 'environment_configuration.dart';
 import 'utils/config-reader/config_reader.dart';
 import 'utils/extensions.dart';
 import 'utils/injector.dart';
@@ -81,50 +82,66 @@ class Configuration {
   late bool ignoreMissing;
 
   /// Loads the configuration values
-  Future<void> getConfigValues(List<String> arguments) async {
+  Future<void> getConfigValues(
+      List<String> arguments, EnvironmentConfiguration envConfig) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
     await _findAndSetCliPath();
 
     final reader = ConfigReader();
-    loadConfig(reader);
+    loadConfig(reader, envConfig);
 
     Log.taskCompleted(taskName);
   }
 
-  void loadConfig(ConfigReader reader) {
+  void loadConfig(ConfigReader reader, EnvironmentConfiguration envConfig) {
     final environments = Platform.environment;
     final pubspec = ConfigReader.getPubspec();
 
-    release = reader.getString('release') ?? environments['SENTRY_RELEASE'];
-    dist = reader.getString('dist') ?? environments['SENTRY_DIST'];
-    version = pubspec['version'].toString();
-    name = pubspec['name'].toString();
+    release = envConfig.release ??
+        reader.getString('release') ??
+        environments['SENTRY_RELEASE'];
+    dist = envConfig.dist ??
+        reader.getString('dist') ??
+        environments['SENTRY_DIST'];
+    version = envConfig.version ?? pubspec['version'].toString();
+    name = envConfig.name ?? pubspec['name'].toString();
 
-    uploadDebugSymbols = reader.getBool('upload_debug_symbols',
+    uploadDebugSymbols = envConfig.uploadDebugSymbols ??
+        reader.getBool('upload_debug_symbols',
             deprecatedKey: 'upload_native_symbols') ??
         true;
-    uploadSourceMaps = reader.getBool('upload_source_maps') ?? false;
-    uploadSources = reader.getBool('upload_sources',
+    uploadSourceMaps = envConfig.uploadSourceMaps ??
+        reader.getBool('upload_source_maps') ??
+        false;
+    uploadSources = envConfig.uploadSources ??
+        reader.getBool('upload_sources',
             deprecatedKey: 'include_native_sources') ??
         false;
-    commits = (reader.getString('commits') ?? 'auto').toString();
-    ignoreMissing = reader.getBool('ignore_missing') ?? false;
+    commits =
+        envConfig.commits ?? (reader.getString('commits') ?? 'auto').toString();
+    ignoreMissing =
+        envConfig.ignoreMissing ?? reader.getBool('ignore_missing') ?? false;
 
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.
-    final webBuildPath =
-        reader.getString('web_build_path') ?? _fs.path.join('build', 'web');
+    final webBuildPath = envConfig.webBuildPath ??
+        reader.getString('web_build_path') ??
+        _fs.path.join('build', 'web');
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
 
-    project = reader.getString('project'); // or env. var. SENTRY_PROJECT
-    org = reader.getString('org'); // or env. var. SENTRY_ORG
-    waitForProcessing = reader.getBool('wait_for_processing') ?? false;
-    authToken =
+    project = envConfig.project ??
+        reader.getString('project'); // or env. var. SENTRY_PROJECT
+    org = envConfig.org ?? reader.getString('org'); // or env. var. SENTRY_ORG
+    waitForProcessing = envConfig.waitForProcessing ??
+        reader.getBool('wait_for_processing') ??
+        false;
+    authToken = envConfig.authToken ??
         reader.getString('auth_token'); // or env. var. SENTRY_AUTH_TOKEN
-    url = reader.getString('url'); // or env. var. SENTRY_URL
-    logLevel = reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
+    url = envConfig.url ?? reader.getString('url'); // or env. var. SENTRY_URL
+    logLevel = envConfig.logLevel ??
+        reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
   }
 
   /// Validates the configuration values and log an error if required fields

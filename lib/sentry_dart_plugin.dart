@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:process/process.dart';
+import 'package:sentry_dart_plugin/src/environment_configuration.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/injector.dart';
@@ -20,9 +21,10 @@ class SentryDartPlugin {
   /// debug symbols and source maps
   Future<int> run(List<String> cliArguments) async {
     _configuration = injector.get<Configuration>();
+    final envConfig = injector.get<EnvironmentConfiguration>();
 
     try {
-      await _configuration.getConfigValues(cliArguments);
+      await _configuration.getConfigValues(cliArguments, envConfig);
       if (!_configuration.validateConfigValues()) {
         return 1;
       }
