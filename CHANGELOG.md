@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Support configuration via `--define` ([#198](https://github.com/getsentry/sentry-dart-plugin/pull/198))
+
 ## 1.7.0
 
 ### Features
