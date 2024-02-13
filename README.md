@@ -59,7 +59,7 @@ sentry:
   ignore_missing: true
 ```
 
-You can also set or override your file based configuration by passing the parameters as arguments
+You can also override or extend your file based configuration by passing the parameters as arguments
 in the format `--sentry-define=<KEY>=<VALUE>`:
 
 ```bash
