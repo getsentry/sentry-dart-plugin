@@ -2,7 +2,6 @@ import 'package:file/file.dart';
 import 'package:file/local.dart';
 import 'package:injector/injector.dart';
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/configuration_values.dart';
 
 import '../cli/_sources.dart';
 import '../cli/setup.dart';

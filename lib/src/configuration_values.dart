@@ -55,15 +55,22 @@ class ConfigurationValues {
       return value == "true"
           ? true
           : value == "false"
-          ? false
-          : null;
+              ? false
+              : null;
     }
+
     return ConfigurationValues(
       version: sentryArguments['version'],
       name: sentryArguments['name'],
-      uploadDebugSymbols: boolFromString(sentryArguments['upload_debug_symbols'] ?? sentryArguments['upload_native_symbols']),
+      uploadDebugSymbols: boolFromString(
+        sentryArguments['upload_debug_symbols'] ??
+            sentryArguments['upload_native_symbols'],
+      ),
       uploadSourceMaps: boolFromString(sentryArguments['upload_source_maps']),
-      uploadSources: boolFromString(sentryArguments['upload_sources'] ?? sentryArguments['include_native_sources']),
+      uploadSources: boolFromString(
+        sentryArguments['upload_sources'] ??
+            sentryArguments['include_native_sources'],
+      ),
       project: sentryArguments['project'],
       org: sentryArguments['org'],
       authToken: sentryArguments['auth_token'],
@@ -82,11 +89,15 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: configReader.getString('version'),
       name: configReader.getString('name'),
-      uploadDebugSymbols: configReader.getBool('upload_debug_symbols',
-          deprecatedKey: 'upload_native_symbols'),
+      uploadDebugSymbols: configReader.getBool(
+        'upload_debug_symbols',
+        deprecatedKey: 'upload_native_symbols',
+      ),
       uploadSourceMaps: configReader.getBool('upload_source_maps'),
-      uploadSources: configReader.getBool('upload_sources',
-          deprecatedKey: 'include_native_sources'),
+      uploadSources: configReader.getBool(
+        'upload_sources',
+        deprecatedKey: 'include_native_sources',
+      ),
       project: configReader.getString('project'),
       org: configReader.getString('org'),
       authToken: configReader.getString('auth_token'),

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/configuration_values.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/injector.dart';
