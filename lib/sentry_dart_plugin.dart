@@ -23,7 +23,7 @@ class SentryDartPlugin {
     _configuration = injector.get<Configuration>();
 
     try {
-      await _configuration.getConfigValues();
+      await _configuration.getConfigValues(cliArguments);
       if (!_configuration.validateConfigValues()) {
         return 1;
       }

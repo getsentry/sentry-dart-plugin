@@ -17,6 +17,4 @@ void initInjector() {
   injector.registerSingleton<ProcessManager>(() => LocalProcessManager());
   injector.registerSingleton<FileSystem>(() => LocalFileSystem());
   injector.registerSingleton<CLISetup>(() => CLISetup(currentCLISources));
-  injector.registerSingleton<ConfigurationValues>(
-      () => ConfigurationValues.fromEnvironment());
 }

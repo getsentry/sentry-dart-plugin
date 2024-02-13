@@ -39,72 +39,42 @@ class ConfigurationValues {
     this.ignoreMissing,
   });
 
-  factory ConfigurationValues.fromEnvironment() {
-    stringFromEnv(String value) {
-      return value != "" ? value : null;
+  factory ConfigurationValues.fromArguments(List<String> arguments) {
+    Map<String, String> sentryArguments = {};
+    for (final arg in arguments) {
+      final components = arg.split("=");
+      if (components.length < 3) {
+        continue;
+      }
+      if (components[0] != "--sentry-define") {
+        continue;
+      }
+      sentryArguments[components[1]] = components[2];
     }
-    boolFromEnv(String value) {
+    boolFromString(String? value) {
       return value == "true"
           ? true
           : value == "false"
-              ? false
-              : null;
+          ? false
+          : null;
     }
     return ConfigurationValues(
-      version: stringFromEnv(
-        const String.fromEnvironment('version'),
-      ),
-      name: stringFromEnv(
-        const String.fromEnvironment('name'),
-      ),
-      uploadDebugSymbols: boolFromEnv(
-            const String.fromEnvironment('upload_debug_symbols'),
-          ) ??
-          boolFromEnv(
-            const String.fromEnvironment('upload_native_symbols'),
-          ),
-      uploadSourceMaps: boolFromEnv(
-        const String.fromEnvironment('upload_sources'),
-      ),
-      uploadSources: boolFromEnv(
-            const String.fromEnvironment('upload_sources'),
-          ) ??
-          boolFromEnv(
-            const String.fromEnvironment('include_native_sources'),
-          ),
-      project: stringFromEnv(
-        const String.fromEnvironment('project'),
-      ),
-      org: stringFromEnv(
-        const String.fromEnvironment('org'),
-      ),
-      authToken: stringFromEnv(
-        const String.fromEnvironment('auth_token'),
-      ),
-      url: stringFromEnv(
-        const String.fromEnvironment('url'),
-      ),
-      waitForProcessing: boolFromEnv(
-        const String.fromEnvironment('wait_for_processing'),
-      ),
-      logLevel: stringFromEnv(
-        const String.fromEnvironment('log_level'),
-      ),
-      release: stringFromEnv(
-        const String.fromEnvironment('release'),
-      ),
-      dist: stringFromEnv(
-        const String.fromEnvironment('dist'),
-      ),
-      webBuildPath: stringFromEnv(
-        const String.fromEnvironment('web_build_path'),
-      ),
-      commits: stringFromEnv(
-        const String.fromEnvironment('commits'),
-      ),
-      ignoreMissing: boolFromEnv(
-        const String.fromEnvironment('ignore_missing'),
-      ),
+      version: sentryArguments['version'],
+      name: sentryArguments['name'],
+      uploadDebugSymbols: boolFromString(sentryArguments['upload_debug_symbols'] ?? sentryArguments['upload_native_symbols']),
+      uploadSourceMaps: boolFromString(sentryArguments['upload_source_maps']),
+      uploadSources: boolFromString(sentryArguments['upload_sources'] ?? sentryArguments['include_native_sources']),
+      project: sentryArguments['project'],
+      org: sentryArguments['org'],
+      authToken: sentryArguments['auth_token'],
+      url: sentryArguments['url'],
+      waitForProcessing: boolFromString(sentryArguments['wait_for_processing']),
+      logLevel: sentryArguments['log_level'],
+      release: sentryArguments['release'],
+      dist: sentryArguments['dist'],
+      webBuildPath: sentryArguments['web_build_path'],
+      commits: sentryArguments['commits'],
+      ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
     );
   }
 

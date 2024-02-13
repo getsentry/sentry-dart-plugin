@@ -59,13 +59,12 @@ sentry:
   ignore_missing: true
 ```
 
-You can also set or override your file based configuration by passing the parameters using `--define`:
+You can also set or override your file based configuration by passing the parameters as arguments
+in the format `--sentry-define=<KEY>=<VALUE>`:
 
 ```bash
-flutter packages pub run --define=release=app-internal-test@0.0.1 sentry_dart_plugin 
+flutter packages pub run sentry_dart_plugin --sentry-define=release=app-internal-test@0.0.1
 ```
-
-Please also refer to the [Dart Environment Declarations](https://dart.dev/guides/environment-declarations) documentation.
 
 ### Available Configuration Fields
 

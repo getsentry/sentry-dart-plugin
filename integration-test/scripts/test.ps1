@@ -146,7 +146,7 @@ function CheckSymbolServerOutput([string] $symbolServerOutput)
     }
 }
 $serverOutput = RunWithApiServer -Callback {
-    $pluginOutput = dart run --define=upload_debug_symbols=true --define=upload_sources=true --define=upload_source_maps=true --define=auth_token=sentry-dart-plugin-auth-token --define=project=sentry-dart-plug --define=org=sentry-sdks --define=url=http://127.0.0.1:8000 --define=log_level=debug --define=commits=false sentry_dart_plugin | ForEach-Object {
+    $pluginOutput = dart run sentry_dart_plugin dart run sentry_dart_plugin --sentry-define=upload_debug_symbols=true --sentry-define=upload_sources=true --sentry-define=upload_source_maps=true --sentry-define=auth_token=sentry-dart-plugin-auth-token --sentry-define=project=sentry-dart-plug --sentry-define=org=sentry-sdks --sentry-define=url=http://127.0.0.1:8000 --sentry-define=log_level=debug --sentry-define=commits=false | ForEach-Object {
         Write-Host $_
         $_
     }
