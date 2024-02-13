@@ -62,7 +62,7 @@ sentry:
 You can also set or override your file based configuration by passing the parameters using `--define`:
 
 ```bash
-flutter packages pub run --define=release=internal-test@0.0.1 sentry_dart_plugin 
+flutter packages pub run --define=release=app-internal-test@0.0.1 sentry_dart_plugin 
 ```
 
 Please also refer to the [Dart Environment Declarations](https://dart.dev/guides/environment-declarations) documentation.
