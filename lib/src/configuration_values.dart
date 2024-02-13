@@ -41,38 +41,70 @@ class ConfigurationValues {
 
   factory ConfigurationValues.fromEnvironment() {
     stringFromEnv(String value) {
-      final envString = String.fromEnvironment(value);
-      return envString != "" ? envString : null;
+      return value != "" ? value : null;
     }
-
     boolFromEnv(String value) {
-      final envString = String.fromEnvironment(value);
-      return envString == "true"
+      return value == "true"
           ? true
-          : envString == "false"
+          : value == "false"
               ? false
               : null;
     }
-
     return ConfigurationValues(
-      version: stringFromEnv('version'),
-      name: stringFromEnv('name'),
-      uploadDebugSymbols: boolFromEnv('upload_debug_symbols') ??
-          boolFromEnv('upload_native_symbols'),
-      uploadSourceMaps: boolFromEnv('upload_sources'),
-      uploadSources: boolFromEnv('upload_sources') ??
-          boolFromEnv('include_native_sources'),
-      project: stringFromEnv('project'),
-      org: stringFromEnv('org'),
-      authToken: stringFromEnv('auth_token'),
-      url: stringFromEnv('url'),
-      waitForProcessing: boolFromEnv('wait_for_processing'),
-      logLevel: stringFromEnv('log_level'),
-      release: stringFromEnv('release'),
-      dist: stringFromEnv('dist'),
-      webBuildPath: stringFromEnv('web_build_path'),
-      commits: stringFromEnv('commits'),
-      ignoreMissing: boolFromEnv('ignore_missing'),
+      version: stringFromEnv(
+        const String.fromEnvironment('version'),
+      ),
+      name: stringFromEnv(
+        const String.fromEnvironment('name'),
+      ),
+      uploadDebugSymbols: boolFromEnv(
+            const String.fromEnvironment('upload_debug_symbols'),
+          ) ??
+          boolFromEnv(
+            const String.fromEnvironment('upload_native_symbols'),
+          ),
+      uploadSourceMaps: boolFromEnv(
+        const String.fromEnvironment('upload_sources'),
+      ),
+      uploadSources: boolFromEnv(
+            const String.fromEnvironment('upload_sources'),
+          ) ??
+          boolFromEnv(
+            const String.fromEnvironment('include_native_sources'),
+          ),
+      project: stringFromEnv(
+        const String.fromEnvironment('project'),
+      ),
+      org: stringFromEnv(
+        const String.fromEnvironment('org'),
+      ),
+      authToken: stringFromEnv(
+        const String.fromEnvironment('auth_token'),
+      ),
+      url: stringFromEnv(
+        const String.fromEnvironment('url'),
+      ),
+      waitForProcessing: boolFromEnv(
+        const String.fromEnvironment('wait_for_processing'),
+      ),
+      logLevel: stringFromEnv(
+        const String.fromEnvironment('log_level'),
+      ),
+      release: stringFromEnv(
+        const String.fromEnvironment('release'),
+      ),
+      dist: stringFromEnv(
+        const String.fromEnvironment('dist'),
+      ),
+      webBuildPath: stringFromEnv(
+        const String.fromEnvironment('web_build_path'),
+      ),
+      commits: stringFromEnv(
+        const String.fromEnvironment('commits'),
+      ),
+      ignoreMissing: boolFromEnv(
+        const String.fromEnvironment('ignore_missing'),
+      ),
     );
   }
 
