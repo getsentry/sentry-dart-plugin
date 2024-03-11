@@ -6,6 +6,13 @@
 
 - Support configuration via `--define` ([#198](https://github.com/getsentry/sentry-dart-plugin/pull/198))
 
+## 1.7.1
+
+### Fixes
+
+- Updated the `process` dependency range to `>=4.2.4 <6.0.0` ([#202](https://github.com/getsentry/sentry-dart-plugin/pull/202)). 
+  - This update resolves a version conflict issue when using the `integration_test` package with Flutter version `3.19.0`
+
 ## 1.7.0
 
 ### Features
