@@ -197,7 +197,7 @@ class Fixture {
 
     final configuration = Configuration();
     configuration.loadConfig(
-      envConfig: envConfig,
+      argsConfig: envConfig,
       fileConfig: fileConfig,
       platformEnvConfig: platformEnvConfig,
     );

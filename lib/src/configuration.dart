@@ -82,13 +82,13 @@ class Configuration {
   late bool ignoreMissing;
 
   /// Loads the configuration values
-  Future<void> getConfigValues(List<String> arguments) async {
+  Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
     await _findAndSetCliPath();
 
     loadConfig(
-      envConfig: ConfigurationValues.fromArguments(arguments),
+      argsConfig: ConfigurationValues.fromArguments(cliArguments),
       fileConfig: ConfigurationValues.fromReader(ConfigReader()),
       platformEnvConfig: ConfigurationValues.fromPlatformEnvironment(
         Platform.environment,
@@ -99,14 +99,14 @@ class Configuration {
   }
 
   void loadConfig({
-    required ConfigurationValues envConfig,
+    required ConfigurationValues argsConfig,
     required ConfigurationValues fileConfig,
     required ConfigurationValues platformEnvConfig,
   }) {
     final pubspec = ConfigReader.getPubspec();
 
     final configValues = ConfigurationValues.merged(
-      envConfig,
+      argsConfig,
       fileConfig,
       platformEnvConfig,
     );

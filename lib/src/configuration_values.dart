@@ -122,27 +122,27 @@ class ConfigurationValues {
   }
 
   factory ConfigurationValues.merged(
-    ConfigurationValues env,
+    ConfigurationValues args,
     ConfigurationValues file,
     ConfigurationValues platformEnv,
   ) {
     return ConfigurationValues(
-      version: env.version ?? file.version,
-      name: env.name ?? file.name,
-      uploadDebugSymbols: env.uploadDebugSymbols ?? file.uploadDebugSymbols,
-      uploadSourceMaps: env.uploadSourceMaps ?? file.uploadSourceMaps,
-      uploadSources: env.uploadSources ?? file.uploadSources,
-      project: env.project ?? file.project,
-      org: env.org ?? file.org,
-      authToken: env.authToken ?? file.authToken,
-      url: env.url ?? file.url,
-      waitForProcessing: env.waitForProcessing ?? file.waitForProcessing,
-      logLevel: env.logLevel ?? file.logLevel,
-      release: env.release ?? file.release ?? platformEnv.release,
-      dist: env.dist ?? file.dist ?? platformEnv.dist,
-      webBuildPath: env.webBuildPath ?? file.webBuildPath,
-      commits: env.commits ?? file.commits,
-      ignoreMissing: env.ignoreMissing ?? file.ignoreMissing,
+      version: args.version ?? file.version,
+      name: args.name ?? file.name,
+      uploadDebugSymbols: args.uploadDebugSymbols ?? file.uploadDebugSymbols,
+      uploadSourceMaps: args.uploadSourceMaps ?? file.uploadSourceMaps,
+      uploadSources: args.uploadSources ?? file.uploadSources,
+      project: args.project ?? file.project,
+      org: args.org ?? file.org,
+      authToken: args.authToken ?? file.authToken,
+      url: args.url ?? file.url,
+      waitForProcessing: args.waitForProcessing ?? file.waitForProcessing,
+      logLevel: args.logLevel ?? file.logLevel,
+      release: args.release ?? file.release ?? platformEnv.release,
+      dist: args.dist ?? file.dist ?? platformEnv.dist,
+      webBuildPath: args.webBuildPath ?? file.webBuildPath,
+      commits: args.commits ?? file.commits,
+      ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
     );
   }
 }
