@@ -4,7 +4,7 @@
 
 ### Features
 
-- Support configuration via `--define` ([#198](https://github.com/getsentry/sentry-dart-plugin/pull/198))
+- Support configuration arguments via `--sentry-define` ([#198](https://github.com/getsentry/sentry-dart-plugin/pull/198))
 
 ## 1.7.1
 
