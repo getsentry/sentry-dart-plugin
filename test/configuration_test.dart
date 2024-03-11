@@ -22,23 +22,23 @@ void main() {
 
     // env config
 
-    test("takes values from env config", () {
-      final envConfig = ConfigurationValues(
-        version: 'version-env-config',
-        name: 'name-env-config',
+    test("takes values from args config", () {
+      final argsConfig = ConfigurationValues(
+        version: 'version-args-config',
+        name: 'name-args-config',
         uploadDebugSymbols: true,
         uploadSourceMaps: true,
         uploadSources: true,
-        project: 'project-env-config',
-        org: 'org-env-config',
-        authToken: 'auth_token-env-config',
-        url: 'url-env-config',
+        project: 'project-args-config',
+        org: 'org-args-config',
+        authToken: 'auth_token-args-config',
+        url: 'url-args-config',
         waitForProcessing: true,
         logLevel: 'warning',
-        release: 'release-env-config',
-        dist: 'dist-env-config',
-        webBuildPath: 'web_build_path-env-config',
-        commits: 'commits-env-config',
+        release: 'release-args-config',
+        dist: 'dist-args-config',
+        webBuildPath: 'web_build_path-args-config',
+        commits: 'commits-args-config',
         ignoreMissing: true,
       );
       final fileConfig = ConfigurationValues(
@@ -64,31 +64,31 @@ void main() {
         dist: 'dist-platformEnv-config',
       );
 
-      final sut = fixture.getSut(envConfig, fileConfig, platformEnvConfig);
+      final sut = fixture.getSut(argsConfig, fileConfig, platformEnvConfig);
 
-      expect(sut.name, 'name-env-config');
-      expect(sut.version, 'version-env-config');
+      expect(sut.name, 'name-args-config');
+      expect(sut.version, 'version-args-config');
       expect(sut.uploadDebugSymbols, true);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);
-      expect(sut.project, 'project-env-config');
-      expect(sut.org, 'org-env-config');
-      expect(sut.authToken, 'auth_token-env-config');
-      expect(sut.url, 'url-env-config');
+      expect(sut.project, 'project-args-config');
+      expect(sut.org, 'org-args-config');
+      expect(sut.authToken, 'auth_token-args-config');
+      expect(sut.url, 'url-args-config');
       expect(sut.waitForProcessing, true);
       expect(sut.logLevel, 'warning');
-      expect(sut.release, 'release-env-config');
-      expect(sut.dist, 'dist-env-config');
+      expect(sut.release, 'release-args-config');
+      expect(sut.dist, 'dist-args-config');
       expect(
         sut.webBuildFilesFolder,
-        fixture.fs.path.join(sut.buildFilesFolder, 'web_build_path-env-config'),
+        fixture.fs.path.join(sut.buildFilesFolder, 'web_build_path-args-config'),
       );
-      expect(sut.commits, 'commits-env-config');
+      expect(sut.commits, 'commits-args-config');
       expect(sut.ignoreMissing, true);
     });
 
     test("takes values from file config", () {
-      final envConfig = ConfigurationValues();
+      final argsConfig = ConfigurationValues();
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
         name: 'name-file-config',
@@ -112,7 +112,7 @@ void main() {
         dist: 'dist-platformEnv-config',
       );
 
-      final sut = fixture.getSut(envConfig, fileConfig, platformEnvConfig);
+      final sut = fixture.getSut(argsConfig, fileConfig, platformEnvConfig);
 
       expect(sut.name, 'name-file-config');
       expect(sut.version, 'version-file-config');
