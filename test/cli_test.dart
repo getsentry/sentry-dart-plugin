@@ -16,7 +16,8 @@ void main() {
       final fs = MemoryFileSystem.test();
       injector.registerSingleton<FileSystem>(() => fs, override: true);
       final cliSetup = CLISetup(sources);
-      final file = await cliSetup.download(platform);
+      final file = await cliSetup.download(
+          platform, '.dart_tool/pub/bin/sentry_dart_plugin');
       final suffix = platform.name.startsWith('windows') ? '.exe' : '';
       expect(file, '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli$suffix');
       expect(fs.file(file).existsSync(), isTrue);
