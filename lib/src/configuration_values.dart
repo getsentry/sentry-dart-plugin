@@ -121,11 +121,11 @@ class ConfigurationValues {
     );
   }
 
-  factory ConfigurationValues.merged(
-    ConfigurationValues args,
-    ConfigurationValues file,
-    ConfigurationValues platformEnv,
-  ) {
+  factory ConfigurationValues.merged({
+    required ConfigurationValues args,
+    required ConfigurationValues file,
+    required ConfigurationValues platformEnv,
+  }) {
     return ConfigurationValues(
       version: args.version ?? file.version,
       name: args.name ?? file.name,

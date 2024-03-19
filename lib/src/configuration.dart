@@ -106,9 +106,9 @@ class Configuration {
     final pubspec = ConfigReader.getPubspec();
 
     final configValues = ConfigurationValues.merged(
-      argsConfig,
-      fileConfig,
-      platformEnvConfig,
+      args: argsConfig,
+      file: fileConfig,
+      platformEnv: platformEnvConfig,
     );
 
     release = configValues.release;
