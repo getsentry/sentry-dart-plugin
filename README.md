@@ -38,6 +38,11 @@ flutter packages pub run sentry_dart_plugin
 ## Configuration (Optional)
 
 This tool comes with a default configuration. You can configure it to suit your needs.
+By default the plugin will look for the Sentry configuration in the `pubspec.yaml` file.
+If the configuration doesn't exist, the plugin will look for a `sentry.properties` file.
+If the `sentry.properties` file doesn't exist, the plugin will look for environment variables.
+
+### pubspec.yaml
 
 Add `sentry:` configuration at the end of your `pubspec.yaml` file:
 
@@ -60,10 +65,31 @@ sentry:
 ```
 
 You can also override or extend your file based configuration by passing the parameters as arguments
-in the format `--sentry-define=<KEY>=<VALUE>`:
+in the format `--sentry-define=<KEY>=<VALUE>`.
 
 ```bash
 flutter packages pub run sentry_dart_plugin --sentry-define=release=app-internal-test@0.0.1
+```
+
+### sentry.properties
+
+Create a `sentry.properties` file at the root of your project:
+
+```properties
+upload_debug_symbols=true
+upload_source_maps=false
+upload_sources=false
+project=...
+org=...
+auth_token=...
+url=...
+wait_for_processing=false
+log_level=error # possible values: trace, debug, info, warn, error
+release=...
+dist=...
+web_build_path=...
+commits=auto
+ignore_missing=true
 ```
 
 ### Available Configuration Fields
