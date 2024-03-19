@@ -81,7 +81,10 @@ void main() {
       expect(sut.dist, 'dist-args-config');
       expect(
         sut.webBuildFilesFolder,
-        fixture.fs.path.join(sut.buildFilesFolder, 'web_build_path-args-config'),
+        fixture.fs.path.join(
+          sut.buildFilesFolder,
+          'web_build_path-args-config',
+        ),
       );
       expect(sut.commits, 'commits-args-config');
       expect(sut.ignoreMissing, true);
