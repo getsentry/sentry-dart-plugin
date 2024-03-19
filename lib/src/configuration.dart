@@ -6,6 +6,7 @@ import 'package:system_info2/system_info2.dart';
 
 import 'cli/host_platform.dart';
 import 'cli/setup.dart';
+import 'configuration_values.dart';
 import 'utils/config-reader/config_reader.dart';
 import 'utils/extensions.dart';
 import 'utils/injector.dart';
@@ -81,50 +82,58 @@ class Configuration {
   late bool ignoreMissing;
 
   /// Loads the configuration values
-  Future<void> getConfigValues(List<String> arguments) async {
+  Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
     await _findAndSetCliPath();
 
-    final reader = ConfigReader();
-    loadConfig(reader);
+    loadConfig(
+      argsConfig: ConfigurationValues.fromArguments(cliArguments),
+      fileConfig: ConfigurationValues.fromReader(ConfigReader()),
+      platformEnvConfig: ConfigurationValues.fromPlatformEnvironment(
+        Platform.environment,
+      ),
+    );
 
     Log.taskCompleted(taskName);
   }
 
-  void loadConfig(ConfigReader reader) {
-    final environments = Platform.environment;
+  void loadConfig({
+    required ConfigurationValues argsConfig,
+    required ConfigurationValues fileConfig,
+    required ConfigurationValues platformEnvConfig,
+  }) {
     final pubspec = ConfigReader.getPubspec();
 
-    release = reader.getString('release') ?? environments['SENTRY_RELEASE'];
-    dist = reader.getString('dist') ?? environments['SENTRY_DIST'];
-    version = pubspec['version'].toString();
-    name = pubspec['name'].toString();
+    final configValues = ConfigurationValues.merged(
+      args: argsConfig,
+      file: fileConfig,
+      platformEnv: platformEnvConfig,
+    );
 
-    uploadDebugSymbols = reader.getBool('upload_debug_symbols',
-            deprecatedKey: 'upload_native_symbols') ??
-        true;
-    uploadSourceMaps = reader.getBool('upload_source_maps') ?? false;
-    uploadSources = reader.getBool('upload_sources',
-            deprecatedKey: 'include_native_sources') ??
-        false;
-    commits = (reader.getString('commits') ?? 'auto').toString();
-    ignoreMissing = reader.getBool('ignore_missing') ?? false;
+    release = configValues.release;
+    dist = configValues.dist;
+    version = configValues.version ?? pubspec['version'].toString();
+    name = configValues.name ?? pubspec['name'].toString();
+    uploadDebugSymbols = configValues.uploadDebugSymbols ?? true;
+    uploadSourceMaps = configValues.uploadSourceMaps ?? false;
+    uploadSources = configValues.uploadSources ?? false;
+    commits = configValues.commits ?? 'auto';
+    ignoreMissing = configValues.ignoreMissing ?? false;
 
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.
     final webBuildPath =
-        reader.getString('web_build_path') ?? _fs.path.join('build', 'web');
+        configValues.webBuildPath ?? _fs.path.join('build', 'web');
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
 
-    project = reader.getString('project'); // or env. var. SENTRY_PROJECT
-    org = reader.getString('org'); // or env. var. SENTRY_ORG
-    waitForProcessing = reader.getBool('wait_for_processing') ?? false;
-    authToken =
-        reader.getString('auth_token'); // or env. var. SENTRY_AUTH_TOKEN
-    url = reader.getString('url'); // or env. var. SENTRY_URL
-    logLevel = reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
+    project = configValues.project; // or env. var. SENTRY_PROJECT
+    org = configValues.org; // or env. var. SENTRY_ORG
+    waitForProcessing = configValues.waitForProcessing ?? false;
+    authToken = configValues.authToken; // or env. var. SENTRY_AUTH_TOKEN
+    url = configValues.url; // or env. var. SENTRY_URL
+    logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
   }
 
   /// Validates the configuration values and log an error if required fields
