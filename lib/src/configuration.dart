@@ -130,7 +130,8 @@ class Configuration {
         reader.getString('auth_token'); // or env. var. SENTRY_AUTH_TOKEN
     url = reader.getString('url'); // or env. var. SENTRY_URL
     logLevel = reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
-    binDir = reader.getString('bin_dir') ?? '.dart_tool/pub/bin/sentry_dart_plugin';
+    binDir =
+        reader.getString('bin_dir') ?? '.dart_tool/pub/bin/sentry_dart_plugin';
   }
 
   /// Validates the configuration values and log an error if required fields
