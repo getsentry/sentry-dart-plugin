@@ -49,7 +49,7 @@ class ConfigurationValues {
       if (components[0] != "--sentry-define") {
         continue;
       }
-      sentryArguments[components[1]] = components[2];
+      sentryArguments[components[1]] = components.sublist(2).join('=');
     }
     boolFromString(String? value) {
       return value == "true"

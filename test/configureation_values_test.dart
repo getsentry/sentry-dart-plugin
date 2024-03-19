@@ -60,6 +60,16 @@ void main() {
       expect(sut.uploadSources, true);
     });
 
+    test("fromArguments correctly reads values containing '=' delimiter", () {
+      final arguments = [
+        "--sentry-define=version=fixture=version",
+        "--sentry-define=name=fixture=name",
+      ];
+      final sut = ConfigurationValues.fromArguments(arguments);
+      expect(sut.version, 'fixture=version');
+      expect(sut.name, 'fixture=name');
+    });
+
     test('from config reader', () {
       final config = '''
       name: fixture-name
