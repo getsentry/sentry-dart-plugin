@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add option to provide alternative binary directory ([#214](https://github.com/getsentry/sentry-dart-plugin/pull/214))
+
 ## 1.7.1
 
 ### Fixes
