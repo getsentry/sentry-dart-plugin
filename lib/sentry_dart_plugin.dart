@@ -209,7 +209,12 @@ class SentryDartPlugin {
       params.add(ext);
     }
 
-    if (release.contains('+')) {
+    final configDist = _configuration.dist ?? "";
+    if (configDist.isNotEmpty) {
+      // Don't mutate dist users provide through env or plugin config.
+      params.add('--dist');
+      params.add(configDist);
+    } else if (release.contains('+')) {
       params.add('--dist');
       final values = release.split('+');
       params.add(values.last);
@@ -217,13 +222,15 @@ class SentryDartPlugin {
   }
 
   String get _release {
+    final configRelease = _configuration.release ?? "";
+    if (configRelease.isNotEmpty) {
+      // Don't mutate release users provide through env or plugin config.
+      return configRelease;
+    }
+
     var release = '';
 
-    if (_configuration.release?.isNotEmpty ?? false) {
-      release = _configuration.release!;
-    } else {
-      release = _configuration.name;
-    }
+    release = _configuration.name;
 
     if (!release.contains('@')) {
       release += '@${_configuration.version}';
