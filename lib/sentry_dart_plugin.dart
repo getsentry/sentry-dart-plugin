@@ -211,6 +211,7 @@ class SentryDartPlugin {
 
     final configDist = _configuration.dist ?? "";
     if (configDist.isNotEmpty) {
+      // Don't mutate dist users provide through env or plugin config.
       params.add('--dist');
       params.add(configDist);
     } else if (release.contains('+')) {
@@ -221,9 +222,10 @@ class SentryDartPlugin {
   }
 
   String get _release {
-    final configurationRelease = _configuration.release ?? "";
-    if (configurationRelease.isNotEmpty) {
-      return configurationRelease;
+    final configRelease = _configuration.release ?? "";
+    if (configRelease.isNotEmpty) {
+      // Don't mutate release users provide through env or plugin config.
+      return configRelease;
     }
 
     var release = '';
