@@ -230,8 +230,15 @@ class SentryDartPlugin {
     }
 
     final dist = _dist;
-    if (!release.contains('+') && (dist?.isNotEmpty ?? false)) {
-      release += '+${dist!}';
+    if ((dist?.isNotEmpty ?? false)) {
+      if (!release.contains('+')) {
+        release += '+${dist!}';
+      } else {
+        final values = release.split('+');
+        if (values.length == 2) {
+          release = '${values.first}+${dist!}';
+        }
+      }
     }
     return release;
   }

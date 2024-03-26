@@ -138,21 +138,43 @@ void main() {
         });
 
         group('custom releases and dists', () {
-          test('custom release with a dist in it', () async {
+          test('release with build number (dist)', () async {
             final dist = 'myDist';
-            final customRelease = 'myRelease@myVersion+$dist';
+            final release = 'myRelease@myVersion+$dist';
 
             final commandLog = await runWith('''
       upload_debug_symbols: false
       upload_source_maps: true
-      release: $customRelease
-      dist: anotherDist
+      release: $release
+    ''');
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $release',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart --dist $dist',
+              '$cli $args releases $orgAndProject set-commits $release --auto',
+              '$cli $args releases $orgAndProject finalize $release'
+            ]);
+          });
+
+          test('custom release with a dist in it', () async {
+            final dist = 'myDist';
+            final release = 'myRelease@myVersion+$dist';
+
+            final customDist = 'anotherDist';
+            final customRelease = 'myRelease@myVersion+$customDist';
+
+            final commandLog = await runWith('''
+      upload_debug_symbols: false
+      upload_source_maps: true
+      release: $release
+      dist: $customDist
     ''');
             final args = commonArgs;
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $customRelease',
-              '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
-              '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
+              '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $customDist',
+              '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir --ext dart --dist $customDist',
               '$cli $args releases $orgAndProject set-commits $customRelease --auto',
               '$cli $args releases $orgAndProject finalize $customRelease'
             ]);
@@ -160,13 +182,13 @@ void main() {
 
           test('custom release with a custom dist', () async {
             final dist = 'myDist';
-            final customRelease = 'myRelease@myVersion';
-            final fullRelease = '$customRelease+$dist';
+            final release = 'myRelease@myVersion';
+            final fullRelease = '$release+$dist';
 
             final commandLog = await runWith('''
       upload_debug_symbols: false
       upload_source_maps: true
-      release: $customRelease
+      release: $release
       dist: $dist
     ''');
             final args = commonArgs;

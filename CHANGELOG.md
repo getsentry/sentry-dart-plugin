@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Custom `dist` overrides version build number ([#216](https://github.com/getsentry/sentry-dart-plugin/pull/216))
+
 ## 1.7.1
 
 ### Fixes
