@@ -5,7 +5,7 @@
 ### Features
 
 - Custom `dist` overrides version build number ([#216](https://github.com/getsentry/sentry-dart-plugin/pull/216))
-- Update config `release` and `dist` behaviour ([#217](https://github.com/getsentry/sentry-dart-plugin/pull/217))
+- Update env/config `release` and `dist` behaviour ([#217](https://github.com/getsentry/sentry-dart-plugin/pull/217))
   - This is a breaking change, please check if the `release` and `dist` values are as you expect them.
 
 ## 1.7.1
