@@ -54,7 +54,7 @@ class Configuration {
   /// If this field has a build number, it has precedence over the [version]'s buid number from pubspec
   late String? release;
 
-  /// The Apps dist/build number, defaults to the build number after the '+' char from [version]'s pubspec or ser via env. var. SENTRY_DIST
+  /// The Apps dist/build number, defaults to the build number after the '+' char from [version]'s pubspec. Override via env. var. SENTRY_DIST
   /// Example, version: 2.0.0+1, in this case the build number is 1
   late String? dist;
 
