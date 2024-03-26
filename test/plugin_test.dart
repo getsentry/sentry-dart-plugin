@@ -23,9 +23,10 @@ void main() {
 
   const cli = MockCLI.name;
   const orgAndProject = '--org o --project p';
+
   const project = 'project';
   const version = '1.1.0';
-  const release = '$project@$version';
+
   const buildDir = '/subdir';
 
   /// File types from which we can read configs.
@@ -67,13 +68,16 @@ void main() {
         }
 
         test('works with all configuration files', () async {
-          final commandLog = await runWith('''
-      upload_debug_symbols: true
-      upload_sources: true
-      upload_source_maps: true
-      log_level: debug
-      ignore_missing: true
-    ''');
+          final config = '''
+            upload_debug_symbols: true
+            upload_sources: true
+            upload_source_maps: true
+            log_level: debug
+            ignore_missing: true
+          ''';
+          final commandLog = await runWith(config);
+          const release = '$project@$version';
+
           final args = '$commonArgs --log-level debug';
           expect(commandLog, [
             '$cli $args debug-files upload $orgAndProject --include-sources $buildDir',
@@ -93,6 +97,8 @@ void main() {
 
         test('defaults', () async {
           final commandLog = await runWith('');
+          const release = '$project@$version';
+
           expect(commandLog, [
             '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
             '$cli $commonArgs releases $orgAndProject new $release',
@@ -117,6 +123,8 @@ void main() {
                   (value == null || value == 'auto' || value == 'true')
                       ? '--auto'
                       : '--commit $value';
+              const release = '$project@$version';
+
               expect(commandLog, [
                 '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
                 '$cli $commonArgs releases $orgAndProject new $release',
@@ -129,6 +137,8 @@ void main() {
           // if explicitly disabled
           test('false', () async {
             final commandLog = await runWith('commits: false');
+            const release = '$project@$version';
+
             expect(commandLog, [
               '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
               '$cli $commonArgs releases $orgAndProject new $release',
@@ -142,11 +152,13 @@ void main() {
             final dist = 'myDist';
             final release = 'myRelease@myVersion+$dist';
 
-            final commandLog = await runWith('''
-      upload_debug_symbols: false
-      upload_source_maps: true
-      release: $release
-    ''');
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              release: $release
+            ''';
+            final commandLog = await runWith(config);
+
             final args = commonArgs;
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $release',
@@ -164,12 +176,14 @@ void main() {
             final customDist = 'anotherDist';
             final customRelease = 'myRelease@myVersion+$customDist';
 
-            final commandLog = await runWith('''
-      upload_debug_symbols: false
-      upload_source_maps: true
-      release: $release
-      dist: $customDist
-    ''');
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              release: $release
+              dist: $customDist
+            ''';
+            final commandLog = await runWith(config);
+
             final args = commonArgs;
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $customRelease',
@@ -185,12 +199,14 @@ void main() {
             final release = 'myRelease@myVersion';
             final fullRelease = '$release+$dist';
 
-            final commandLog = await runWith('''
-      upload_debug_symbols: false
-      upload_source_maps: true
-      release: $release
-      dist: $dist
-    ''');
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              release: $release
+              dist: $dist
+            ''';
+            final commandLog = await runWith(config);
+
             final args = commonArgs;
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $fullRelease',
@@ -203,13 +219,16 @@ void main() {
 
           test('custom dist', () async {
             final dist = 'myDist';
+            const release = '$project@$version';
             final fullRelease = '$release+$dist';
 
-            final commandLog = await runWith('''
-      upload_debug_symbols: false
-      upload_source_maps: true
-      dist: $dist
-    ''');
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              dist: $dist
+            ''';
+            final commandLog = await runWith(config);
+
             final args = commonArgs;
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $fullRelease',
