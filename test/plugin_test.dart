@@ -138,6 +138,25 @@ void main() {
         });
 
         group('custom releases and dists', () {
+          test('release with build number (dist)', () async {
+            final dist = 'myDist';
+            final release = 'myRelease@myVersion+$dist';
+
+            final commandLog = await runWith('''
+      upload_debug_symbols: false
+      upload_source_maps: true
+      release: $release
+    ''');
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $release',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart --dist $dist',
+              '$cli $args releases $orgAndProject set-commits $release --auto',
+              '$cli $args releases $orgAndProject finalize $release'
+            ]);
+          });
+
           test('custom release with a dist in it', () async {
             final dist = 'myDist';
             final release = 'myRelease@myVersion+$dist';
