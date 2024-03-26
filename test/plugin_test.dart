@@ -258,7 +258,9 @@ void main() {
             ]);
           });
 
-          test('used from config and overriding build number from pubspec version', () async {
+          test(
+              'used from config and overriding build number from pubspec version',
+              () async {
             const version = '1.0.0';
             const versionWithBuild = '$version+1';
             final configDist = 'configDist';
@@ -304,7 +306,9 @@ void main() {
             ]);
           });
 
-          test('used from config but not replacing build/dist in config release', () async {
+          test(
+              'used from config but not replacing build/dist in config release',
+              () async {
             const version = '1.0.0';
             final configRelease = 'fixture-configRelease+configDist';
             final configDist = 'configDist';

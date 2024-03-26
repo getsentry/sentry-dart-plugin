@@ -221,7 +221,6 @@ class SentryDartPlugin {
   }
 
   String get _release {
-
     final configurationRelease = _configuration.release ?? "";
     if (configurationRelease.isNotEmpty) {
       return configurationRelease;
