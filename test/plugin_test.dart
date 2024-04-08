@@ -1,15 +1,14 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:file/file.dart';
 import 'package:file/memory.dart';
 import 'package:process/process.dart';
+import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 import 'package:sentry_dart_plugin/src/cli/host_platform.dart';
 import 'package:sentry_dart_plugin/src/cli/setup.dart';
-import 'package:test/test.dart';
-
-import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
+import 'package:test/test.dart';
 
 import 'utils/config_file_type.dart';
 import 'utils/config_formatter.dart';
@@ -348,6 +347,32 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $configRelease',
               '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
+              '$cli $args releases $orgAndProject set-commits $configRelease --auto',
+              '$cli $args releases $orgAndProject finalize $configRelease'
+            ]);
+          });
+
+          test(
+              'used from config but not replacing build/dist in config release',
+              () async {
+            const version = '1.0.0';
+            final configRelease = 'fixture-configRelease+configDist';
+            final configDist = 'configDist';
+
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              release: $configRelease
+              dist: $configDist
+              url_prefix: ~/app/
+            ''';
+            final commandLog = await runWith(version, config);
+
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $configRelease',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist --url-prefix ~/app/',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart --dist $configDist',
               '$cli $args releases $orgAndProject set-commits $configRelease --auto',
               '$cli $args releases $orgAndProject finalize $configRelease'
             ]);
