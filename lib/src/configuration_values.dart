@@ -12,6 +12,7 @@ class ConfigurationValues {
   final String? org;
   final String? authToken;
   final String? url;
+  final String? urlPrefix;
   final bool? waitForProcessing;
   final String? logLevel;
   final String? release;
@@ -35,6 +36,7 @@ class ConfigurationValues {
     this.org,
     this.authToken,
     this.url,
+    this.urlPrefix,
     this.waitForProcessing,
     this.logLevel,
     this.release,
@@ -85,6 +87,7 @@ class ConfigurationValues {
       org: sentryArguments['org'],
       authToken: sentryArguments['auth_token'],
       url: sentryArguments['url'],
+      urlPrefix: sentryArguments['url_prefix'],
       waitForProcessing: boolFromString(sentryArguments['wait_for_processing']),
       logLevel: sentryArguments['log_level'],
       release: sentryArguments['release'],
@@ -117,6 +120,7 @@ class ConfigurationValues {
       org: configReader.getString('org'),
       authToken: configReader.getString('auth_token'),
       url: configReader.getString('url'),
+      urlPrefix: configReader.getString('url_prefix'),
       waitForProcessing: configReader.getBool('wait_for_processing'),
       logLevel: configReader.getString('log_level'),
       release: configReader.getString('release'),
@@ -169,6 +173,7 @@ class ConfigurationValues {
       org: args.org ?? file.org,
       authToken: args.authToken ?? file.authToken,
       url: args.url ?? file.url,
+      urlPrefix: args.urlPrefix ?? file.urlPrefix,
       waitForProcessing: args.waitForProcessing ?? file.waitForProcessing,
       logLevel: args.logLevel ?? file.logLevel,
       release: platformEnv.release ?? args.release ?? file.release,

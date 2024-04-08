@@ -104,6 +104,7 @@ ignore_missing=true
 | org | Organization's slug | e.g. sentry-sdks (string) | yes | SENTRY_ORG |
 | auth_token | Auth Token | e.g. 64 random characteres (string)  | yes | SENTRY_AUTH_TOKEN |
 | url | URL | e.g. https<area>://mysentry.invalid/ (string)  | no | SENTRY_URL |
+| url_prefix           | URL prefix for JS source maps                             | e.g. https<area>://mysentry.invalid/ (string)  | no | -                                |
 | wait_for_processing | Wait for server-side processing of uploaded files | false (boolean)  | no | - |
 | log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
 | release | The release version for source maps, it should match the release set by the SDK | name@version from pubspec (string)  | no | SENTRY_RELEASE |
