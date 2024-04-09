@@ -96,8 +96,18 @@ class Configuration {
     final environments = Platform.environment;
     final pubspec = ConfigReader.getPubspec();
 
-    release = reader.getString('release') ?? environments['SENTRY_RELEASE'];
-    dist = reader.getString('dist') ?? environments['SENTRY_DIST'];
+    String? envRelease = environments['SENTRY_RELEASE'];
+    if (envRelease?.isEmpty ?? false) {
+      envRelease = null;
+    }
+
+    String? envDist = environments['SENTRY_DIST'];
+    if (envDist?.isEmpty ?? false) {
+      envDist = null;
+    }
+
+    release = envRelease ?? reader.getString('release');
+    dist = envDist ?? reader.getString('dist');
     version = pubspec['version'].toString();
     name = pubspec['name'].toString();
 
