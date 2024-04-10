@@ -103,6 +103,7 @@ ignore_missing=true
 | web_build_path | The web build folder | default: build/web (string)  | no | - |
 | commits | Release commits integration | default: auto | no | - |
 | ignore_missing | Ignore missing commits previously used in the release | default: false | no | - |
+| bin_dir | The folder where the plugin downloads the sentry-cli binary | .dart_tool/pub/bin/sentry_dart_plugin (string) | no | - |
 
 ## Release
 

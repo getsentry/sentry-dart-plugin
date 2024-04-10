@@ -80,14 +80,19 @@ class Configuration {
   /// https://docs.sentry.io/product/cli/releases/#dealing-with-missing-commits
   late bool ignoreMissing;
 
+  /// The directory where the sentry-cli binary is downloaded to. Defaults to
+  /// `.dart_tool/pub/bin/sentry_dart_plugin`.
+  late String binDir;
+
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> arguments) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
-    await _findAndSetCliPath();
 
     final reader = ConfigReader();
     loadConfig(reader);
+
+    await _findAndSetCliPath();
 
     Log.taskCompleted(taskName);
   }
@@ -135,6 +140,8 @@ class Configuration {
         reader.getString('auth_token'); // or env. var. SENTRY_AUTH_TOKEN
     url = reader.getString('url'); // or env. var. SENTRY_URL
     logLevel = reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
+    binDir =
+        reader.getString('bin_dir') ?? '.dart_tool/pub/bin/sentry_dart_plugin';
   }
 
   /// Validates the configuration values and log an error if required fields
@@ -208,7 +215,7 @@ class Configuration {
     }
 
     try {
-      cliPath = await injector.get<CLISetup>().download(platform);
+      cliPath = await injector.get<CLISetup>().download(platform, binDir);
     } on Exception catch (e) {
       Log.error("Failed to download Sentry CLI: $e");
       return _setPreInstalledCli();

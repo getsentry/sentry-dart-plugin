@@ -8,6 +8,7 @@
   - For instance, if the initial release version is `release@1.0.0+1`, specifying a custom dist value of 2 will update the version to `release@1.0.0+2`.
 - Update env/config `release` and `dist` behaviour ([#217](https://github.com/getsentry/sentry-dart-plugin/pull/217))
   - This is a breaking change, please check if the `release` and `dist` values are as you expect them.
+- Add option to provide alternative binary directory ([#214](https://github.com/getsentry/sentry-dart-plugin/pull/214))
 
 ## 1.7.1
 
