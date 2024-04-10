@@ -10,6 +10,12 @@
   - This is a breaking change, please check if the `release` and `dist` values are as you expect them.
 - Add option to provide alternative binary directory ([#214](https://github.com/getsentry/sentry-dart-plugin/pull/214))
 
+### Dependencies
+
+- Bump CLI from v2.27.0 to v2.31.0 ([#219](https://github.com/getsentry/sentry-dart-plugin/pull/219))
+  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2310)
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.27.0...2.31.0)
+
 ## 1.7.1
 
 ### Fixes
