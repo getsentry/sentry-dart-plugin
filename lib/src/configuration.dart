@@ -51,11 +51,11 @@ class Configuration {
   /// The Apps release name, defaults to 'name@version+buildNumber' from pubspec or set via env. var. SENTRY_RELEASE
   /// Example, name: 'my_app', version: 2.0.0+1, in this case the release is my_app@2.0.0+1
   /// This field has precedence over the [name] from pubspec
-  /// If this field has a build number, it has precedence over the [version]'s buid number from pubspec
+  /// If this field has a build number, it has precedence over the [version]'s build number from pubspec
   late String? release;
 
-  /// The Apps dist/build number, defaults to the build number after the '+' char from [version]'s pubspec or ser via env. var. SENTRY_DIST
-  /// Example, version: 2.0.0+1, in this case the build number is 1
+  /// The Apps dist/build number, taken from pubspec dist or SENTRY_DIST env. variable
+  /// If provided, it will override the build number from [version]
   late String? dist;
 
   /// The Apps version, defaults to [version] from pubspec
@@ -101,8 +101,18 @@ class Configuration {
     final environments = Platform.environment;
     final pubspec = ConfigReader.getPubspec();
 
-    release = reader.getString('release') ?? environments['SENTRY_RELEASE'];
-    dist = reader.getString('dist') ?? environments['SENTRY_DIST'];
+    String? envRelease = environments['SENTRY_RELEASE'];
+    if (envRelease?.isEmpty ?? false) {
+      envRelease = null;
+    }
+
+    String? envDist = environments['SENTRY_DIST'];
+    if (envDist?.isEmpty ?? false) {
+      envDist = null;
+    }
+
+    release = envRelease ?? reader.getString('release');
+    dist = envDist ?? reader.getString('dist');
     version = pubspec['version'].toString();
     name = pubspec['name'].toString();
 
