@@ -6,6 +6,7 @@ import 'package:system_info2/system_info2.dart';
 
 import 'cli/host_platform.dart';
 import 'cli/setup.dart';
+import 'configuration_values.dart';
 import 'utils/config-reader/config_reader.dart';
 import 'utils/extensions.dart';
 import 'utils/injector.dart';
@@ -48,13 +49,13 @@ class Configuration {
   // the Sentry CLI path, defaults to the assets folder
   late String? cliPath;
 
-  /// The Apps release name, defaults to 'name@version+buildNumber' from pubspec or set via env. var. SENTRY_RELEASE
+  /// The Apps release name, defaults to 'name@version+buildNumber' from SENTRY_RELEASE env. variable, arguments or pubspec.
   /// Example, name: 'my_app', version: 2.0.0+1, in this case the release is my_app@2.0.0+1
   /// This field has precedence over the [name] from pubspec
   /// If this field has a build number, it has precedence over the [version]'s build number from pubspec
   late String? release;
 
-  /// The Apps dist/build number, taken from pubspec dist or SENTRY_DIST env. variable
+  /// The Apps dist/build number, taken from SENTRY_DIST env. variable, arguments or pubspec.
   /// If provided, it will override the build number from [version]
   late String? dist;
 
@@ -85,63 +86,60 @@ class Configuration {
   late String binDir;
 
   /// Loads the configuration values
-  Future<void> getConfigValues(List<String> arguments) async {
+  Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
 
-    final reader = ConfigReader();
-    loadConfig(reader);
+    loadConfig(
+      argsConfig: ConfigurationValues.fromArguments(cliArguments),
+      fileConfig: ConfigurationValues.fromReader(ConfigReader()),
+      platformEnvConfig: ConfigurationValues.fromPlatformEnvironment(
+        Platform.environment,
+      ),
+    );
 
     await _findAndSetCliPath();
 
     Log.taskCompleted(taskName);
   }
 
-  void loadConfig(ConfigReader reader) {
-    final environments = Platform.environment;
+  void loadConfig({
+    required ConfigurationValues platformEnvConfig,
+    required ConfigurationValues argsConfig,
+    required ConfigurationValues fileConfig,
+  }) {
     final pubspec = ConfigReader.getPubspec();
 
-    String? envRelease = environments['SENTRY_RELEASE'];
-    if (envRelease?.isEmpty ?? false) {
-      envRelease = null;
-    }
+    final configValues = ConfigurationValues.merged(
+      args: argsConfig,
+      file: fileConfig,
+      platformEnv: platformEnvConfig,
+    );
 
-    String? envDist = environments['SENTRY_DIST'];
-    if (envDist?.isEmpty ?? false) {
-      envDist = null;
-    }
-
-    release = envRelease ?? reader.getString('release');
-    dist = envDist ?? reader.getString('dist');
-    version = pubspec['version'].toString();
-    name = pubspec['name'].toString();
-
-    uploadDebugSymbols = reader.getBool('upload_debug_symbols',
-            deprecatedKey: 'upload_native_symbols') ??
-        true;
-    uploadSourceMaps = reader.getBool('upload_source_maps') ?? false;
-    uploadSources = reader.getBool('upload_sources',
-            deprecatedKey: 'include_native_sources') ??
-        false;
-    commits = (reader.getString('commits') ?? 'auto').toString();
-    ignoreMissing = reader.getBool('ignore_missing') ?? false;
+    release = configValues.release;
+    dist = configValues.dist;
+    version = configValues.version ?? pubspec['version'].toString();
+    name = configValues.name ?? pubspec['name'].toString();
+    uploadDebugSymbols = configValues.uploadDebugSymbols ?? true;
+    uploadSourceMaps = configValues.uploadSourceMaps ?? false;
+    uploadSources = configValues.uploadSources ?? false;
+    commits = configValues.commits ?? 'auto';
+    ignoreMissing = configValues.ignoreMissing ?? false;
 
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.
     final webBuildPath =
-        reader.getString('web_build_path') ?? _fs.path.join('build', 'web');
+        configValues.webBuildPath ?? _fs.path.join('build', 'web');
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
 
-    project = reader.getString('project'); // or env. var. SENTRY_PROJECT
-    org = reader.getString('org'); // or env. var. SENTRY_ORG
-    waitForProcessing = reader.getBool('wait_for_processing') ?? false;
-    authToken =
-        reader.getString('auth_token'); // or env. var. SENTRY_AUTH_TOKEN
-    url = reader.getString('url'); // or env. var. SENTRY_URL
-    logLevel = reader.getString('log_level'); // or env. var. SENTRY_LOG_LEVEL
-    binDir =
-        reader.getString('bin_dir') ?? '.dart_tool/pub/bin/sentry_dart_plugin';
+    project = configValues.project; // or env. var. SENTRY_PROJECT
+    org = configValues.org; // or env. var. SENTRY_ORG
+    waitForProcessing = configValues.waitForProcessing ?? false;
+    authToken = configValues.authToken; // or env. var. SENTRY_AUTH_TOKEN
+    url = configValues.url; // or env. var. SENTRY_URL
+    logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
+    binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
   }
 
   /// Validates the configuration values and log an error if required fields

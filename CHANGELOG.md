@@ -9,6 +9,7 @@
 - Update env/config `release` and `dist` behaviour ([#217](https://github.com/getsentry/sentry-dart-plugin/pull/217))
   - This is a breaking change, please check if the `release` and `dist` values are as you expect them.
 - Add option to provide alternative binary directory ([#214](https://github.com/getsentry/sentry-dart-plugin/pull/214))
+- Support configuration arguments via `--sentry-define` ([#198](https://github.com/getsentry/sentry-dart-plugin/pull/198))
 
 ### Dependencies
 

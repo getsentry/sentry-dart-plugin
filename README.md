@@ -64,6 +64,14 @@ sentry:
   ignore_missing: true
 ```
 
+You can also override or extend your file based configuration by passing the parameters as arguments
+in the format `--sentry-define=<KEY>=<VALUE>`. They take precedence over your file based parameters,
+but not over the alternative environment variables.
+
+```bash
+flutter packages pub run sentry_dart_plugin --sentry-define=release=app-internal-test@0.0.1
+```
+
 ### sentry.properties
 
 Create a `sentry.properties` file at the root of your project:
