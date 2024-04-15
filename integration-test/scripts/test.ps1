@@ -112,11 +112,10 @@ function CheckSymbolServerOutput([string] $symbolServerOutput)
             "libswiftos.dylib"
         )
     }
-# TODO: Enable again when https://github.com/getsentry/sentry-dart-plugin/issues/161 is fixed
-#    if ($IsLinux)
-#    {
-#        $expectedFiles += "app.so"
-#    }
+    if ($IsLinux)
+    {
+        $expectedFiles += "app.so"
+    }
 
     Write-Host 'Verifying debug symbol upload...'
     $successful = $true
