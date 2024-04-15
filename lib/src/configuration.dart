@@ -187,50 +187,57 @@ class Configuration {
   }
 
   Future<void> _findAndSetCliPath() async {
-    HostPlatform? platform;
-    if (Platform.isMacOS) {
-      platform = HostPlatform.darwinUniversal;
-    } else if (Platform.isWindows) {
-      platform = SysInfo.kernelBitness == 32
-          ? HostPlatform.windows32bit
-          : HostPlatform.windows64bit;
-    } else if (Platform.isLinux) {
-      switch (SysInfo.kernelArchitecture.name.toLowerCase()) {
-        case 'arm':
-        case 'armv6':
-        case 'armv7':
-          platform = HostPlatform.linuxArmv7;
-          break;
-        case 'aarch64':
-          platform = HostPlatform.linuxAarch64;
-          break;
-        case 'amd64':
-        case 'x86_64':
-          platform = HostPlatform.linux64bit;
-          break;
+    final binPath = this.binPath;
+    if (binPath != null && binPath.isNotEmpty) {
+      cliPath = binPath;
+    } else {
+      HostPlatform? platform;
+      if (Platform.isMacOS) {
+        platform = HostPlatform.darwinUniversal;
+      } else if (Platform.isWindows) {
+        platform = SysInfo.kernelBitness == 32
+            ? HostPlatform.windows32bit
+            : HostPlatform.windows64bit;
+      } else if (Platform.isLinux) {
+        switch (SysInfo.kernelArchitecture.name.toLowerCase()) {
+          case 'arm':
+          case 'armv6':
+          case 'armv7':
+            platform = HostPlatform.linuxArmv7;
+            break;
+          case 'aarch64':
+            platform = HostPlatform.linuxAarch64;
+            break;
+          case 'amd64':
+          case 'x86_64':
+            platform = HostPlatform.linux64bit;
+            break;
+        }
       }
-    }
 
-    if (platform == null) {
-      Log.error(
-          'Host platform not supported - cannot download Sentry CLI for ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
-      return _setPreInstalledCli();
-    }
-
-    try {
-      cliPath = await injector.get<CLISetup>().download(platform, binDir);
-    } on Exception catch (e) {
-      Log.error("Failed to download Sentry CLI: $e");
-      return _setPreInstalledCli();
-    }
-
-    if (!Platform.isWindows) {
-      final result =
-          await injector.get<ProcessManager>().run(['chmod', '+x', cliPath!]);
-      if (result.exitCode != 0) {
+      if (platform == null) {
         Log.error(
-            "Failed to make downloaded Sentry CLI executable: ${result.stdout}\n${result.stderr}");
+            'Host platform not supported - cannot download Sentry CLI for ${Platform
+                .operatingSystem} ${SysInfo.kernelArchitecture}');
         return _setPreInstalledCli();
+      }
+
+      try {
+        cliPath = await injector.get<CLISetup>().download(platform, binDir);
+      } on Exception catch (e) {
+        Log.error("Failed to download Sentry CLI: $e");
+        return _setPreInstalledCli();
+      }
+
+      if (!Platform.isWindows) {
+        final result =
+        await injector.get<ProcessManager>().run(['chmod', '+x', cliPath!]);
+        if (result.exitCode != 0) {
+          Log.error(
+              "Failed to make downloaded Sentry CLI executable: ${result
+                  .stdout}\n${result.stderr}");
+          return _setPreInstalledCli();
+        }
       }
     }
   }
