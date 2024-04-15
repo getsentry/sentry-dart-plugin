@@ -49,7 +49,7 @@ class Configuration {
   // the Sentry CLI path, defaults to the assets folder
   late String? cliPath;
 
-  /// The Apps release name, defaults to 'name@version+buildNumber' from pubspec or set via env. var. SENTRY_RELEASE
+  /// The Apps release name, defaults to 'name@version+buildNumber' from SENTRY_RELEASE env. variable, arguments or pubspec.
   /// Example, name: 'my_app', version: 2.0.0+1, in this case the release is my_app@2.0.0+1
   /// This field has precedence over the [name] from pubspec
   /// If this field has a build number, it has precedence over the [version]'s build number from pubspec
