@@ -52,11 +52,11 @@ class Configuration {
   /// The Apps release name, defaults to 'name@version+buildNumber' from pubspec or set via env. var. SENTRY_RELEASE
   /// Example, name: 'my_app', version: 2.0.0+1, in this case the release is my_app@2.0.0+1
   /// This field has precedence over the [name] from pubspec
-  /// If this field has a build number, it has precedence over the [version]'s buid number from pubspec
+  /// If this field has a build number, it has precedence over the [version]'s build number from pubspec
   late String? release;
 
-  /// The Apps dist/build number, defaults to the build number after the '+' char from [version]'s pubspec or ser via env. var. SENTRY_DIST
-  /// Example, version: 2.0.0+1, in this case the build number is 1
+  /// The Apps dist/build number, taken from pubspec dist or SENTRY_DIST env. variable
+  /// If provided, it will override the build number from [version]
   late String? dist;
 
   /// The Apps version, defaults to [version] from pubspec
@@ -81,11 +81,14 @@ class Configuration {
   /// https://docs.sentry.io/product/cli/releases/#dealing-with-missing-commits
   late bool ignoreMissing;
 
+  /// The directory where the sentry-cli binary is downloaded to. Defaults to
+  /// `.dart_tool/pub/bin/sentry_dart_plugin`.
+  late String binDir;
+
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
-    await _findAndSetCliPath();
 
     loadConfig(
       argsConfig: ConfigurationValues.fromArguments(cliArguments),
@@ -95,13 +98,15 @@ class Configuration {
       ),
     );
 
+    await _findAndSetCliPath();
+
     Log.taskCompleted(taskName);
   }
 
   void loadConfig({
+    required ConfigurationValues platformEnvConfig,
     required ConfigurationValues argsConfig,
     required ConfigurationValues fileConfig,
-    required ConfigurationValues platformEnvConfig,
   }) {
     final pubspec = ConfigReader.getPubspec();
 
@@ -134,6 +139,7 @@ class Configuration {
     authToken = configValues.authToken; // or env. var. SENTRY_AUTH_TOKEN
     url = configValues.url; // or env. var. SENTRY_URL
     logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
+    binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
   }
 
   /// Validates the configuration values and log an error if required fields
@@ -207,7 +213,7 @@ class Configuration {
     }
 
     try {
-      cliPath = await injector.get<CLISetup>().download(platform);
+      cliPath = await injector.get<CLISetup>().download(platform, binDir);
     } on Exception catch (e) {
       Log.error("Failed to download Sentry CLI: $e");
       return _setPreInstalledCli();

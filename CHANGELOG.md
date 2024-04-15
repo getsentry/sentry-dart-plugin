@@ -4,7 +4,18 @@
 
 ### Features
 
+- Custom `dist` overrides version build number ([#216](https://github.com/getsentry/sentry-dart-plugin/pull/216))
+  - For instance, if the initial release version is `release@1.0.0+1`, specifying a custom dist value of 2 will update the version to `release@1.0.0+2`.
+- Update env/config `release` and `dist` behaviour ([#217](https://github.com/getsentry/sentry-dart-plugin/pull/217))
+  - This is a breaking change, please check if the `release` and `dist` values are as you expect them.
+- Add option to provide alternative binary directory ([#214](https://github.com/getsentry/sentry-dart-plugin/pull/214))
 - Support configuration arguments via `--sentry-define` ([#198](https://github.com/getsentry/sentry-dart-plugin/pull/198))
+
+### Dependencies
+
+- Bump CLI from v2.27.0 to v2.31.0 ([#219](https://github.com/getsentry/sentry-dart-plugin/pull/219))
+  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2310)
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.27.0...2.31.0)
 
 ## 1.7.1
 

@@ -110,6 +110,16 @@ ignore_missing=true
 | web_build_path | The web build folder | default: build/web (string)  | no | - |
 | commits | Release commits integration | default: auto | no | - |
 | ignore_missing | Ignore missing commits previously used in the release | default: false | no | - |
+| bin_dir | The folder where the plugin downloads the sentry-cli binary | .dart_tool/pub/bin/sentry_dart_plugin (string) | no | - |
+
+## Release
+
+Per default, the release is build from pubspec.yaml's name, version & build: `name@version+build`. The build number, if present, is used as the `dist` parameter.
+
+You can override these values by providing a `release` and `dist` through the plugin config, or through environmental values. The latter have precedence over the former.
+A custom `dist` value will also be used as the build number.
+
+If provided, the plugin will take your `release` and `dist` values without further mutating them. Make sure you configure everything as outlined in the [release docs](https://docs.sentry.io/product/cli/releases/) of `sentry-cli`.
 
 ## Troubleshooting
 

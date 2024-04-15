@@ -23,9 +23,7 @@ void main() {
 
   const cli = MockCLI.name;
   const orgAndProject = '--org o --project p';
-  const project = 'project';
-  const version = '1.1.0';
-  const release = '$project@$version';
+  const name = 'name';
   const buildDir = '/subdir';
 
   /// File types from which we can read configs.
@@ -42,7 +40,7 @@ void main() {
     fs.currentDirectory = fs.directory(buildDir)..createSync();
     injector.registerSingleton<FileSystem>(() => fs, override: true);
     injector.registerSingleton<CLISetup>(() => MockCLI(), override: true);
-    configWriter = ConfigWriter(fs, project, version);
+    configWriter = ConfigWriter(fs, name);
   });
 
   for (final url in const ['http://127.0.0.1', null]) {
@@ -55,10 +53,10 @@ void main() {
           '$cli help'
         ];
 
-        Future<Iterable<String>> runWith(String config) async {
+        Future<Iterable<String>> runWith(String version, String config) async {
           final formattedConfig =
               ConfigFormatter.formatConfig(config, fileType, url);
-          configWriter.write(fileType, formattedConfig);
+          configWriter.write(version, fileType, formattedConfig);
 
           final exitCode = await plugin.run([]);
           expect(exitCode, 0);
@@ -67,13 +65,17 @@ void main() {
         }
 
         test('works with all configuration files', () async {
-          final commandLog = await runWith('''
-      upload_debug_symbols: true
-      upload_sources: true
-      upload_source_maps: true
-      log_level: debug
-      ignore_missing: true
-    ''');
+          const version = '1.0.0';
+          final config = '''
+            upload_debug_symbols: true
+            upload_sources: true
+            upload_source_maps: true
+            log_level: debug
+            ignore_missing: true
+          ''';
+          final commandLog = await runWith(version, config);
+          const release = '$name@$version';
+
           final args = '$commonArgs --log-level debug';
           expect(commandLog, [
             '$cli $args debug-files upload $orgAndProject --include-sources $buildDir',
@@ -92,7 +94,10 @@ void main() {
         });
 
         test('defaults', () async {
-          final commandLog = await runWith('');
+          const version = '1.0.0';
+          final commandLog = await runWith(version, '');
+          const release = '$name@$version';
+
           expect(commandLog, [
             '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
             '$cli $commonArgs releases $orgAndProject new $release',
@@ -111,12 +116,16 @@ void main() {
             'repo_name@293ea41d67225d27a8c212f901637e771d73c0f7..1e248e5e6c24b79a5c46a2e8be12cef0e41bd58d',
           ]) {
             test(value, () async {
-              final commandLog =
-                  await runWith(value == null ? '' : 'commits: $value');
+              const version = '1.0.0';
+              final config = value == null ? '' : 'commits: $value';
+              final commandLog = await runWith(version, config);
               final expectedArgs =
                   (value == null || value == 'auto' || value == 'true')
                       ? '--auto'
                       : '--commit $value';
+
+              const release = '$name@$version';
+
               expect(commandLog, [
                 '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
                 '$cli $commonArgs releases $orgAndProject new $release',
@@ -128,7 +137,10 @@ void main() {
 
           // if explicitly disabled
           test('false', () async {
-            final commandLog = await runWith('commits: false');
+            const version = '1.0.0';
+            final commandLog = await runWith(version, 'commits: false');
+            const release = '$name@$version';
+
             expect(commandLog, [
               '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
               '$cli $commonArgs releases $orgAndProject new $release',
@@ -137,64 +149,185 @@ void main() {
           });
         });
 
-        group('custom releases and dists', () {
-          test('custom release with a dist in it', () async {
-            final dist = 'myDist';
-            final customRelease = 'myRelease@myVersion+$dist';
+        group('release', () {
+          test('default from name and version', () async {
+            const version = '1.0.0';
+            final release = '$name@$version';
 
-            final commandLog = await runWith('''
-      upload_debug_symbols: false
-      upload_source_maps: true
-      release: $customRelease
-      dist: anotherDist
-    ''');
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+            ''';
+            final commandLog = await runWith(version, config);
+
             final args = commonArgs;
             expect(commandLog, [
-              '$cli $args releases $orgAndProject new $customRelease',
-              '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
-              '$cli $args releases $orgAndProject files $customRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
-              '$cli $args releases $orgAndProject set-commits $customRelease --auto',
-              '$cli $args releases $orgAndProject finalize $customRelease'
+              '$cli $args releases $orgAndProject new $release',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
+              '$cli $args releases $orgAndProject set-commits $release --auto',
+              '$cli $args releases $orgAndProject finalize $release'
             ]);
           });
 
-          test('custom release with a custom dist', () async {
-            final dist = 'myDist';
-            final customRelease = 'myRelease@myVersion';
-            final fullRelease = '$customRelease+$dist';
+          test('release from config overrides default', () async {
+            const version = '1.0.0';
+            final configRelease = 'fixture-configRelease';
 
-            final commandLog = await runWith('''
-      upload_debug_symbols: false
-      upload_source_maps: true
-      release: $customRelease
-      dist: $dist
-    ''');
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              release: $configRelease
+            ''';
+            final commandLog = await runWith(version, config);
+
             final args = commonArgs;
             expect(commandLog, [
-              '$cli $args releases $orgAndProject new $fullRelease',
-              '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
-              '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
-              '$cli $args releases $orgAndProject set-commits $fullRelease --auto',
-              '$cli $args releases $orgAndProject finalize $fullRelease'
+              '$cli $args releases $orgAndProject new $configRelease',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart',
+              '$cli $args releases $orgAndProject set-commits $configRelease --auto',
+              '$cli $args releases $orgAndProject finalize $configRelease'
+            ]);
+          });
+        });
+
+        group('dist', () {
+          test('read from pubspec version', () async {
+            const build = '1';
+            const versionWithBuild = '1.0.0+$build';
+            final release = '$name@$versionWithBuild';
+
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+            ''';
+            final commandLog = await runWith(versionWithBuild, config);
+
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $release',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $build',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart --dist $build',
+              '$cli $args releases $orgAndProject set-commits $release --auto',
+              '$cli $args releases $orgAndProject finalize $release'
             ]);
           });
 
-          test('custom dist', () async {
-            final dist = 'myDist';
-            final fullRelease = '$release+$dist';
+          test('read from config release', () async {
+            const version = '1.0.0';
+            const build = '1';
+            final configRelease = 'custom+$build';
 
-            final commandLog = await runWith('''
-      upload_debug_symbols: false
-      upload_source_maps: true
-      dist: $dist
-    ''');
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              release: $configRelease
+            ''';
+            final commandLog = await runWith(version, config);
+
             final args = commonArgs;
             expect(commandLog, [
-              '$cli $args releases $orgAndProject new $fullRelease',
-              '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $dist',
-              '$cli $args releases $orgAndProject files $fullRelease upload-sourcemaps $buildDir --ext dart --dist $dist',
-              '$cli $args releases $orgAndProject set-commits $fullRelease --auto',
-              '$cli $args releases $orgAndProject finalize $fullRelease'
+              '$cli $args releases $orgAndProject new $configRelease',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $build',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart --dist $build',
+              '$cli $args releases $orgAndProject set-commits $configRelease --auto',
+              '$cli $args releases $orgAndProject finalize $configRelease'
+            ]);
+          });
+
+          test('used from config and appended to release', () async {
+            const version = '1.0.0';
+            final configDist = 'configDist';
+            final release = '$name@$version+$configDist';
+
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              dist: $configDist
+            ''';
+            final commandLog = await runWith(version, config);
+
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $release',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart --dist $configDist',
+              '$cli $args releases $orgAndProject set-commits $release --auto',
+              '$cli $args releases $orgAndProject finalize $release'
+            ]);
+          });
+
+          test(
+              'used from config and overriding build number from pubspec version',
+              () async {
+            const version = '1.0.0';
+            const versionWithBuild = '$version+1';
+            final configDist = 'configDist';
+            final release = '$name@$version+$configDist';
+
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              dist: $configDist
+            ''';
+            final commandLog = await runWith(versionWithBuild, config);
+
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $release',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
+              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart --dist $configDist',
+              '$cli $args releases $orgAndProject set-commits $release --auto',
+              '$cli $args releases $orgAndProject finalize $release'
+            ]);
+          });
+
+          test('used from config but not appended to config release', () async {
+            const version = '1.0.0';
+            final configRelease = 'fixture-configRelease';
+            final configDist = 'configDist';
+
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              release: $configRelease
+              dist: $configDist
+            ''';
+            final commandLog = await runWith(version, config);
+
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $configRelease',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart --dist $configDist',
+              '$cli $args releases $orgAndProject set-commits $configRelease --auto',
+              '$cli $args releases $orgAndProject finalize $configRelease'
+            ]);
+          });
+
+          test(
+              'used from config but not replacing build/dist in config release',
+              () async {
+            const version = '1.0.0';
+            final configRelease = 'fixture-configRelease+configDist';
+            final configDist = 'configDist';
+
+            final config = '''
+              upload_debug_symbols: false
+              upload_source_maps: true
+              release: $configRelease
+              dist: $configDist
+            ''';
+            final commandLog = await runWith(version, config);
+
+            final args = commonArgs;
+            expect(commandLog, [
+              '$cli $args releases $orgAndProject new $configRelease',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart --dist $configDist',
+              '$cli $args releases $orgAndProject set-commits $configRelease --auto',
+              '$cli $args releases $orgAndProject finalize $configRelease'
             ]);
           });
         });
@@ -273,5 +406,6 @@ class MockCLI implements CLISetup {
   static const name = 'mock-cli';
 
   @override
-  Future<String> download(HostPlatform platform) => Future.value(name);
+  Future<String> download(HostPlatform platform, String directory) =>
+      Future.value(name);
 }

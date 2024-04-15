@@ -5,11 +5,10 @@ import 'config_file_type.dart';
 class ConfigWriter {
   final FileSystem fs;
   final String name;
-  final String version;
 
-  ConfigWriter(this.fs, this.name, this.version);
+  ConfigWriter(this.fs, this.name);
 
-  void write(ConfigFileType configFile, String config) {
+  void write(String version, ConfigFileType configFile, String config) {
     // Write the basic options to pubspec.yaml which is needed for all configs
     fs.file('pubspec.yaml').writeAsStringSync('''
 name: $name
