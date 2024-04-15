@@ -441,5 +441,5 @@ class MockCLI implements CLISetup {
       Future.value(name);
 
   @override
-  Future<bool> check(CLISource source, File file) => Future.value(true);
+  Future<void> check(HostPlatform platform, String path) => Future.value();
 }
