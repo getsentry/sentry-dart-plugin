@@ -20,9 +20,34 @@ void main() {
       fixture = Fixture(fs);
     });
 
+    test("takes values from platform env config", () {
+      final platformEnvConfig = ConfigurationValues(
+        release: 'release-platformEnv-config',
+        dist: 'dist-platformEnv-config',
+      );
+      final argsConfig = ConfigurationValues(
+        release: 'release-args-config',
+        dist: 'dist-args-config',
+      );
+      final fileConfig = ConfigurationValues(
+        release: 'release-file-config',
+        dist: 'dist-file-config',
+      );
+
+      final sut = fixture.getSut(
+        platformEnvConfig: platformEnvConfig,
+        argsConfig: argsConfig,
+        fileConfig: fileConfig,
+      );
+
+      expect(sut.release, 'release-platformEnv-config');
+      expect(sut.dist, 'dist-platformEnv-config');
+    });
+
     // env config
 
     test("takes values from args config", () {
+      final platformEnvConfig = ConfigurationValues();
       final argsConfig = ConfigurationValues(
         version: 'version-args-config',
         name: 'name-args-config',
@@ -59,12 +84,12 @@ void main() {
         commits: 'commits-file-config',
         ignoreMissing: false,
       );
-      final platformEnvConfig = ConfigurationValues(
-        release: 'release-platformEnv-config',
-        dist: 'dist-platformEnv-config',
-      );
 
-      final sut = fixture.getSut(argsConfig, fileConfig, platformEnvConfig);
+      final sut = fixture.getSut(
+        platformEnvConfig: platformEnvConfig,
+        argsConfig: argsConfig,
+        fileConfig: fileConfig,
+      );
 
       expect(sut.name, 'name-args-config');
       expect(sut.version, 'version-args-config');
@@ -91,6 +116,7 @@ void main() {
     });
 
     test("takes values from file config", () {
+      final platformEnvConfig = ConfigurationValues();
       final argsConfig = ConfigurationValues();
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
@@ -110,12 +136,12 @@ void main() {
         commits: 'commits-file-config',
         ignoreMissing: true,
       );
-      final platformEnvConfig = ConfigurationValues(
-        release: 'release-platformEnv-config',
-        dist: 'dist-platformEnv-config',
-      );
 
-      final sut = fixture.getSut(argsConfig, fileConfig, platformEnvConfig);
+      final sut = fixture.getSut(
+        argsConfig: argsConfig,
+        fileConfig: fileConfig,
+        platformEnvConfig: platformEnvConfig,
+      );
 
       expect(sut.name, 'name-file-config');
       expect(sut.version, 'version-file-config');
@@ -139,26 +165,16 @@ void main() {
       expect(sut.ignoreMissing, true);
     });
 
-    test("takes values from platform env config", () {
-      final envConfig = ConfigurationValues();
-      final fileConfig = ConfigurationValues();
-      final platformEnvConfig = ConfigurationValues(
-        release: 'release-platformEnv-config',
-        dist: 'dist-platformEnv-config',
-      );
-
-      final sut = fixture.getSut(envConfig, fileConfig, platformEnvConfig);
-
-      expect(sut.release, 'release-platformEnv-config');
-      expect(sut.dist, 'dist-platformEnv-config');
-    });
-
     test("falls back to default values", () {
       final envConfig = ConfigurationValues();
       final fileConfig = ConfigurationValues();
       final platformEnvConfig = ConfigurationValues();
 
-      final sut = fixture.getSut(envConfig, fileConfig, platformEnvConfig);
+      final sut = fixture.getSut(
+        argsConfig: envConfig,
+        fileConfig: fileConfig,
+        platformEnvConfig: platformEnvConfig,
+      );
 
       expect(sut.name, 'name-pubspec-config');
       expect(sut.version, 'version-pubspec-config');
@@ -181,11 +197,11 @@ class Fixture {
 
   FileSystem fs;
 
-  Configuration getSut(
-    ConfigurationValues envConfig,
-    ConfigurationValues fileConfig,
-    ConfigurationValues platformEnvConfig,
-  ) {
+  Configuration getSut({
+    required ConfigurationValues platformEnvConfig,
+    required ConfigurationValues argsConfig,
+    required ConfigurationValues fileConfig,
+  }) {
     final pubspecConfig = ConfigFormatter.formatConfig(
       '',
       ConfigFileType.pubspecYaml,
@@ -194,15 +210,15 @@ class Fixture {
     final writer = ConfigWriter(
       fs,
       'name-pubspec-config',
-      'version-pubspec-config',
     );
-    writer.write(ConfigFileType.pubspecYaml, pubspecConfig);
+    writer.write(
+        'version-pubspec-config', ConfigFileType.pubspecYaml, pubspecConfig);
 
     final configuration = Configuration();
     configuration.loadConfig(
-      argsConfig: envConfig,
-      fileConfig: fileConfig,
       platformEnvConfig: platformEnvConfig,
+      argsConfig: argsConfig,
+      fileConfig: fileConfig,
     );
     return configuration;
   }

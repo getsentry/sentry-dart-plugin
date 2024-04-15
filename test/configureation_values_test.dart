@@ -30,6 +30,7 @@ void main() {
         "--sentry-define=web_build_path=fixture-web_build_path",
         "--sentry-define=commits=fixture-commits",
         "--sentry-define=ignore_missing=true",
+        "--sentry-define=bin_dir=fixture-bin_dir",
       ];
       final sut = ConfigurationValues.fromArguments(arguments);
       expect(sut.name, 'fixture-name');
@@ -48,6 +49,7 @@ void main() {
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
+      expect(sut.binDir, 'fixture-bin_dir');
     });
 
     test("fromArguments supports deprecated fields", () {
@@ -85,6 +87,7 @@ void main() {
       web_build_path: fixture-web_build_path
       commits: fixture-commits
       ignore_missing: true
+      bin_dir: fixture-bin_dir
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
@@ -99,9 +102,9 @@ void main() {
       final writer = ConfigWriter(
         fs,
         'fixture-name',
-        'fixture-version',
       );
-      writer.write(ConfigFileType.pubspecYaml, pubspecConfig);
+      writer.write(
+          'fixture-version', ConfigFileType.pubspecYaml, pubspecConfig);
 
       final reader = ConfigReader();
       final sut = ConfigurationValues.fromReader(reader);
@@ -121,6 +124,7 @@ void main() {
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
+      expect(sut.binDir, 'fixture-bin_dir');
     });
 
     test("fromPlatformEnvironment", () {

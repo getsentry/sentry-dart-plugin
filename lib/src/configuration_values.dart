@@ -19,6 +19,7 @@ class ConfigurationValues {
   final String? webBuildPath;
   final String? commits;
   final bool? ignoreMissing;
+  final String? binDir;
 
   ConfigurationValues({
     this.version,
@@ -37,6 +38,7 @@ class ConfigurationValues {
     this.webBuildPath,
     this.commits,
     this.ignoreMissing,
+    this.binDir,
   });
 
   factory ConfigurationValues.fromArguments(List<String> arguments) {
@@ -60,29 +62,30 @@ class ConfigurationValues {
     }
 
     return ConfigurationValues(
-      version: sentryArguments['version'],
-      name: sentryArguments['name'],
-      uploadDebugSymbols: boolFromString(
-        sentryArguments['upload_debug_symbols'] ??
-            sentryArguments['upload_native_symbols'],
-      ),
-      uploadSourceMaps: boolFromString(sentryArguments['upload_source_maps']),
-      uploadSources: boolFromString(
-        sentryArguments['upload_sources'] ??
-            sentryArguments['include_native_sources'],
-      ),
-      project: sentryArguments['project'],
-      org: sentryArguments['org'],
-      authToken: sentryArguments['auth_token'],
-      url: sentryArguments['url'],
-      waitForProcessing: boolFromString(sentryArguments['wait_for_processing']),
-      logLevel: sentryArguments['log_level'],
-      release: sentryArguments['release'],
-      dist: sentryArguments['dist'],
-      webBuildPath: sentryArguments['web_build_path'],
-      commits: sentryArguments['commits'],
-      ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
-    );
+        version: sentryArguments['version'],
+        name: sentryArguments['name'],
+        uploadDebugSymbols: boolFromString(
+          sentryArguments['upload_debug_symbols'] ??
+              sentryArguments['upload_native_symbols'],
+        ),
+        uploadSourceMaps: boolFromString(sentryArguments['upload_source_maps']),
+        uploadSources: boolFromString(
+          sentryArguments['upload_sources'] ??
+              sentryArguments['include_native_sources'],
+        ),
+        project: sentryArguments['project'],
+        org: sentryArguments['org'],
+        authToken: sentryArguments['auth_token'],
+        url: sentryArguments['url'],
+        waitForProcessing:
+            boolFromString(sentryArguments['wait_for_processing']),
+        logLevel: sentryArguments['log_level'],
+        release: sentryArguments['release'],
+        dist: sentryArguments['dist'],
+        webBuildPath: sentryArguments['web_build_path'],
+        commits: sentryArguments['commits'],
+        ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
+        binDir: sentryArguments['bin_dir']);
   }
 
   factory ConfigurationValues.fromReader(ConfigReader configReader) {
@@ -109,22 +112,31 @@ class ConfigurationValues {
       webBuildPath: configReader.getString('web_build_path'),
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
+      binDir: configReader.getString('bin_dir'),
     );
   }
 
   factory ConfigurationValues.fromPlatformEnvironment(
     Map<String, String> environment,
   ) {
+    String? envRelease = environment['SENTRY_RELEASE'];
+    if (envRelease?.isEmpty ?? false) {
+      envRelease = null;
+    }
+    String? envDist = environment['SENTRY_DIST'];
+    if (envDist?.isEmpty ?? false) {
+      envDist = null;
+    }
     return ConfigurationValues(
-      release: environment['SENTRY_RELEASE'],
-      dist: environment['SENTRY_DIST'],
+      release: envRelease,
+      dist: envDist,
     );
   }
 
   factory ConfigurationValues.merged({
+    required ConfigurationValues platformEnv,
     required ConfigurationValues args,
     required ConfigurationValues file,
-    required ConfigurationValues platformEnv,
   }) {
     return ConfigurationValues(
       version: args.version ?? file.version,
@@ -138,11 +150,12 @@ class ConfigurationValues {
       url: args.url ?? file.url,
       waitForProcessing: args.waitForProcessing ?? file.waitForProcessing,
       logLevel: args.logLevel ?? file.logLevel,
-      release: args.release ?? file.release ?? platformEnv.release,
-      dist: args.dist ?? file.dist ?? platformEnv.dist,
+      release: platformEnv.release ?? args.release ?? file.release,
+      dist: platformEnv.dist ?? args.dist ?? file.dist,
       webBuildPath: args.webBuildPath ?? file.webBuildPath,
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
+      binDir: args.binDir ?? file.binDir,
     );
   }
 }
