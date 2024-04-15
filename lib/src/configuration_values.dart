@@ -20,6 +20,7 @@ class ConfigurationValues {
   final String? commits;
   final bool? ignoreMissing;
   final String? binDir;
+  final String? binPath;
 
   ConfigurationValues({
     this.version,
@@ -39,6 +40,7 @@ class ConfigurationValues {
     this.commits,
     this.ignoreMissing,
     this.binDir,
+    this.binPath,
   });
 
   factory ConfigurationValues.fromArguments(List<String> arguments) {
@@ -85,7 +87,9 @@ class ConfigurationValues {
         webBuildPath: sentryArguments['web_build_path'],
         commits: sentryArguments['commits'],
         ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
-        binDir: sentryArguments['bin_dir']);
+        binDir: sentryArguments['bin_dir'],
+        binPath: sentryArguments['bin_path'],
+    );
   }
 
   factory ConfigurationValues.fromReader(ConfigReader configReader) {
@@ -113,6 +117,7 @@ class ConfigurationValues {
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
       binDir: configReader.getString('bin_dir'),
+      binPath: configReader.getString('bin_path'),
     );
   }
 
@@ -156,6 +161,7 @@ class ConfigurationValues {
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
       binDir: args.binDir ?? file.binDir,
+      binPath: args.binPath ?? file.binPath,
     );
   }
 }

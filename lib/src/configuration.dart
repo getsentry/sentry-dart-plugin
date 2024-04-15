@@ -85,6 +85,10 @@ class Configuration {
   /// `.dart_tool/pub/bin/sentry_dart_plugin`.
   late String binDir;
 
+  /// An alternative path to sentry-cli. If provided, the SDK will not be
+  /// downloaded. Please make sure to use the matching version.
+  late String? binPath;
+
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
@@ -140,6 +144,7 @@ class Configuration {
     url = configValues.url; // or env. var. SENTRY_URL
     logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
     binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
+    binPath = configValues.binPath;
   }
 
   /// Validates the configuration values and log an error if required fields
