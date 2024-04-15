@@ -6,7 +6,6 @@ import 'package:file/memory.dart';
 import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/cli/host_platform.dart';
 import 'package:sentry_dart_plugin/src/cli/setup.dart';
-import 'package:sentry_dart_plugin/src/cli/sources.dart';
 import 'package:test/test.dart';
 
 import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
