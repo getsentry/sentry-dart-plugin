@@ -215,7 +215,11 @@ class Configuration {
     if (binPath != null && binPath.isNotEmpty) {
       if (platform != null) {
         await injector.get<CLISetup>().check(platform, binPath);
+      } else {
+        Log.warn(
+            'Host platform not supported. Cannot verify sentry-cli checksum.');
       }
+      Log.info("Using sentry-cli at path '$binPath'");
       cliPath = binPath;
     } else {
       if (platform == null) {
