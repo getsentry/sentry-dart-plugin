@@ -64,31 +64,30 @@ class ConfigurationValues {
     }
 
     return ConfigurationValues(
-        version: sentryArguments['version'],
-        name: sentryArguments['name'],
-        uploadDebugSymbols: boolFromString(
-          sentryArguments['upload_debug_symbols'] ??
-              sentryArguments['upload_native_symbols'],
-        ),
-        uploadSourceMaps: boolFromString(sentryArguments['upload_source_maps']),
-        uploadSources: boolFromString(
-          sentryArguments['upload_sources'] ??
-              sentryArguments['include_native_sources'],
-        ),
-        project: sentryArguments['project'],
-        org: sentryArguments['org'],
-        authToken: sentryArguments['auth_token'],
-        url: sentryArguments['url'],
-        waitForProcessing:
-            boolFromString(sentryArguments['wait_for_processing']),
-        logLevel: sentryArguments['log_level'],
-        release: sentryArguments['release'],
-        dist: sentryArguments['dist'],
-        webBuildPath: sentryArguments['web_build_path'],
-        commits: sentryArguments['commits'],
-        ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
-        binDir: sentryArguments['bin_dir'],
-        binPath: sentryArguments['bin_path'],
+      version: sentryArguments['version'],
+      name: sentryArguments['name'],
+      uploadDebugSymbols: boolFromString(
+        sentryArguments['upload_debug_symbols'] ??
+            sentryArguments['upload_native_symbols'],
+      ),
+      uploadSourceMaps: boolFromString(sentryArguments['upload_source_maps']),
+      uploadSources: boolFromString(
+        sentryArguments['upload_sources'] ??
+            sentryArguments['include_native_sources'],
+      ),
+      project: sentryArguments['project'],
+      org: sentryArguments['org'],
+      authToken: sentryArguments['auth_token'],
+      url: sentryArguments['url'],
+      waitForProcessing: boolFromString(sentryArguments['wait_for_processing']),
+      logLevel: sentryArguments['log_level'],
+      release: sentryArguments['release'],
+      dist: sentryArguments['dist'],
+      webBuildPath: sentryArguments['web_build_path'],
+      commits: sentryArguments['commits'],
+      ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
+      binDir: sentryArguments['bin_dir'],
+      binPath: sentryArguments['bin_path'],
     );
   }
 

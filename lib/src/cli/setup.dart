@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:file/file.dart';
@@ -25,6 +27,15 @@ class CLISetup {
     }
 
     return file.path;
+  }
+
+  Future<void> check(HostPlatform platform, String path) async {
+    final file = injector.get<FileSystem>().file(path);
+    final source = _sources[platform]!;
+    if (!await _check(source, file)) {
+      Log.warn(
+          "Download sentry-cli from '${source.downloadUrl}' and update at path '${file.path}'.");
+    }
   }
 
   Future<void> _download(CLISource source, File file) async {
@@ -59,12 +70,12 @@ class CLISetup {
     final expected = source.hash;
     if (calculated != expected) {
       Log.warn(
-          "Sentry CLI checksum mismatch on ${file.path} - expected $expected but got $calculated");
+          "Sentry CLI checksum mismatch on ${file.path} - expected $expected but got $calculated.");
       return false;
     }
 
     Log.info(
-        "Downloaded Sentry CLI binary checksum verification passed successfully (hash: $calculated).");
+        "Sentry CLI binary checksum verification passed successfully (hash: $calculated).");
     return true;
   }
 

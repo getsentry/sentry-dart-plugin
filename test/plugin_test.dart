@@ -6,6 +6,7 @@ import 'package:file/memory.dart';
 import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/cli/host_platform.dart';
 import 'package:sentry_dart_plugin/src/cli/setup.dart';
+import 'package:sentry_dart_plugin/src/cli/sources.dart';
 import 'package:test/test.dart';
 
 import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
@@ -49,7 +50,8 @@ void main() {
         final commonArgs =
             '${url == null ? '' : '--url http://127.0.0.1 '}--auth-token t';
 
-        Future<Iterable<String>> runWith(String version, String config, {String? customCli}) async {
+        Future<Iterable<String>> runWith(String version, String config,
+            {String? customCli}) async {
           final formattedConfig =
               ConfigFormatter.formatConfig(config, fileType, url);
           configWriter.write(version, fileType, formattedConfig);
@@ -120,7 +122,11 @@ void main() {
           final config = '''
             bin_path: $customCliPath
           ''';
-          final commandLog = await runWith(version, config, customCli: customCliPath,);
+          final commandLog = await runWith(
+            version,
+            config,
+            customCli: customCliPath,
+          );
           const release = '$name@$version';
 
           expect(commandLog, [
@@ -433,4 +439,7 @@ class MockCLI implements CLISetup {
   @override
   Future<String> download(HostPlatform platform, String directory) =>
       Future.value(name);
+
+  @override
+  Future<bool> check(CLISource source, File file) => Future.value(true);
 }
