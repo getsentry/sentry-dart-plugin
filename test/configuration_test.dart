@@ -65,6 +65,8 @@ void main() {
         webBuildPath: 'web_build_path-args-config',
         commits: 'commits-args-config',
         ignoreMissing: true,
+        binDir: 'binDir-args-config',
+        binPath: 'binPath-args-config',
       );
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
@@ -83,6 +85,8 @@ void main() {
         webBuildPath: 'web_build_path-file-config',
         commits: 'commits-file-config',
         ignoreMissing: false,
+        binDir: 'binDir-file-config',
+        binPath: 'binPath-file-config',
       );
 
       final sut = fixture.getSut(
@@ -113,6 +117,8 @@ void main() {
       );
       expect(sut.commits, 'commits-args-config');
       expect(sut.ignoreMissing, true);
+      expect(sut.binDir, 'binDir-args-config');
+      expect(sut.binPath, 'binPath-args-config');
     });
 
     test("takes values from file config", () {
@@ -135,6 +141,8 @@ void main() {
         webBuildPath: 'web_build_path-file-config',
         commits: 'commits-file-config',
         ignoreMissing: true,
+        binDir: 'binDir-file-config',
+        binPath: 'binPath-file-config',
       );
 
       final sut = fixture.getSut(
@@ -163,6 +171,8 @@ void main() {
       );
       expect(sut.commits, 'commits-file-config');
       expect(sut.ignoreMissing, true);
+      expect(sut.binDir, 'binDir-file-config');
+      expect(sut.binPath, 'binPath-file-config');
     });
 
     test("falls back to default values", () {
@@ -188,6 +198,7 @@ void main() {
         fixture.fs.path.join(sut.buildFilesFolder, 'build/web'),
       );
       expect(sut.waitForProcessing, false);
+      expect(sut.binDir, '.dart_tool/pub/bin/sentry_dart_plugin');
     });
   });
 }

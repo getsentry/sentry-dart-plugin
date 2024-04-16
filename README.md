@@ -112,6 +112,7 @@ ignore_missing=true
 | commits | Release commits integration | default: auto | no | - |
 | ignore_missing | Ignore missing commits previously used in the release | default: false | no | - |
 | bin_dir | The folder where the plugin downloads the sentry-cli binary | .dart_tool/pub/bin/sentry_dart_plugin (string) | no | - |
+| bin_path | Path to the sentry-cli binary to use instead of downloading. Make sure to use the correct version. | null (string) | no | - |
 
 ## Release
 
