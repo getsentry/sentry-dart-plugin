@@ -194,25 +194,24 @@ class Configuration {
       if (platform != null) {
         await injector.get<CLISetup>().check(platform, binPath);
       } else {
-        Log.warn(
-            'Host platform not supported. Cannot verify sentry-cli checksum.');
+        Log.warn('Host platform not supported. Cannot verify Sentry CLI.');
       }
-      Log.info("Using sentry-cli at path '$binPath'");
       cliPath = binPath;
+      Log.info("Using Sentry CLI at path '$cliPath'");
     } else {
       try {
         cliPath = await _downloadSentryCli(platform);
-      } on Exception catch (e) {
-        Log.error("Failed to download sentry-cli: $e");
-        _setPreInstalledCli();
+      } catch (e) {
+        Log.error("Failed to download Sentry CLI: $e");
+
+        cliPath = _getPreInstalledCli();
+        Log.info('Trying to fallback to Sentry CLI at path: $cliPath');
       }
     }
   }
 
-  void _setPreInstalledCli() {
-    cliPath = Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
-    Log.info(
-        'Trying to fallback to preinstalled Sentry CLI, if available on PATH: $cliPath');
+  String _getPreInstalledCli() {
+    return Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
   }
 
   Future<String> _downloadSentryCli(HostPlatform? platform) async {
@@ -223,7 +222,7 @@ class Configuration {
     if (!Platform.isWindows) {
       final result = await injector.get<ProcessManager>().run(['chmod', '+x', cliPath]);
       if (result.exitCode != 0) {
-        throw Exception('Cannot make binary executable: ${result.stdout}\n${result.stderr}');
+        throw Exception('Failed to make binary executable: ${result.stdout}\n${result.stderr}');
       }
     }
     return cliPath;

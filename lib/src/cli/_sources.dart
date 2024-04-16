@@ -9,18 +9,33 @@ const _urlPrefix = 'https://downloads.sentry-cdn.com/sentry-cli/$_version';
 
 final currentCLISources = {
   HostPlatform.darwinUniversal: CLISource(
-      '$_urlPrefix/sentry-cli-Darwin-universal',
-      '5d12bee428d18ca49657f2573b130a0c5990a665e0cbe6fad583e72a2fd1e3cc'),
-  HostPlatform.linuxAarch64: CLISource('$_urlPrefix/sentry-cli-Linux-aarch64',
-      '2b92198d58ffd2f4551db6782b42b42ecc1ba3c7c7864f0c4ae84be940f927d3'),
-  HostPlatform.linuxArmv7: CLISource('$_urlPrefix/sentry-cli-Linux-armv7',
-      '2745bc24c84fa7bf1b2c8331acc5bce8741a329ed3866162c5279296d856b1f6'),
-  HostPlatform.linux64bit: CLISource('$_urlPrefix/sentry-cli-Linux-x86_64',
-      'baeb5b4ca0a5e500d667087f0b7fbb2865d3b8f01896cfba5144433dbe59bebd'),
+    _version,
+    '$_urlPrefix/sentry-cli-Darwin-universal',
+    '5d12bee428d18ca49657f2573b130a0c5990a665e0cbe6fad583e72a2fd1e3cc',
+  ),
+  HostPlatform.linuxAarch64: CLISource(
+    _version,
+    '$_urlPrefix/sentry-cli-Linux-aarch64',
+    '2b92198d58ffd2f4551db6782b42b42ecc1ba3c7c7864f0c4ae84be940f927d3',
+  ),
+  HostPlatform.linuxArmv7: CLISource(
+    _version,
+    '$_urlPrefix/sentry-cli-Linux-armv7',
+    '2745bc24c84fa7bf1b2c8331acc5bce8741a329ed3866162c5279296d856b1f6',
+  ),
+  HostPlatform.linux64bit: CLISource(
+    _version,
+    '$_urlPrefix/sentry-cli-Linux-x86_64',
+    'baeb5b4ca0a5e500d667087f0b7fbb2865d3b8f01896cfba5144433dbe59bebd',
+  ),
   HostPlatform.windows32bit: CLISource(
-      '$_urlPrefix/sentry-cli-Windows-i686.exe',
-      '5620bd8d7ce13dfa489d45fab2c6c421ee0570c8217e7c3fbbddae38c910bba5'),
+    _version,
+    '$_urlPrefix/sentry-cli-Windows-i686.exe',
+    '5620bd8d7ce13dfa489d45fab2c6c421ee0570c8217e7c3fbbddae38c910bba5',
+  ),
   HostPlatform.windows64bit: CLISource(
-      '$_urlPrefix/sentry-cli-Windows-x86_64.exe',
-      'de063e8f5ab9e8e8642f7316dec5b5bb7f856dd4ac2cb1a1b58149e2e9d31758'),
+    _version,
+    '$_urlPrefix/sentry-cli-Windows-x86_64.exe',
+    'de063e8f5ab9e8e8642f7316dec5b5bb7f856dd4ac2cb1a1b58149e2e9d31758',
+  ),
 };

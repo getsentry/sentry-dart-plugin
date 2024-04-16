@@ -32,13 +32,13 @@ class CLISetup {
     final source = _sources[platform]!;
     if (!await _check(source, file)) {
       Log.warn(
-          "Download sentry-cli from '${source.downloadUrl}' and update at path '${file.path}'.");
+          "Download Sentry CLI ${source.version} from '${source.downloadUrl}' and update at path '${file.path}'.");
     }
   }
 
   Future<void> _download(CLISource source, File file) async {
     Log.info(
-        "Downloading sentry-cli from ${source.downloadUrl} to ${file.path}");
+        "Downloading Sentry CLI ${source.version} from ${source.downloadUrl} to ${file.path}");
 
     final client = http.Client();
     try {
