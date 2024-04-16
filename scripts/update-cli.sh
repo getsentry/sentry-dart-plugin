@@ -41,32 +41,32 @@ const _urlPrefix = 'https://downloads.sentry-cdn.com/sentry-cli/\$_version';
 
 final currentCLISources = {
   HostPlatform.darwinUniversal: CLISource(
-    _version,
     '\$_urlPrefix/sentry-cli-Darwin-universal',
+    _version,
     '$(hashFor Darwin-universal)',
   ),
   HostPlatform.linuxAarch64: CLISource(
-    _version,
     '\$_urlPrefix/sentry-cli-Linux-aarch64',
+    _version,
     '$(hashFor Linux-aarch64)',
   ),
   HostPlatform.linuxArmv7: CLISource(
-    _version,
     '\$_urlPrefix/sentry-cli-Linux-armv7',
+    _version,
     '$(hashFor Linux-armv7)'),
   HostPlatform.linux64bit: CLISource(
-    _version,
     '\$_urlPrefix/sentry-cli-Linux-x86_64',
+    _version,
     '$(hashFor Linux-x86_64)',
   ),
   HostPlatform.windows32bit: CLISource(
-    _version,
     '\$_urlPrefix/sentry-cli-Windows-i686.exe',
+    _version,
     '$(hashFor Windows-i686.exe)',
   ),
   HostPlatform.windows64bit: CLISource(
-    _version,
     '\$_urlPrefix/sentry-cli-Windows-x86_64.exe',
+    _version,
     '$(hashFor Windows-x86_64.exe)',
   ),
 };
