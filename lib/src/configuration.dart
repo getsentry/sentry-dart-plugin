@@ -216,13 +216,16 @@ class Configuration {
 
   Future<String> _downloadSentryCli(HostPlatform? platform) async {
     if (platform == null) {
-      throw Exception('Host platform not supported: ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
+      throw Exception(
+          'Host platform not supported: ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
     }
     final cliPath = await injector.get<CLISetup>().download(platform, binDir);
     if (!Platform.isWindows) {
-      final result = await injector.get<ProcessManager>().run(['chmod', '+x', cliPath]);
+      final result =
+          await injector.get<ProcessManager>().run(['chmod', '+x', cliPath]);
       if (result.exitCode != 0) {
-        throw Exception('Failed to make binary executable: ${result.stdout}\n${result.stderr}');
+        throw Exception(
+            'Failed to make binary executable: ${result.stdout}\n${result.stderr}');
       }
     }
     return cliPath;
