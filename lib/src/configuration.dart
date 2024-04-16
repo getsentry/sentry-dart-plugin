@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file/file.dart';
@@ -199,27 +200,11 @@ class Configuration {
       Log.info("Using sentry-cli at path '$binPath'");
       cliPath = binPath;
     } else {
-      if (platform == null) {
-        Log.error(
-            'Host platform not supported - cannot download Sentry CLI for ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
-        return _setPreInstalledCli();
-      }
-
       try {
-        cliPath = await injector.get<CLISetup>().download(platform, binDir);
+        cliPath = await _downloadSentryCli(platform);
       } on Exception catch (e) {
-        Log.error("Failed to download Sentry CLI: $e");
-        return _setPreInstalledCli();
-      }
-
-      if (!Platform.isWindows) {
-        final result =
-            await injector.get<ProcessManager>().run(['chmod', '+x', cliPath!]);
-        if (result.exitCode != 0) {
-          Log.error(
-              "Failed to make downloaded Sentry CLI executable: ${result.stdout}\n${result.stderr}");
-          return _setPreInstalledCli();
-        }
+        Log.error("Failed to download sentry-cli: $e");
+        _setPreInstalledCli();
       }
     }
   }
@@ -228,6 +213,20 @@ class Configuration {
     cliPath = Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
     Log.info(
         'Trying to fallback to preinstalled Sentry CLI, if available on PATH: $cliPath');
+  }
+
+  Future<String> _downloadSentryCli(HostPlatform? platform) async {
+    if (platform == null) {
+      throw Exception('Host platform not supported: ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
+    }
+    final cliPath = await injector.get<CLISetup>().download(platform, binDir);
+    if (!Platform.isWindows) {
+      final result = await injector.get<ProcessManager>().run(['chmod', '+x', cliPath]);
+      if (result.exitCode != 0) {
+        throw Exception('Cannot make binary executable: ${result.stdout}\n${result.stderr}');
+      }
+    }
+    return cliPath;
   }
 
   HostPlatform? _getHostPlatform() {
