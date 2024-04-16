@@ -187,30 +187,7 @@ class Configuration {
   }
 
   Future<void> _findAndSetCliPath() async {
-    HostPlatform? platform;
-    if (Platform.isMacOS) {
-      platform = HostPlatform.darwinUniversal;
-    } else if (Platform.isWindows) {
-      platform = SysInfo.kernelBitness == 32
-          ? HostPlatform.windows32bit
-          : HostPlatform.windows64bit;
-    } else if (Platform.isLinux) {
-      switch (SysInfo.kernelArchitecture.name.toLowerCase()) {
-        case 'arm':
-        case 'armv6':
-        case 'armv7':
-          platform = HostPlatform.linuxArmv7;
-          break;
-        case 'aarch64':
-          platform = HostPlatform.linuxAarch64;
-          break;
-        case 'amd64':
-        case 'x86_64':
-          platform = HostPlatform.linux64bit;
-          break;
-      }
-    }
-
+    final platform = _getHostPlatform();
     final binPath = this.binPath;
     if (binPath != null && binPath.isNotEmpty) {
       if (platform != null) {
@@ -251,5 +228,28 @@ class Configuration {
     cliPath = Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
     Log.info(
         'Trying to fallback to preinstalled Sentry CLI, if available on PATH: $cliPath');
+  }
+
+  HostPlatform? _getHostPlatform() {
+    if (Platform.isMacOS) {
+      return HostPlatform.darwinUniversal;
+    } else if (Platform.isWindows) {
+      return SysInfo.kernelBitness == 32
+          ? HostPlatform.windows32bit
+          : HostPlatform.windows64bit;
+    } else if (Platform.isLinux) {
+      switch (SysInfo.kernelArchitecture.name.toLowerCase()) {
+        case 'arm':
+        case 'armv6':
+        case 'armv7':
+          return HostPlatform.linuxArmv7;
+        case 'aarch64':
+          return HostPlatform.linuxAarch64;
+        case 'amd64':
+        case 'x86_64':
+          return HostPlatform.linux64bit;
+      }
+    }
+    return null;
   }
 }
