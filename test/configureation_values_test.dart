@@ -32,6 +32,7 @@ void main() {
         "--sentry-define=commits=fixture-commits",
         "--sentry-define=ignore_missing=true",
         "--sentry-define=bin_dir=fixture-bin_dir",
+        "--sentry-define=sentry_cli_cdn_url=fixture-sentry_cli_cdn_url",
       ];
       final sut = ConfigurationValues.fromArguments(arguments);
       expect(sut.name, 'fixture-name');
@@ -53,6 +54,7 @@ void main() {
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'fixture-bin_dir');
+      expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
     });
 
     test("fromArguments supports deprecated fields", () {
@@ -93,6 +95,7 @@ void main() {
       commits: fixture-commits
       ignore_missing: true
       bin_dir: fixture-bin_dir
+      sentry_cli_cdn_url: fixture-sentry_cli_cdn_url
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
@@ -132,17 +135,20 @@ void main() {
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'fixture-bin_dir');
+      expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
     });
 
     test("fromPlatformEnvironment", () {
       final arguments = {
         'SENTRY_RELEASE': 'fixture-release',
         'SENTRY_DIST': 'fixture-dist',
+        'SENTRYCLI_CDNURL': 'fixture-sentry_cli_cdn_url',
       };
 
       final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
+      expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
     });
   });
 }

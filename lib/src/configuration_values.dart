@@ -22,6 +22,7 @@ class ConfigurationValues {
   final bool? ignoreMissing;
   final String? binDir;
   final String? binPath;
+  final String? sentryCliCdnUrl;
 
   ConfigurationValues({
     this.version,
@@ -43,6 +44,7 @@ class ConfigurationValues {
     this.ignoreMissing,
     this.binDir,
     this.binPath,
+    this.sentryCliCdnUrl,
   });
 
   factory ConfigurationValues.fromArguments(List<String> arguments) {
@@ -91,6 +93,7 @@ class ConfigurationValues {
       ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
       binDir: sentryArguments['bin_dir'],
       binPath: sentryArguments['bin_path'],
+      sentryCliCdnUrl: sentryArguments['sentry_cli_cdn_url'],
     );
   }
 
@@ -122,6 +125,7 @@ class ConfigurationValues {
       ignoreMissing: configReader.getBool('ignore_missing'),
       binDir: configReader.getString('bin_dir'),
       binPath: configReader.getString('bin_path'),
+      sentryCliCdnUrl: configReader.getString('sentry_cli_cdn_url'),
     );
   }
 
@@ -136,9 +140,14 @@ class ConfigurationValues {
     if (envDist?.isEmpty ?? false) {
       envDist = null;
     }
+    String? envSentryCliCdnUrl = environment['SENTRYCLI_CDNURL'];
+    if (envSentryCliCdnUrl?.isEmpty ?? false) {
+      envSentryCliCdnUrl = null;
+    }
     return ConfigurationValues(
       release: envRelease,
       dist: envDist,
+      sentryCliCdnUrl: envSentryCliCdnUrl,
     );
   }
 
@@ -167,6 +176,9 @@ class ConfigurationValues {
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
       binDir: args.binDir ?? file.binDir,
       binPath: args.binPath ?? file.binPath,
+      sentryCliCdnUrl: platformEnv.sentryCliCdnUrl ??
+          args.sentryCliCdnUrl ??
+          file.sentryCliCdnUrl,
     );
   }
 }

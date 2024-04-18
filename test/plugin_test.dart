@@ -436,7 +436,11 @@ class MockCLI implements CLISetup {
   static const name = 'mock-cli';
 
   @override
-  Future<String> download(HostPlatform platform, String directory) =>
+  Future<String> download(
+    HostPlatform platform,
+    String directory,
+    String cdnUrl,
+  ) =>
       Future.value(name);
 
   @override

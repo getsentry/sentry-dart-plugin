@@ -13,12 +13,16 @@ class CLISetup {
 
   CLISetup(this._sources);
 
-  Future<String> download(HostPlatform platform, String directory) async {
+  Future<String> download(
+    HostPlatform platform,
+    String directory,
+    String cdnUrl,
+  ) async {
     final dir = injector.get<FileSystem>().directory(directory);
     await dir.create(recursive: true);
     final file = dir.childFile('sentry-cli${platform.executableExtension}');
 
-    final source = _sources[platform]!;
+    final source = _sources[platform]!.from(cdnUrl);
 
     if (!await _check(source, file)) {
       await _download(source, file);

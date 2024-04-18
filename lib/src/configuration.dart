@@ -90,6 +90,9 @@ class Configuration {
   /// downloaded. Please make sure to use the matching version.
   late String? binPath;
 
+  /// Place to download sentry-cli
+  late String sentryCliCdnUrl;
+
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
@@ -148,6 +151,8 @@ class Configuration {
     logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
     binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
     binPath = configValues.binPath;
+    sentryCliCdnUrl = configValues.sentryCliCdnUrl ??
+        'https://downloads.sentry-cdn.com/sentry-cli/';
   }
 
   /// Validates the configuration values and log an error if required fields
@@ -221,7 +226,9 @@ class Configuration {
       throw Exception(
           'Host platform not supported: ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
     }
-    final cliPath = await injector.get<CLISetup>().download(platform, binDir);
+    final cliPath = await injector
+        .get<CLISetup>()
+        .download(platform, binDir, sentryCliCdnUrl);
     if (!Platform.isWindows) {
       final result =
           await injector.get<ProcessManager>().run(['chmod', '+x', cliPath]);
