@@ -199,7 +199,9 @@ class Configuration {
     final binPath = this.binPath;
     if (binPath != null && binPath.isNotEmpty) {
       if (platform != null) {
-        await injector.get<CLISetup>().check(platform, binPath);
+        await injector
+            .get<CLISetup>()
+            .check(platform, binPath, sentryCliCdnUrl);
       } else {
         Log.warn('Host platform not supported. Cannot verify Sentry CLI.');
       }

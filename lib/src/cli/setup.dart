@@ -16,13 +16,13 @@ class CLISetup {
   Future<String> download(
     HostPlatform platform,
     String directory,
-    String cdnUrl,
+    String downloadUrlPrefix,
   ) async {
     final dir = injector.get<FileSystem>().directory(directory);
     await dir.create(recursive: true);
     final file = dir.childFile('sentry-cli${platform.executableExtension}');
 
-    final source = _sources[platform]!.from(cdnUrl);
+    final source = _sources[platform]!.withPrefix(downloadUrlPrefix);
 
     if (!await _check(source, file)) {
       await _download(source, file);
@@ -31,9 +31,13 @@ class CLISetup {
     return file.path;
   }
 
-  Future<void> check(HostPlatform platform, String path) async {
+  Future<void> check(
+    HostPlatform platform,
+    String path,
+    String downloadUrlPrefix,
+  ) async {
     final file = injector.get<FileSystem>().file(path);
-    final source = _sources[platform]!;
+    final source = _sources[platform]!.withPrefix(downloadUrlPrefix);
     if (!await _check(source, file)) {
       Log.warn(
           "Download Sentry CLI ${source.version} from '${source.downloadUrl}' and update at path '${file.path}'.");

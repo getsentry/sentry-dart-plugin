@@ -444,5 +444,10 @@ class MockCLI implements CLISetup {
       Future.value(name);
 
   @override
-  Future<void> check(HostPlatform platform, String path) => Future.value();
+  Future<void> check(
+    HostPlatform platform,
+    String path,
+    String cdnUrl,
+  ) =>
+      Future.value();
 }
