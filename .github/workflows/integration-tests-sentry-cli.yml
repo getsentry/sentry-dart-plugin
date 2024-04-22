@@ -29,13 +29,6 @@ jobs:
           java-version: '11'
 
       - run: flutter pub get
-
-      - name: flutter build apk & debug
-        run: |
-          flutter build apk
-          ls -a ./build/app/intermediates/flutter/release/arm64-v8a
-          ls -a ./build/app/intermediates/flutter/release/armeabi-v7a
-          ls -a ./build/app/intermediates/flutter/release/x86_64
         
       - run: flutter build ipa --no-codesign
         if: matrix.os == 'macos'

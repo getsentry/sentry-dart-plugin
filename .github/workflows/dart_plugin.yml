@@ -4,7 +4,8 @@ on:
     branches:
       - main
       - release/**
-#  pull_request:
+  pull_request:
+
 jobs:
   build:
     name: 'Format, Fix, Analyze and Build'
