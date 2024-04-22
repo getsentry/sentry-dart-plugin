@@ -1,8 +1,9 @@
 class CLISource {
   final Uri downloadUrl;
+  final String version;
   final String hash;
 
-  CLISource(String downloadUrl, this.hash)
+  CLISource(String downloadUrl, this.version, this.hash)
       : downloadUrl = Uri.parse(downloadUrl);
 }
 

@@ -20,6 +20,7 @@ class ConfigurationValues {
   final String? commits;
   final bool? ignoreMissing;
   final String? binDir;
+  final String? binPath;
 
   ConfigurationValues({
     this.version,
@@ -39,6 +40,7 @@ class ConfigurationValues {
     this.commits,
     this.ignoreMissing,
     this.binDir,
+    this.binPath,
   });
 
   factory ConfigurationValues.fromArguments(List<String> arguments) {
@@ -62,30 +64,31 @@ class ConfigurationValues {
     }
 
     return ConfigurationValues(
-        version: sentryArguments['version'],
-        name: sentryArguments['name'],
-        uploadDebugSymbols: boolFromString(
-          sentryArguments['upload_debug_symbols'] ??
-              sentryArguments['upload_native_symbols'],
-        ),
-        uploadSourceMaps: boolFromString(sentryArguments['upload_source_maps']),
-        uploadSources: boolFromString(
-          sentryArguments['upload_sources'] ??
-              sentryArguments['include_native_sources'],
-        ),
-        project: sentryArguments['project'],
-        org: sentryArguments['org'],
-        authToken: sentryArguments['auth_token'],
-        url: sentryArguments['url'],
-        waitForProcessing:
-            boolFromString(sentryArguments['wait_for_processing']),
-        logLevel: sentryArguments['log_level'],
-        release: sentryArguments['release'],
-        dist: sentryArguments['dist'],
-        webBuildPath: sentryArguments['web_build_path'],
-        commits: sentryArguments['commits'],
-        ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
-        binDir: sentryArguments['bin_dir']);
+      version: sentryArguments['version'],
+      name: sentryArguments['name'],
+      uploadDebugSymbols: boolFromString(
+        sentryArguments['upload_debug_symbols'] ??
+            sentryArguments['upload_native_symbols'],
+      ),
+      uploadSourceMaps: boolFromString(sentryArguments['upload_source_maps']),
+      uploadSources: boolFromString(
+        sentryArguments['upload_sources'] ??
+            sentryArguments['include_native_sources'],
+      ),
+      project: sentryArguments['project'],
+      org: sentryArguments['org'],
+      authToken: sentryArguments['auth_token'],
+      url: sentryArguments['url'],
+      waitForProcessing: boolFromString(sentryArguments['wait_for_processing']),
+      logLevel: sentryArguments['log_level'],
+      release: sentryArguments['release'],
+      dist: sentryArguments['dist'],
+      webBuildPath: sentryArguments['web_build_path'],
+      commits: sentryArguments['commits'],
+      ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
+      binDir: sentryArguments['bin_dir'],
+      binPath: sentryArguments['bin_path'],
+    );
   }
 
   factory ConfigurationValues.fromReader(ConfigReader configReader) {
@@ -113,6 +116,7 @@ class ConfigurationValues {
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
       binDir: configReader.getString('bin_dir'),
+      binPath: configReader.getString('bin_path'),
     );
   }
 
@@ -156,6 +160,7 @@ class ConfigurationValues {
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
       binDir: args.binDir ?? file.binDir,
+      binPath: args.binPath ?? file.binPath,
     );
   }
 }

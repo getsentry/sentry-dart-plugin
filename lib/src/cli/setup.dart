@@ -27,9 +27,18 @@ class CLISetup {
     return file.path;
   }
 
+  Future<void> check(HostPlatform platform, String path) async {
+    final file = injector.get<FileSystem>().file(path);
+    final source = _sources[platform]!;
+    if (!await _check(source, file)) {
+      Log.warn(
+          "Download Sentry CLI ${source.version} from '${source.downloadUrl}' and update at path '${file.path}'.");
+    }
+  }
+
   Future<void> _download(CLISource source, File file) async {
     Log.info(
-        "Downloading sentry-cli from ${source.downloadUrl} to ${file.path}");
+        "Downloading Sentry CLI ${source.version} from ${source.downloadUrl} to ${file.path}");
 
     final client = http.Client();
     try {
@@ -59,12 +68,12 @@ class CLISetup {
     final expected = source.hash;
     if (calculated != expected) {
       Log.warn(
-          "Sentry CLI checksum mismatch on ${file.path} - expected $expected but got $calculated");
+          "Sentry CLI checksum mismatch on ${file.path} - expected $expected but got $calculated.");
       return false;
     }
 
     Log.info(
-        "Downloaded Sentry CLI binary checksum verification passed successfully (hash: $calculated).");
+        "Sentry CLI binary checksum verification passed successfully (hash: $calculated).");
     return true;
   }
 

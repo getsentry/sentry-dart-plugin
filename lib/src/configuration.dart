@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file/file.dart';
@@ -85,6 +86,10 @@ class Configuration {
   /// `.dart_tool/pub/bin/sentry_dart_plugin`.
   late String binDir;
 
+  /// An alternative path to sentry-cli. If provided, the SDK will not be
+  /// downloaded. Please make sure to use the matching version.
+  late String? binPath;
+
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
@@ -140,6 +145,7 @@ class Configuration {
     url = configValues.url; // or env. var. SENTRY_URL
     logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
     binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
+    binPath = configValues.binPath;
   }
 
   /// Validates the configuration values and log an error if required fields
@@ -182,11 +188,54 @@ class Configuration {
   }
 
   Future<void> _findAndSetCliPath() async {
-    HostPlatform? platform;
+    final platform = _getHostPlatform();
+    final binPath = this.binPath;
+    if (binPath != null && binPath.isNotEmpty) {
+      if (platform != null) {
+        await injector.get<CLISetup>().check(platform, binPath);
+      } else {
+        Log.warn('Host platform not supported. Cannot verify Sentry CLI.');
+      }
+      cliPath = binPath;
+      Log.info("Using Sentry CLI at path '$cliPath'");
+    } else {
+      try {
+        cliPath = await _downloadSentryCli(platform);
+      } catch (e) {
+        Log.error("Failed to download Sentry CLI: $e");
+
+        cliPath = _getPreInstalledCli();
+        Log.info('Trying to fallback to Sentry CLI at path: $cliPath');
+      }
+    }
+  }
+
+  String _getPreInstalledCli() {
+    return Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
+  }
+
+  Future<String> _downloadSentryCli(HostPlatform? platform) async {
+    if (platform == null) {
+      throw Exception(
+          'Host platform not supported: ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
+    }
+    final cliPath = await injector.get<CLISetup>().download(platform, binDir);
+    if (!Platform.isWindows) {
+      final result =
+          await injector.get<ProcessManager>().run(['chmod', '+x', cliPath]);
+      if (result.exitCode != 0) {
+        throw Exception(
+            'Failed to make binary executable: ${result.stdout}\n${result.stderr}');
+      }
+    }
+    return cliPath;
+  }
+
+  HostPlatform? _getHostPlatform() {
     if (Platform.isMacOS) {
-      platform = HostPlatform.darwinUniversal;
+      return HostPlatform.darwinUniversal;
     } else if (Platform.isWindows) {
-      platform = SysInfo.kernelBitness == 32
+      return SysInfo.kernelBitness == 32
           ? HostPlatform.windows32bit
           : HostPlatform.windows64bit;
     } else if (Platform.isLinux) {
@@ -194,45 +243,14 @@ class Configuration {
         case 'arm':
         case 'armv6':
         case 'armv7':
-          platform = HostPlatform.linuxArmv7;
-          break;
+          return HostPlatform.linuxArmv7;
         case 'aarch64':
-          platform = HostPlatform.linuxAarch64;
-          break;
+          return HostPlatform.linuxAarch64;
         case 'amd64':
         case 'x86_64':
-          platform = HostPlatform.linux64bit;
-          break;
+          return HostPlatform.linux64bit;
       }
     }
-
-    if (platform == null) {
-      Log.error(
-          'Host platform not supported - cannot download Sentry CLI for ${Platform.operatingSystem} ${SysInfo.kernelArchitecture}');
-      return _setPreInstalledCli();
-    }
-
-    try {
-      cliPath = await injector.get<CLISetup>().download(platform, binDir);
-    } on Exception catch (e) {
-      Log.error("Failed to download Sentry CLI: $e");
-      return _setPreInstalledCli();
-    }
-
-    if (!Platform.isWindows) {
-      final result =
-          await injector.get<ProcessManager>().run(['chmod', '+x', cliPath!]);
-      if (result.exitCode != 0) {
-        Log.error(
-            "Failed to make downloaded Sentry CLI executable: ${result.stdout}\n${result.stderr}");
-        return _setPreInstalledCli();
-      }
-    }
-  }
-
-  void _setPreInstalledCli() {
-    cliPath = Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';
-    Log.info(
-        'Trying to fallback to preinstalled Sentry CLI, if available on PATH: $cliPath');
+    return null;
   }
 }

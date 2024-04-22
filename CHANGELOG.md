@@ -1,15 +1,23 @@
 # Changelog
 
-## Unreleased
+## 2.0.0
+
+### Breaking Changes
+
+- Update env/config `release` and `dist` behaviour ([#217](https://github.com/getsentry/sentry-dart-plugin/pull/217))
+  - Default release: automatically constructs the release identifier from pubspec.yaml using the format: `name@version`.
+    If a build number is included in the version, it is utilized as dist.
+  - Custom release can be specified via an environment variable or plugin configuration. Once set, it is used as is without further modification.
+  - Custom dist can also be set via environment variables or plugin configuration. It replaces or adds to the build number in the default release.
+  - Environment variables: `SENTRY_RELEASE` and `SENTRY_DIST `environment variables take precedence over plugin config values.
 
 ### Features
 
 - Custom `dist` overrides version build number ([#216](https://github.com/getsentry/sentry-dart-plugin/pull/216))
   - For instance, if the initial release version is `release@1.0.0+1`, specifying a custom dist value of 2 will update the version to `release@1.0.0+2`.
-- Update env/config `release` and `dist` behaviour ([#217](https://github.com/getsentry/sentry-dart-plugin/pull/217))
-  - This is a breaking change, please check if the `release` and `dist` values are as you expect them.
 - Add option to provide alternative binary directory ([#214](https://github.com/getsentry/sentry-dart-plugin/pull/214))
 - Support configuration arguments via `--sentry-define` ([#198](https://github.com/getsentry/sentry-dart-plugin/pull/198))
+- Provide path to local `sentry-cli` ([#224](https://github.com/getsentry/sentry-dart-plugin/pull/224))
 
 ### Dependencies
 
