@@ -29,7 +29,9 @@ jobs:
           java-version: '11'
 
       - run: flutter pub get
-        
+
+      - run: flutter build apk
+
       - run: flutter build ipa --no-codesign
         if: matrix.os == 'macos'
 
