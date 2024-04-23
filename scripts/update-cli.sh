@@ -37,7 +37,7 @@ import 'package:sentry_dart_plugin/src/cli/sources.dart';
 import 'host_platform.dart';
 
 const _version = '$newVersion';
-const _urlPrefix = 'https://downloads.sentry-cdn.com/sentry-cli/';
+const _urlPrefix = 'https://downloads.sentry-cdn.com/sentry-cli';
 
 final currentCLISources = {
   HostPlatform.darwinUniversal: CLISource(
@@ -56,7 +56,8 @@ final currentCLISources = {
     _urlPrefix,
     'sentry-cli-Linux-armv7',
     _version,
-    '$(hashFor Linux-armv7)'),
+    '$(hashFor Linux-armv7)',
+  ),
   HostPlatform.linux64bit: CLISource(
     _urlPrefix,
     'sentry-cli-Linux-x86_64',
