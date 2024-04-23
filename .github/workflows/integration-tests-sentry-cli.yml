@@ -35,7 +35,7 @@ jobs:
       - run: flutter build ipa --no-codesign
         if: matrix.os == 'macos'
 
-      - run: flutter build macos --no-codesign
+      - run: flutter build macos
         if: matrix.os == 'macos'
 
       - run: flutter build web --source-maps
