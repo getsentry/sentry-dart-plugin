@@ -26,4 +26,6 @@ sentry:
   org: sentry-sdks
   url: http://127.0.0.1:8000
   log_level: debug
-  commits: false
+  commits: auto
+  wait_for_processing: false
+  ignore_missing: true
