@@ -19,7 +19,7 @@ void main() {
       final file = await cliSetup.download(
         platform,
         '.dart_tool/pub/bin/sentry_dart_plugin',
-        'https://downloads.sentry-cdn.com/sentry-cli/',
+        'https://downloads.sentry-cdn.com/sentry-cli',
       );
       final suffix = platform.name.startsWith('windows') ? '.exe' : '';
       expect(file, '.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli$suffix');

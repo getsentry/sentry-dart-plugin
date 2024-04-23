@@ -220,7 +220,7 @@ void main() {
       expect(sut.binDir, '.dart_tool/pub/bin/sentry_dart_plugin');
       expect(
         sut.sentryCliCdnUrl,
-        'https://downloads.sentry-cdn.com/sentry-cli/',
+        'https://downloads.sentry-cdn.com/sentry-cli',
       );
     });
   });

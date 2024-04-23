@@ -152,7 +152,7 @@ class Configuration {
     binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
     binPath = configValues.binPath;
     sentryCliCdnUrl = configValues.sentryCliCdnUrl ??
-        'https://downloads.sentry-cdn.com/sentry-cli/';
+        'https://downloads.sentry-cdn.com/sentry-cli';
   }
 
   /// Validates the configuration values and log an error if required fields

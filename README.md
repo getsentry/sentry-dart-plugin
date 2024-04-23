@@ -114,7 +114,7 @@ ignore_missing=true
 | ignore_missing | Ignore missing commits previously used in the release | false (boolean) | no | - |
 | bin_dir | The folder where the plugin downloads the sentry-cli binary | .dart_tool/pub/bin/sentry_dart_plugin (string) | no | - |
 | bin_path | Path to the sentry-cli binary to use instead of downloading. Make sure to use the correct version. | null (string) | no | - |
-| sentry_cli_cdn_url | Alternative place to download sentry-cli | default: https://downloads.sentry-cdn.com/sentry-cli/ | no | SENTRYCLI_CDNURL |
+| sentry_cli_cdn_url | Alternative place to download sentry-cli | default: https://downloads.sentry-cdn.com/sentry-cli | no | SENTRYCLI_CDNURL |
 
 
 ## Release
