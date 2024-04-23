@@ -1,6 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:grpc/grpc.dart';
 
 void main() {
+
+  final channel = ClientChannel(
+    'localhost',
+    port: 50051,
+    options: ChannelOptions(
+      credentials: ChannelCredentials.insecure(),
+      codecRegistry:
+      CodecRegistry(codecs: const [GzipCodec(), IdentityCodec()]),
+    ),
+  );
+  print("Just use some grpc API: $channel");
+
   runApp(const ProjectApp());
 }
 
