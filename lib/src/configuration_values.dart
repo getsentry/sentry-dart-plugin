@@ -4,6 +4,7 @@ import 'package:sentry_dart_plugin/src/utils/config-reader/config_reader.dart';
 class ConfigurationValues {
   final String? version;
   final String? name;
+  final String? buildFilesFolder;
 
   final bool? uploadDebugSymbols;
   final bool? uploadSourceMaps;
@@ -25,6 +26,7 @@ class ConfigurationValues {
   ConfigurationValues({
     this.version,
     this.name,
+    this.buildFilesFolder,
     this.uploadDebugSymbols,
     this.uploadSourceMaps,
     this.uploadSources,
@@ -66,6 +68,7 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: sentryArguments['version'],
       name: sentryArguments['name'],
+      buildFilesFolder: sentryArguments['build_files_folder'],
       uploadDebugSymbols: boolFromString(
         sentryArguments['upload_debug_symbols'] ??
             sentryArguments['upload_native_symbols'],
@@ -95,6 +98,7 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: configReader.getString('version'),
       name: configReader.getString('name'),
+      buildFilesFolder: configReader.getString('build_files_folder'),
       uploadDebugSymbols: configReader.getBool(
         'upload_debug_symbols',
         deprecatedKey: 'upload_native_symbols',
@@ -145,6 +149,7 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: args.version ?? file.version,
       name: args.name ?? file.name,
+      buildFilesFolder: args.buildFilesFolder ?? file.buildFilesFolder,
       uploadDebugSymbols: args.uploadDebugSymbols ?? file.uploadDebugSymbols,
       uploadSourceMaps: args.uploadSourceMaps ?? file.uploadSourceMaps,
       uploadSources: args.uploadSources ?? file.uploadSources,

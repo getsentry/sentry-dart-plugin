@@ -51,6 +51,7 @@ void main() {
       final argsConfig = ConfigurationValues(
         version: 'version-args-config',
         name: 'name-args-config',
+        buildFilesFolder: 'build_files_folder-args-config',
         uploadDebugSymbols: true,
         uploadSourceMaps: true,
         uploadSources: true,
@@ -71,6 +72,7 @@ void main() {
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
         name: 'name-file-config',
+        buildFilesFolder: 'build_files_folder-file-config',
         uploadDebugSymbols: false,
         uploadSourceMaps: false,
         uploadSources: false,
@@ -97,6 +99,7 @@ void main() {
 
       expect(sut.name, 'name-args-config');
       expect(sut.version, 'version-args-config');
+      expect(sut.buildFilesFolder, 'build_files_folder-args-config');
       expect(sut.uploadDebugSymbols, true);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);
@@ -127,6 +130,7 @@ void main() {
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
         name: 'name-file-config',
+        buildFilesFolder: 'build_files_folder-file-config',
         uploadDebugSymbols: false,
         uploadSourceMaps: true,
         uploadSources: true,
@@ -153,6 +157,7 @@ void main() {
 
       expect(sut.name, 'name-file-config');
       expect(sut.version, 'version-file-config');
+      expect(sut.buildFilesFolder, 'build_files_folder-file-config');
       expect(sut.uploadDebugSymbols, false);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);

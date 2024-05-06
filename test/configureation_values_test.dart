@@ -16,6 +16,7 @@ void main() {
       final arguments = [
         "--sentry-define=version=fixture-version",
         "--sentry-define=name=fixture-name",
+        "--sentry-define=build_files_folder=fixture-build_files_folder",
         "--sentry-define=upload_debug_symbols=true",
         "--sentry-define=upload_source_maps=true",
         "--sentry-define=upload_sources=true",
@@ -35,6 +36,7 @@ void main() {
       final sut = ConfigurationValues.fromArguments(arguments);
       expect(sut.name, 'fixture-name');
       expect(sut.version, 'fixture-version');
+      expect(sut.buildFilesFolder, 'fixture-build_files_folder');
       expect(sut.uploadDebugSymbols, true);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);
@@ -76,6 +78,7 @@ void main() {
       final config = '''
       name: fixture-name
       version: fixture-version
+      build_files_folder: fixture-build_files_folder
       upload_debug_symbols: true
       upload_source_maps: true
       upload_sources: true
@@ -110,6 +113,7 @@ void main() {
       final sut = ConfigurationValues.fromReader(reader);
       expect(sut.name, 'fixture-name');
       expect(sut.version, 'fixture-version');
+      expect(sut.buildFilesFolder, 'fixture-build_files_folder');
       expect(sut.uploadDebugSymbols, true);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);
