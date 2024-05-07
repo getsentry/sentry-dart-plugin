@@ -16,6 +16,7 @@ class ConfigurationValues {
   final String? logLevel;
   final String? release;
   final String? dist;
+  final String? buildPath;
   final String? webBuildPath;
   final String? commits;
   final bool? ignoreMissing;
@@ -36,6 +37,7 @@ class ConfigurationValues {
     this.logLevel,
     this.release,
     this.dist,
+    this.buildPath,
     this.webBuildPath,
     this.commits,
     this.ignoreMissing,
@@ -83,6 +85,7 @@ class ConfigurationValues {
       logLevel: sentryArguments['log_level'],
       release: sentryArguments['release'],
       dist: sentryArguments['dist'],
+      buildPath: sentryArguments['build_path'],
       webBuildPath: sentryArguments['web_build_path'],
       commits: sentryArguments['commits'],
       ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
@@ -95,6 +98,7 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: configReader.getString('version'),
       name: configReader.getString('name'),
+
       uploadDebugSymbols: configReader.getBool(
         'upload_debug_symbols',
         deprecatedKey: 'upload_native_symbols',
@@ -112,6 +116,7 @@ class ConfigurationValues {
       logLevel: configReader.getString('log_level'),
       release: configReader.getString('release'),
       dist: configReader.getString('dist'),
+      buildPath: configReader.getString('build_path'),
       webBuildPath: configReader.getString('web_build_path'),
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
@@ -156,6 +161,7 @@ class ConfigurationValues {
       logLevel: args.logLevel ?? file.logLevel,
       release: platformEnv.release ?? args.release ?? file.release,
       dist: platformEnv.dist ?? args.dist ?? file.dist,
+      buildPath: args.buildPath ?? file.buildPath,
       webBuildPath: args.webBuildPath ?? file.webBuildPath,
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,

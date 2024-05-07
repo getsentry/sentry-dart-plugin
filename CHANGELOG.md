@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add support for build files folder parameter ([#235](https://github.com/getsentry/sentry-dart-plugin/pull/235))
+
 ## 2.0.0
 
 ### Breaking Changes

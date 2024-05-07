@@ -27,6 +27,7 @@ void main() {
         "--sentry-define=log_level=fixture-log_level",
         "--sentry-define=release=fixture-release",
         "--sentry-define=dist=fixture-dist",
+        "--sentry-define=build_path=fixture-build_path",
         "--sentry-define=web_build_path=fixture-web_build_path",
         "--sentry-define=commits=fixture-commits",
         "--sentry-define=ignore_missing=true",
@@ -35,6 +36,7 @@ void main() {
       final sut = ConfigurationValues.fromArguments(arguments);
       expect(sut.name, 'fixture-name');
       expect(sut.version, 'fixture-version');
+
       expect(sut.uploadDebugSymbols, true);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);
@@ -46,6 +48,7 @@ void main() {
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
+      expect(sut.buildPath, 'fixture-build_path');
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
@@ -76,6 +79,7 @@ void main() {
       final config = '''
       name: fixture-name
       version: fixture-version
+      
       upload_debug_symbols: true
       upload_source_maps: true
       upload_sources: true
@@ -84,6 +88,7 @@ void main() {
       log_level: fixture-log_level
       release: fixture-release
       dist: fixture-dist
+      build_path: fixture-build_path
       web_build_path: fixture-web_build_path
       commits: fixture-commits
       ignore_missing: true
@@ -110,6 +115,7 @@ void main() {
       final sut = ConfigurationValues.fromReader(reader);
       expect(sut.name, 'fixture-name');
       expect(sut.version, 'fixture-version');
+
       expect(sut.uploadDebugSymbols, true);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);
@@ -121,6 +127,7 @@ void main() {
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
+      expect(sut.buildPath, 'fixture-build_path');
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
