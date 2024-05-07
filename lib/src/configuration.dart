@@ -132,7 +132,7 @@ class Configuration {
     ignoreMissing = configValues.ignoreMissing ?? false;
 
     buildFilesFolder =
-        configValues.buildFilesFolder ?? _fs.currentDirectory.path;
+        configValues.buildPath ?? _fs.currentDirectory.path;
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.

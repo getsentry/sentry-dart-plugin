@@ -106,14 +106,15 @@ ignore_missing=true
 | url | URL | e.g. https<area>://mysentry.invalid/ (string)  | no | SENTRY_URL |
 | wait_for_processing | Wait for server-side processing of uploaded files | false (boolean)  | no | - |
 | log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
-| release | The release version for source maps, it should match the release set by the SDK | default: name@version from pubspec (string)  | no | SENTRY_RELEASE |
-| dist | The dist/build number for source maps, it should match the dist set by the SDK | default: the number after the '+' char from 'version' pubspec (string)  | no | SENTRY_DIST |
-| web_build_path | The web build folder | default: build/web (string)  | no | - |
-| commits | Release commits integration | default: auto | no | - |
-| ignore_missing | Ignore missing commits previously used in the release | default: false | no | - |
+| release | The release version for source maps, it should match the release set by the SDK | name@version from pubspec (string)  | no | SENTRY_RELEASE |
+| dist | The dist/build number for source maps, it should match the dist set by the SDK | the number after the '+' char from 'version' pubspec (string)  | no | SENTRY_DIST |
+| build_path | The build folder of debug files for upload | `.` current folder (string) | no | - |
+| web_build_path | The web build folder of debug files for upload | `build/web` relative to build_path (string)  | no | - |
+| commits | Release commits integration | auto (string) | no | - |
+| ignore_missing | Ignore missing commits previously used in the release | false (boolean) | no | - |
 | bin_dir | The folder where the plugin downloads the sentry-cli binary | .dart_tool/pub/bin/sentry_dart_plugin (string) | no | - |
 | bin_path | Path to the sentry-cli binary to use instead of downloading. Make sure to use the correct version. | null (string) | no | - |
-| build_files_folder | The build files folder used to upload debug files | Current Directory (string) | no | - |
+
 
 ## Release
 

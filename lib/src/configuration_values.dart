@@ -4,7 +4,6 @@ import 'package:sentry_dart_plugin/src/utils/config-reader/config_reader.dart';
 class ConfigurationValues {
   final String? version;
   final String? name;
-  final String? buildFilesFolder;
 
   final bool? uploadDebugSymbols;
   final bool? uploadSourceMaps;
@@ -17,6 +16,7 @@ class ConfigurationValues {
   final String? logLevel;
   final String? release;
   final String? dist;
+  final String? buildPath;
   final String? webBuildPath;
   final String? commits;
   final bool? ignoreMissing;
@@ -26,7 +26,6 @@ class ConfigurationValues {
   ConfigurationValues({
     this.version,
     this.name,
-    this.buildFilesFolder,
     this.uploadDebugSymbols,
     this.uploadSourceMaps,
     this.uploadSources,
@@ -38,6 +37,7 @@ class ConfigurationValues {
     this.logLevel,
     this.release,
     this.dist,
+    this.buildPath,
     this.webBuildPath,
     this.commits,
     this.ignoreMissing,
@@ -68,7 +68,6 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: sentryArguments['version'],
       name: sentryArguments['name'],
-      buildFilesFolder: sentryArguments['build_files_folder'],
       uploadDebugSymbols: boolFromString(
         sentryArguments['upload_debug_symbols'] ??
             sentryArguments['upload_native_symbols'],
@@ -86,6 +85,7 @@ class ConfigurationValues {
       logLevel: sentryArguments['log_level'],
       release: sentryArguments['release'],
       dist: sentryArguments['dist'],
+      buildPath: sentryArguments['build_path'],
       webBuildPath: sentryArguments['web_build_path'],
       commits: sentryArguments['commits'],
       ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
@@ -98,7 +98,7 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: configReader.getString('version'),
       name: configReader.getString('name'),
-      buildFilesFolder: configReader.getString('build_files_folder'),
+
       uploadDebugSymbols: configReader.getBool(
         'upload_debug_symbols',
         deprecatedKey: 'upload_native_symbols',
@@ -116,6 +116,7 @@ class ConfigurationValues {
       logLevel: configReader.getString('log_level'),
       release: configReader.getString('release'),
       dist: configReader.getString('dist'),
+      buildPath: configReader.getString('build_path'),
       webBuildPath: configReader.getString('web_build_path'),
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
@@ -149,7 +150,6 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: args.version ?? file.version,
       name: args.name ?? file.name,
-      buildFilesFolder: args.buildFilesFolder ?? file.buildFilesFolder,
       uploadDebugSymbols: args.uploadDebugSymbols ?? file.uploadDebugSymbols,
       uploadSourceMaps: args.uploadSourceMaps ?? file.uploadSourceMaps,
       uploadSources: args.uploadSources ?? file.uploadSources,
@@ -161,6 +161,7 @@ class ConfigurationValues {
       logLevel: args.logLevel ?? file.logLevel,
       release: platformEnv.release ?? args.release ?? file.release,
       dist: platformEnv.dist ?? args.dist ?? file.dist,
+      buildPath: args.buildPath ?? file.buildPath,
       webBuildPath: args.webBuildPath ?? file.webBuildPath,
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,

@@ -51,7 +51,6 @@ void main() {
       final argsConfig = ConfigurationValues(
         version: 'version-args-config',
         name: 'name-args-config',
-        buildFilesFolder: 'build_files_folder-args-config',
         uploadDebugSymbols: true,
         uploadSourceMaps: true,
         uploadSources: true,
@@ -63,6 +62,7 @@ void main() {
         logLevel: 'warning',
         release: 'release-args-config',
         dist: 'dist-args-config',
+        buildPath: 'build_path-args-config',
         webBuildPath: 'web_build_path-args-config',
         commits: 'commits-args-config',
         ignoreMissing: true,
@@ -72,7 +72,6 @@ void main() {
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
         name: 'name-file-config',
-        buildFilesFolder: 'build_files_folder-file-config',
         uploadDebugSymbols: false,
         uploadSourceMaps: false,
         uploadSources: false,
@@ -84,6 +83,7 @@ void main() {
         logLevel: 'debug',
         release: 'release-file-config',
         dist: 'dist-file-config',
+        buildPath: 'build_path-file-config',
         webBuildPath: 'web_build_path-file-config',
         commits: 'commits-file-config',
         ignoreMissing: false,
@@ -99,7 +99,6 @@ void main() {
 
       expect(sut.name, 'name-args-config');
       expect(sut.version, 'version-args-config');
-      expect(sut.buildFilesFolder, 'build_files_folder-args-config');
       expect(sut.uploadDebugSymbols, true);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);
@@ -111,6 +110,7 @@ void main() {
       expect(sut.logLevel, 'warning');
       expect(sut.release, 'release-args-config');
       expect(sut.dist, 'dist-args-config');
+      expect(sut.buildFilesFolder, 'build_path-args-config');
       expect(
         sut.webBuildFilesFolder,
         fixture.fs.path.join(
@@ -130,7 +130,6 @@ void main() {
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
         name: 'name-file-config',
-        buildFilesFolder: 'build_files_folder-file-config',
         uploadDebugSymbols: false,
         uploadSourceMaps: true,
         uploadSources: true,
@@ -142,6 +141,7 @@ void main() {
         logLevel: 'debug',
         release: 'release-file-config',
         dist: 'dist-file-config',
+        buildPath: 'build_path-file-config',
         webBuildPath: 'web_build_path-file-config',
         commits: 'commits-file-config',
         ignoreMissing: true,
@@ -157,7 +157,7 @@ void main() {
 
       expect(sut.name, 'name-file-config');
       expect(sut.version, 'version-file-config');
-      expect(sut.buildFilesFolder, 'build_files_folder-file-config');
+
       expect(sut.uploadDebugSymbols, false);
       expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, true);
@@ -169,6 +169,7 @@ void main() {
       expect(sut.logLevel, 'debug');
       expect(sut.release, 'release-file-config');
       expect(sut.dist, 'dist-file-config');
+      expect(sut.buildFilesFolder, 'build_path-file-config');
       expect(
         sut.webBuildFilesFolder,
         fixture.fs.path
@@ -198,6 +199,10 @@ void main() {
       expect(sut.uploadSources, false);
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, false);
+      expect(
+        sut.buildFilesFolder,
+        fixture.fs.currentDirectory.path,
+      );
       expect(
         sut.webBuildFilesFolder,
         fixture.fs.path.join(sut.buildFilesFolder, 'build/web'),
