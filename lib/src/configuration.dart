@@ -18,7 +18,7 @@ class Configuration {
   // cannot use ${Directory.current.path}/build since --split-debug-info allows
   // setting a custom path which is a sibling of build
   /// The Build folder, defaults to the current directory.
-  late final String buildFilesFolder = _fs.currentDirectory.path;
+  late String buildFilesFolder;
 
   /// Whether to upload debug symbols, defaults to true
   late bool uploadDebugSymbols;
@@ -131,6 +131,8 @@ class Configuration {
     commits = configValues.commits ?? 'auto';
     ignoreMissing = configValues.ignoreMissing ?? false;
 
+    buildFilesFolder =
+        configValues.buildPath ?? _fs.currentDirectory.path;
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.
