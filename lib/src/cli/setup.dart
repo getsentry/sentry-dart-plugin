@@ -22,10 +22,10 @@ class CLISetup {
     await dir.create(recursive: true);
     final file = dir.childFile('sentry-cli${platform.executableExtension}');
 
-    final source = _sources[platform]!.withPrefix(downloadUrlPrefix);
+    final source = _sources[platform]!;
 
     if (!await _check(source, file)) {
-      await _download(source, file);
+      await _download(source, file, downloadUrlPrefix);
     }
 
     return file.path;
@@ -37,21 +37,26 @@ class CLISetup {
     String downloadUrlPrefix,
   ) async {
     final file = injector.get<FileSystem>().file(path);
-    final source = _sources[platform]!.withPrefix(downloadUrlPrefix);
+    final source = _sources[platform]!;
     if (!await _check(source, file)) {
+      final downloadUrl = source.formatDownloadUrl(downloadUrlPrefix);
       Log.warn(
-          "Download Sentry CLI ${source.version} from '${source.downloadUrl}' and update at path '${file.path}'.");
+          "Download Sentry CLI ${source.version} from '$downloadUrl' and update at path '${file.path}'.");
     }
   }
 
-  Future<void> _download(CLISource source, File file) async {
+  Future<void> _download(
+    CLISource source,
+    File file,
+    String downloadUrlPrefix,
+  ) async {
+    final downloadUrl = source.formatDownloadUrl(downloadUrlPrefix);
     Log.info(
-        "Downloading Sentry CLI ${source.version} from ${source.downloadUrl} to ${file.path}");
+        "Downloading Sentry CLI ${source.version} from $downloadUrl to ${file.path}");
 
     final client = http.Client();
     try {
-      final response =
-          await client.send(http.Request('GET', source.downloadUrl));
+      final response = await client.send(http.Request('GET', downloadUrl));
       final sink = file.openWrite();
       await sink.addStream(response.stream);
       await sink.close();

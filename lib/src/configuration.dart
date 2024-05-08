@@ -90,7 +90,8 @@ class Configuration {
   /// downloaded. Please make sure to use the matching version.
   late String? binPath;
 
-  /// Place to download sentry-cli
+  /// Place to download sentry-cli. Defaults to
+  /// `https://downloads.sentry-cdn.com/sentry-cli`.
   late String sentryCliCdnUrl;
 
   /// Loads the configuration values
@@ -134,8 +135,7 @@ class Configuration {
     commits = configValues.commits ?? 'auto';
     ignoreMissing = configValues.ignoreMissing ?? false;
 
-    buildFilesFolder =
-        configValues.buildPath ?? _fs.currentDirectory.path;
+    buildFilesFolder = configValues.buildPath ?? _fs.currentDirectory.path;
     // uploading JS and Map files need to have the correct folder structure
     // otherwise symbolication fails, the default path for the web build folder is build/web
     // but can be customized so making it flexible.

@@ -1,16 +1,11 @@
 class CLISource {
-  final String prefix;
   final String name;
   final String version;
   final String hash;
 
-  CLISource(this.prefix, this.name, this.version, this.hash);
+  CLISource(this.name, this.version, this.hash);
 
-  Uri get downloadUrl {
-    return _formatDownloadUrl(prefix);
-  }
-
-  Uri _formatDownloadUrl(String prefix) {
+  Uri formatDownloadUrl(String prefix) {
     if (prefix.endsWith('/')) {
       prefix = prefix.substring(0, prefix.length - 2);
     }
@@ -20,10 +15,6 @@ class CLISource {
       pathSegments: [...parsed.pathSegments, version, name],
     );
     return fullUrl;
-  }
-
-  CLISource withPrefix(String prefix) {
-    return CLISource(prefix, name, version, hash);
   }
 }
 
