@@ -24,14 +24,17 @@ void main() {
       final platformEnvConfig = ConfigurationValues(
         release: 'release-platformEnv-config',
         dist: 'dist-platformEnv-config',
+        sentryCliCdnUrl: 'sentryCliCdnUrl-platformEnv-config',
       );
       final argsConfig = ConfigurationValues(
         release: 'release-args-config',
         dist: 'dist-args-config',
+        sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
       );
       final fileConfig = ConfigurationValues(
         release: 'release-file-config',
         dist: 'dist-file-config',
+        sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
       );
 
       final sut = fixture.getSut(
@@ -42,6 +45,7 @@ void main() {
 
       expect(sut.release, 'release-platformEnv-config');
       expect(sut.dist, 'dist-platformEnv-config');
+      expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-platformEnv-config');
     });
 
     // env config
@@ -68,6 +72,7 @@ void main() {
         ignoreMissing: true,
         binDir: 'binDir-args-config',
         binPath: 'binPath-args-config',
+        sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
       );
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
@@ -89,6 +94,7 @@ void main() {
         ignoreMissing: false,
         binDir: 'binDir-file-config',
         binPath: 'binPath-file-config',
+        sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
       );
 
       final sut = fixture.getSut(
@@ -122,6 +128,7 @@ void main() {
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'binDir-args-config');
       expect(sut.binPath, 'binPath-args-config');
+      expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-args-config');
     });
 
     test("takes values from file config", () {
@@ -147,6 +154,7 @@ void main() {
         ignoreMissing: true,
         binDir: 'binDir-file-config',
         binPath: 'binPath-file-config',
+        sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
       );
 
       final sut = fixture.getSut(
@@ -179,6 +187,7 @@ void main() {
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'binDir-file-config');
       expect(sut.binPath, 'binPath-file-config');
+      expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-file-config');
     });
 
     test("falls back to default values", () {
@@ -209,6 +218,10 @@ void main() {
       );
       expect(sut.waitForProcessing, false);
       expect(sut.binDir, '.dart_tool/pub/bin/sentry_dart_plugin');
+      expect(
+        sut.sentryCliCdnUrl,
+        'https://downloads.sentry-cdn.com/sentry-cli',
+      );
     });
   });
 }
