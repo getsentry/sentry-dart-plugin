@@ -4,23 +4,36 @@ import 'package:sentry_dart_plugin/src/cli/sources.dart';
 
 import 'host_platform.dart';
 
-const _version = '2.27.0';
-const _urlPrefix = 'https://downloads.sentry-cdn.com/sentry-cli/$_version';
+const _version = '2.31.2';
 
 final currentCLISources = {
   HostPlatform.darwinUniversal: CLISource(
-      '$_urlPrefix/sentry-cli-Darwin-universal',
-      '8693527282890285f55d9b55414905e8621dd788ad3ae4c85175b84e8eeb6a04'),
-  HostPlatform.linuxAarch64: CLISource('$_urlPrefix/sentry-cli-Linux-aarch64',
-      '54fce909d18c815cb41a3fd24088b76b58872326f211e18ee28646ae844882b0'),
-  HostPlatform.linuxArmv7: CLISource('$_urlPrefix/sentry-cli-Linux-armv7',
-      '7fbc79ea7d90aa39acf7e0cdd66535258494ef981401ce37c477b42393505b79'),
-  HostPlatform.linux64bit: CLISource('$_urlPrefix/sentry-cli-Linux-x86_64',
-      '6b31bbd385d436620415305c12ae181c38bdd3a54c243803dc3ff241ee952356'),
+    'sentry-cli-Darwin-universal',
+    _version,
+    'a8aac1d1821fcd42c75f9e8a4d9abd443d32dafa213f1c515d744de343d1f474',
+  ),
+  HostPlatform.linuxAarch64: CLISource(
+    'sentry-cli-Linux-aarch64',
+    _version,
+    '17f2af78965d67571eb22b49934c4c7f2620a7b8e52c9db4116e73eb9877af88',
+  ),
+  HostPlatform.linuxArmv7: CLISource(
+    'sentry-cli-Linux-armv7',
+    _version,
+    '1a0bb1d6a8b79a07ac2c839d26d696d59c19b80b236ed85cc5ee118e8047e5b0'),
+  HostPlatform.linux64bit: CLISource(
+    'sentry-cli-Linux-x86_64',
+    _version,
+    'a6e82e7c4eac8d4c358bf261badf97f0d2fc7469093082397345cfe99f6caf18',
+  ),
   HostPlatform.windows32bit: CLISource(
-      '$_urlPrefix/sentry-cli-Windows-i686.exe',
-      'de0fa9d55f7c78f16b712955607979b21f797ba89e08e490a76f07991b272d4d'),
+    'sentry-cli-Windows-i686.exe',
+    _version,
+    '2e5eed2ccf985259503ed8bcb694a258d1b82dfc9ed5b8eca1bbaf0257b95930',
+  ),
   HostPlatform.windows64bit: CLISource(
-      '$_urlPrefix/sentry-cli-Windows-x86_64.exe',
-      'ff6e8708ef7e95d1358e38ed5dc8bb4e62ebd359aff4749dc336b8d2e48ba5b9'),
+    'sentry-cli-Windows-x86_64.exe',
+    _version,
+    '82a395375f4cf732706f5b8030a9394ab57753f76334d2ae480f5d4f6961a723',
+  ),
 };

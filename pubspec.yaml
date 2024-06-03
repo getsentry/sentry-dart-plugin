@@ -1,5 +1,5 @@
 name: sentry_dart_plugin
-version: 1.7.1
+version: 2.0.0
 description: >
   A Dart Build Plugin that uploads symbols for Android, iOS/macOS, and Web to Sentry via sentry-cli.
 homepage: https://docs.sentry.io/platforms/dart/
@@ -21,7 +21,7 @@ dependencies:
   properties: ^2.1.0
 
 dev_dependencies:
-  lints: ^3.0.0
+  lints: ^4.0.0
   test: ^1.21.6
 
 platforms:

@@ -48,18 +48,22 @@ void main() {
       group('url: $url', () {
         final commonArgs =
             '${url == null ? '' : '--url http://127.0.0.1 '}--auth-token t';
-        final commonCommands = [
-          if (!Platform.isWindows) 'chmod +x $cli',
-          '$cli help'
-        ];
 
-        Future<Iterable<String>> runWith(String version, String config) async {
+        Future<Iterable<String>> runWith(String version, String config,
+            {String? customCli}) async {
           final formattedConfig =
               ConfigFormatter.formatConfig(config, fileType, url);
           configWriter.write(version, fileType, formattedConfig);
 
           final exitCode = await plugin.run([]);
           expect(exitCode, 0);
+
+          final cliToUse = customCli ?? cli;
+          final commonCommands = [
+            if (!Platform.isWindows && customCli == null) 'chmod +x $cliToUse',
+            '$cliToUse help'
+          ];
+
           expect(pm.commandLog.take(commonCommands.length), commonCommands);
           return pm.commandLog.skip(commonCommands.length);
         }
@@ -90,6 +94,11 @@ void main() {
         test('fails without args and pubspec', () async {
           final exitCode = await plugin.run([]);
           expect(exitCode, 1);
+
+          final commonCommands = [
+            if (!Platform.isWindows) 'chmod +x $cli',
+            '$cli help'
+          ];
           expect(pm.commandLog, commonCommands);
         });
 
@@ -103,6 +112,27 @@ void main() {
             '$cli $commonArgs releases $orgAndProject new $release',
             '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
             '$cli $commonArgs releases $orgAndProject finalize $release'
+          ]);
+        });
+
+        test('takes cli-path from binPath arg', () async {
+          const version = '1.0.0';
+          const customCliPath = './custom/path/sentry-local-cli';
+          final config = '''
+            bin_path: $customCliPath
+          ''';
+          final commandLog = await runWith(
+            version,
+            config,
+            customCli: customCliPath,
+          );
+          const release = '$name@$version';
+
+          expect(commandLog, [
+            '$customCliPath $commonArgs debug-files upload $orgAndProject $buildDir',
+            '$customCliPath $commonArgs releases $orgAndProject new $release',
+            '$customCliPath $commonArgs releases $orgAndProject set-commits $release --auto',
+            '$customCliPath $commonArgs releases $orgAndProject finalize $release'
           ]);
         });
 
@@ -406,6 +436,18 @@ class MockCLI implements CLISetup {
   static const name = 'mock-cli';
 
   @override
-  Future<String> download(HostPlatform platform, String directory) =>
+  Future<String> download(
+    HostPlatform platform,
+    String directory,
+    String cdnUrl,
+  ) =>
       Future.value(name);
+
+  @override
+  Future<void> check(
+    HostPlatform platform,
+    String path,
+    String cdnUrl,
+  ) =>
+      Future.value();
 }

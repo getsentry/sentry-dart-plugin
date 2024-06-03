@@ -37,24 +37,38 @@ import 'package:sentry_dart_plugin/src/cli/sources.dart';
 import 'host_platform.dart';
 
 const _version = '$newVersion';
-const _urlPrefix = 'https://downloads.sentry-cdn.com/sentry-cli/\$_version';
 
 final currentCLISources = {
   HostPlatform.darwinUniversal: CLISource(
-      '\$_urlPrefix/sentry-cli-Darwin-universal',
-      '$(hashFor Darwin-universal)'),
-  HostPlatform.linuxAarch64: CLISource('\$_urlPrefix/sentry-cli-Linux-aarch64',
-      '$(hashFor Linux-aarch64)'),
-  HostPlatform.linuxArmv7: CLISource('\$_urlPrefix/sentry-cli-Linux-armv7',
-      '$(hashFor Linux-armv7)'),
-  HostPlatform.linux64bit: CLISource('\$_urlPrefix/sentry-cli-Linux-x86_64',
-      '$(hashFor Linux-x86_64)'),
+    'sentry-cli-Darwin-universal',
+    _version,
+    '$(hashFor Darwin-universal)',
+  ),
+  HostPlatform.linuxAarch64: CLISource(
+    'sentry-cli-Linux-aarch64',
+    _version,
+    '$(hashFor Linux-aarch64)',
+  ),
+  HostPlatform.linuxArmv7: CLISource(
+    'sentry-cli-Linux-armv7',
+    _version,
+    '$(hashFor Linux-armv7)',
+  ),
+  HostPlatform.linux64bit: CLISource(
+    'sentry-cli-Linux-x86_64',
+    _version,
+    '$(hashFor Linux-x86_64)',
+  ),
   HostPlatform.windows32bit: CLISource(
-      '\$_urlPrefix/sentry-cli-Windows-i686.exe',
-      '$(hashFor Windows-i686.exe)'),
+    'sentry-cli-Windows-i686.exe',
+    _version,
+    '$(hashFor Windows-i686.exe)',
+  ),
   HostPlatform.windows64bit: CLISource(
-      '\$_urlPrefix/sentry-cli-Windows-x86_64.exe',
-      '$(hashFor Windows-x86_64.exe)'),
+    'sentry-cli-Windows-x86_64.exe',
+    _version,
+    '$(hashFor Windows-x86_64.exe)',
+  ),
 };
 EOF
     ;;
