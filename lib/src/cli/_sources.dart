@@ -20,7 +20,8 @@ final currentCLISources = {
   HostPlatform.linuxArmv7: CLISource(
     'sentry-cli-Linux-armv7',
     _version,
-    '1a0bb1d6a8b79a07ac2c839d26d696d59c19b80b236ed85cc5ee118e8047e5b0'),
+    '1a0bb1d6a8b79a07ac2c839d26d696d59c19b80b236ed85cc5ee118e8047e5b0',
+  ),
   HostPlatform.linux64bit: CLISource(
     'sentry-cli-Linux-x86_64',
     _version,

@@ -101,7 +101,6 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: configReader.getString('version'),
       name: configReader.getString('name'),
-
       uploadDebugSymbols: configReader.getBool(
         'upload_debug_symbols',
         deprecatedKey: 'upload_native_symbols',
