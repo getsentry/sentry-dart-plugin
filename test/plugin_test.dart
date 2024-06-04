@@ -440,6 +440,7 @@ class MockCLI implements CLISetup {
     HostPlatform platform,
     String directory,
     String cdnUrl,
+    String? overrideVersion,
   ) =>
       Future.value(name);
 
@@ -448,6 +449,7 @@ class MockCLI implements CLISetup {
     HostPlatform platform,
     String path,
     String cdnUrl,
+    String? overrideVersion,
   ) =>
       Future.value();
 }
