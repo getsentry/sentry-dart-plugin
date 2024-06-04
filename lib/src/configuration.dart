@@ -113,9 +113,9 @@ class Configuration {
   }
 
   void loadConfig({
-    required ConfigurationValues platformEnvConfig,
     required ConfigurationValues argsConfig,
     required ConfigurationValues fileConfig,
+    required ConfigurationValues platformEnvConfig,
   }) {
     final pubspec = ConfigReader.getPubspec();
 
