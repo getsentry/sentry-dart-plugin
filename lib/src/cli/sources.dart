@@ -5,14 +5,14 @@ class CLISource {
 
   CLISource(this.name, this.version, this.hash);
 
-  Uri formatDownloadUrl(String prefix) {
+  Uri formatDownloadUrl(String prefix, String? version) {
     if (prefix.endsWith('/')) {
       prefix = prefix.substring(0, prefix.length - 2);
     }
 
     final parsed = Uri.parse(prefix);
     final fullUrl = parsed.replace(
-      pathSegments: [...parsed.pathSegments, version, name],
+      pathSegments: [...parsed.pathSegments, version ?? this.version, name],
     );
     return fullUrl;
   }

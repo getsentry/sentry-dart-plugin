@@ -17,6 +17,7 @@ class CLISetup {
     HostPlatform platform,
     String directory,
     String downloadUrlPrefix,
+    String? versionOverride,
   ) async {
     final dir = injector.get<FileSystem>().directory(directory);
     await dir.create(recursive: true);
@@ -24,8 +25,8 @@ class CLISetup {
 
     final source = _sources[platform]!;
 
-    if (!await _check(source, file)) {
-      await _download(source, file, downloadUrlPrefix);
+    if (!await _check(source, file, versionOverride)) {
+      await _download(source, file, downloadUrlPrefix, versionOverride);
     }
 
     return file.path;
@@ -35,24 +36,24 @@ class CLISetup {
     HostPlatform platform,
     String path,
     String downloadUrlPrefix,
+    String? versionOverride,
   ) async {
     final file = injector.get<FileSystem>().file(path);
     final source = _sources[platform]!;
-    if (!await _check(source, file)) {
-      final downloadUrl = source.formatDownloadUrl(downloadUrlPrefix);
+    if (!await _check(source, file, versionOverride)) {
+      final downloadUrl =
+          source.formatDownloadUrl(downloadUrlPrefix, versionOverride);
       Log.warn(
-          "Download Sentry CLI ${source.version} from '$downloadUrl' and update at path '${file.path}'.");
+          "Download Sentry CLI ${versionOverride ?? source.version} from '$downloadUrl' and update at path '${file.path}'.");
     }
   }
 
-  Future<void> _download(
-    CLISource source,
-    File file,
-    String downloadUrlPrefix,
-  ) async {
-    final downloadUrl = source.formatDownloadUrl(downloadUrlPrefix);
+  Future<void> _download(CLISource source, File file, String downloadUrlPrefix,
+      String? versionOverride) async {
+    final downloadUrl =
+        source.formatDownloadUrl(downloadUrlPrefix, versionOverride);
     Log.info(
-        "Downloading Sentry CLI ${source.version} from $downloadUrl to ${file.path}");
+        "Downloading Sentry CLI ${versionOverride ?? source.version} from $downloadUrl to ${file.path}");
 
     final client = http.Client();
     try {
@@ -64,7 +65,7 @@ class CLISetup {
       client.close();
     }
 
-    if (await _check(source, file)) {
+    if (await _check(source, file, versionOverride)) {
       Log.info("Sentry CLI downloaded successfully.");
     } else {
       Log.error(
@@ -72,9 +73,15 @@ class CLISetup {
     }
   }
 
-  Future<bool> _check(CLISource source, File file) async {
+  Future<bool> _check(
+      CLISource source, File file, String? versionOverride) async {
     if (!await file.exists()) {
       return false;
+    }
+    if (versionOverride != null) {
+      Log.info(
+          "Sentry CLI binary checksum verification skipped due to version override.");
+      return true;
     }
 
     final calculated = await _hash(file);

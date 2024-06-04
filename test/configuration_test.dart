@@ -73,6 +73,7 @@ void main() {
         binDir: 'binDir-args-config',
         binPath: 'binPath-args-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
+        sentryCliVersion: '1.0.0-args-config',
       );
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
@@ -95,6 +96,7 @@ void main() {
         binDir: 'binDir-file-config',
         binPath: 'binPath-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
+        sentryCliVersion: '1.0.0-file-config',
       );
 
       final sut = fixture.getSut(
@@ -129,6 +131,7 @@ void main() {
       expect(sut.binDir, 'binDir-args-config');
       expect(sut.binPath, 'binPath-args-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-args-config');
+      expect(sut.sentryCliVersion, '1.0.0-args-config');
     });
 
     test("takes values from file config", () {
@@ -155,6 +158,7 @@ void main() {
         binDir: 'binDir-file-config',
         binPath: 'binPath-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
+        sentryCliVersion: '1.0.0-file-config',
       );
 
       final sut = fixture.getSut(
@@ -188,6 +192,7 @@ void main() {
       expect(sut.binDir, 'binDir-file-config');
       expect(sut.binPath, 'binPath-file-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-file-config');
+      expect(sut.sentryCliVersion, '1.0.0-file-config');
     });
 
     test("falls back to default values", () {

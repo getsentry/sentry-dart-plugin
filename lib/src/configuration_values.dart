@@ -23,6 +23,7 @@ class ConfigurationValues {
   final String? binDir;
   final String? binPath;
   final String? sentryCliCdnUrl;
+  final String? sentryCliVersion;
 
   ConfigurationValues({
     this.version,
@@ -45,6 +46,7 @@ class ConfigurationValues {
     this.binDir,
     this.binPath,
     this.sentryCliCdnUrl,
+    this.sentryCliVersion,
   });
 
   factory ConfigurationValues.fromArguments(List<String> arguments) {
@@ -94,6 +96,7 @@ class ConfigurationValues {
       binDir: sentryArguments['bin_dir'],
       binPath: sentryArguments['bin_path'],
       sentryCliCdnUrl: sentryArguments['sentry_cli_cdn_url'],
+      sentryCliVersion: sentryArguments['sentry_cli_version'],
     );
   }
 
@@ -101,7 +104,6 @@ class ConfigurationValues {
     return ConfigurationValues(
       version: configReader.getString('version'),
       name: configReader.getString('name'),
-
       uploadDebugSymbols: configReader.getBool(
         'upload_debug_symbols',
         deprecatedKey: 'upload_native_symbols',
@@ -126,6 +128,7 @@ class ConfigurationValues {
       binDir: configReader.getString('bin_dir'),
       binPath: configReader.getString('bin_path'),
       sentryCliCdnUrl: configReader.getString('sentry_cli_cdn_url'),
+      sentryCliVersion: configReader.getString('sentry_cli_version'),
     );
   }
 
@@ -179,6 +182,7 @@ class ConfigurationValues {
       sentryCliCdnUrl: platformEnv.sentryCliCdnUrl ??
           args.sentryCliCdnUrl ??
           file.sentryCliCdnUrl,
+      sentryCliVersion: args.sentryCliVersion ?? file.sentryCliVersion,
     );
   }
 }
