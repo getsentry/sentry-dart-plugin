@@ -157,6 +157,7 @@ void main() {
       ignore_missing=true
       bin_dir=fixture-bin_dir
       sentry_cli_cdn_url=fixture-sentry_cli_cdn_url
+      sentry_cli_version=1.0.0
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
