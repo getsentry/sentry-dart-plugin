@@ -94,6 +94,9 @@ class Configuration {
   /// `https://downloads.sentry-cdn.com/sentry-cli`.
   late String sentryCliCdnUrl;
 
+  /// Override the sentry-cli version that should be downloaded
+  late String? sentryCliVersion;
+
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
@@ -153,6 +156,7 @@ class Configuration {
     binPath = configValues.binPath;
     sentryCliCdnUrl = configValues.sentryCliCdnUrl ??
         'https://downloads.sentry-cdn.com/sentry-cli';
+    sentryCliVersion = configValues.sentryCliVersion;
   }
 
   /// Validates the configuration values and log an error if required fields
@@ -201,7 +205,7 @@ class Configuration {
       if (platform != null) {
         await injector
             .get<CLISetup>()
-            .check(platform, binPath, sentryCliCdnUrl);
+            .check(platform, binPath, sentryCliCdnUrl, sentryCliVersion);
       } else {
         Log.warn('Host platform not supported. Cannot verify Sentry CLI.');
       }
@@ -230,7 +234,7 @@ class Configuration {
     }
     final cliPath = await injector
         .get<CLISetup>()
-        .download(platform, binDir, sentryCliCdnUrl);
+        .download(platform, binDir, sentryCliCdnUrl, sentryCliVersion);
     if (!Platform.isWindows) {
       final result =
           await injector.get<ProcessManager>().run(['chmod', '+x', cliPath]);

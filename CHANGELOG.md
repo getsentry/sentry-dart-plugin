@@ -6,6 +6,7 @@
 
 - Add support for build files folder parameter ([#235](https://github.com/getsentry/sentry-dart-plugin/pull/235))
 - Support SENTRYCLI_CDNURL env ([#230](https://github.com/getsentry/sentry-dart-plugin/pull/230))
+- Add `sentry_cli_version` parameter ([#243](https://github.com/getsentry/sentry-dart-plugin/pull/243))
 
 ### Fixes
 

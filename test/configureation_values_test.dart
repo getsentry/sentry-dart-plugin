@@ -33,6 +33,7 @@ void main() {
         "--sentry-define=ignore_missing=true",
         "--sentry-define=bin_dir=fixture-bin_dir",
         "--sentry-define=sentry_cli_cdn_url=fixture-sentry_cli_cdn_url",
+        "--sentry-define=sentry_cli_version=1.0.0",
       ];
       final sut = ConfigurationValues.fromArguments(arguments);
       expect(sut.name, 'fixture-sentry-name');
@@ -54,6 +55,7 @@ void main() {
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
+      expect(sut.sentryCliVersion, '1.0.0');
     });
 
     test("fromArguments supports deprecated fields", () {
@@ -94,6 +96,7 @@ void main() {
       ignore_missing: true
       bin_dir: fixture-bin_dir
       sentry_cli_cdn_url: fixture-sentry_cli_cdn_url
+      sentry_cli_version: 1.0.0
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
@@ -154,6 +157,7 @@ void main() {
       ignore_missing=true
       bin_dir=fixture-bin_dir
       sentry_cli_cdn_url=fixture-sentry_cli_cdn_url
+      sentry_cli_version=1.0.0
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
@@ -194,6 +198,7 @@ void main() {
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
+      expect(sut.sentryCliVersion, '1.0.0');
     });
 
     test("fromPlatformEnvironment", () {
