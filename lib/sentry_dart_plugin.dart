@@ -137,6 +137,7 @@ class SentryDartPlugin {
         _configuration.webBuildFilesFolder);
 
     _addWait(releaseJsFilesParams);
+    _addUrlPrefix(releaseJsFilesParams);
 
     await _executeAndLog('Failed to upload source maps', releaseJsFilesParams);
 
@@ -153,6 +154,18 @@ class SentryDartPlugin {
         'Failed to upload source maps', releaseDartFilesParams);
 
     Log.taskCompleted(taskName);
+  }
+
+  void _addUrlPrefix(List<String> releaseDartFilesParams){
+    if (_configuration.urlPrefix != null) {
+      if (!_configuration.urlPrefix!.startsWith("~")) {
+        Log.error(
+            'urlPrefix must start with ~, please update the configuration.');
+        return;
+      }
+      releaseDartFilesParams.add('--url-prefix');
+      releaseDartFilesParams.add(_configuration.urlPrefix!);
+    }
   }
 
   void _setUrlAndTokenAndLog(List<String> params) {
