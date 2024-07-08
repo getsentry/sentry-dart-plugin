@@ -194,7 +194,6 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $release',
               '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js',
-              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
               '$cli $args releases $orgAndProject set-commits $release --auto',
               '$cli $args releases $orgAndProject finalize $release'
             ]);
@@ -215,7 +214,6 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $configRelease',
               '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js',
-              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart',
               '$cli $args releases $orgAndProject set-commits $configRelease --auto',
               '$cli $args releases $orgAndProject finalize $configRelease'
             ]);
@@ -238,7 +236,6 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $release',
               '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $build',
-              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart --dist $build',
               '$cli $args releases $orgAndProject set-commits $release --auto',
               '$cli $args releases $orgAndProject finalize $release'
             ]);
@@ -260,7 +257,6 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $configRelease',
               '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $build',
-              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart --dist $build',
               '$cli $args releases $orgAndProject set-commits $configRelease --auto',
               '$cli $args releases $orgAndProject finalize $configRelease'
             ]);
@@ -282,7 +278,6 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $release',
               '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
-              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart --dist $configDist',
               '$cli $args releases $orgAndProject set-commits $release --auto',
               '$cli $args releases $orgAndProject finalize $release'
             ]);
@@ -307,7 +302,6 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $release',
               '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
-              '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart --dist $configDist',
               '$cli $args releases $orgAndProject set-commits $release --auto',
               '$cli $args releases $orgAndProject finalize $release'
             ]);
@@ -330,7 +324,6 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $configRelease',
               '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
-              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart --dist $configDist',
               '$cli $args releases $orgAndProject set-commits $configRelease --auto',
               '$cli $args releases $orgAndProject finalize $configRelease'
             ]);
@@ -355,7 +348,6 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $configRelease',
               '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
-              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir --ext dart --dist $configDist',
               '$cli $args releases $orgAndProject set-commits $configRelease --auto',
               '$cli $args releases $orgAndProject finalize $configRelease'
             ]);

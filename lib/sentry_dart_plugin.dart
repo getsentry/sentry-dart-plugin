@@ -140,17 +140,20 @@ class SentryDartPlugin {
 
     await _executeAndLog('Failed to upload source maps', releaseJsFilesParams);
 
-    // upload source maps (dart)
-    List<String> releaseDartFilesParams = [];
-    releaseDartFilesParams.addAll(params);
 
-    _addExtensionToParams(['dart'], releaseDartFilesParams, release,
-        _configuration.buildFilesFolder);
+    if (_configuration.uploadSources) {
+      // upload source maps (dart)
+      List<String> releaseDartFilesParams = [];
+      releaseDartFilesParams.addAll(params);
 
-    _addWait(releaseDartFilesParams);
+      _addExtensionToParams(['dart'], releaseDartFilesParams, release,
+          _configuration.buildFilesFolder);
 
-    await _executeAndLog(
-        'Failed to upload source maps', releaseDartFilesParams);
+      _addWait(releaseDartFilesParams);
+
+      await _executeAndLog(
+          'Failed to upload source maps', releaseDartFilesParams);
+    }
 
     Log.taskCompleted(taskName);
   }
