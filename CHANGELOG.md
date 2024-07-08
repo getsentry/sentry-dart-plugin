@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Only upload `.dart` files with `upload-sourcemaps` when `upload_sources` is enabled ([#247](https://github.com/getsentry/sentry-dart-plugin/pull/247))
+
 ## 2.1.0
 
 ### Features
