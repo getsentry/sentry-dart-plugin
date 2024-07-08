@@ -7,6 +7,12 @@
 - Only upload `.dart` files with `upload-sourcemaps` when `upload_sources` is enabled ([#247](https://github.com/getsentry/sentry-dart-plugin/pull/247))
   - Enable `upload_sources` to opt in to Flutter web source context
 
+### Dependencies
+
+- Bump CLI from v2.27.0 to v2.32.1 ([#239](https://github.com/getsentry/sentry-dart-plugin/pull/239))
+  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2321)
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.27.0...2.32.1)
+
 ## 2.1.0
 
 ### Features
