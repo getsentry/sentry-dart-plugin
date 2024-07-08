@@ -142,7 +142,7 @@ class SentryDartPlugin {
 
 
     if (_configuration.uploadSources) {
-      // upload source maps (dart)
+      // upload source files (dart)
       List<String> releaseDartFilesParams = [];
       releaseDartFilesParams.addAll(params);
 
@@ -152,7 +152,7 @@ class SentryDartPlugin {
       _addWait(releaseDartFilesParams);
 
       await _executeAndLog(
-          'Failed to upload source maps', releaseDartFilesParams);
+          'Failed to upload source files', releaseDartFilesParams);
     }
 
     Log.taskCompleted(taskName);
