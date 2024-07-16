@@ -126,6 +126,49 @@ A custom `dist` value will also be used as the build number.
 
 If provided, the plugin will take your `release` and `dist` values without further mutating them. Make sure you configure everything as outlined in the [release docs](https://docs.sentry.io/product/cli/releases/) of `sentry-cli`.
 
+## Web
+
+If you're publishing your app on the web and it's not deployed at the root of your URL, you need to configure a `prefix` and update your stack frames.
+
+Add the prefix to your `pubspec.yaml` in addition to your other configurations. Make sure that you have `upload_source_maps` enabled:
+
+```properties
+sentry:
+  upload_source_maps=true
+  prefix: ~/your_prefix/
+```
+
+The absolute path of your stack frames also needs to include the same prefix so that the source maps can be found for deobfuscation. Below is an example of how to update the stack frame's absolute path to include the prefix using the `beforeSend` hook:
+
+```dart
+options.beforeSend = (event, hint) async {
+  final exceptions = event.exceptions?.map((exception) {
+    final stackTrace = exception.stackTrace;
+    if (stackTrace != null) {
+      final frames = stackTrace.frames.map((frame) {
+        const baseUrl = 'https://your-domain.com/';
+        final modifiedAbsPath = frame.absPath?.replaceFirst(
+          baseUrl,
+          '${baseUrl}your_prefix/',
+        );
+        return frame.copyWith(absPath: modifiedAbsPath);
+      }).toList();
+      return exception.copyWith(
+        stackTrace: SentryStackTrace(frames: frames),
+      );
+    }
+    return exception;
+  }).toList();
+  return event.copyWith(exceptions: exceptions ?? []);
+};
+```
+
+Don't forget to specify the prefix path when building for the web and also build with `--source-maps`:
+
+```bash
+flutter build web --base-href=/your_prefix/ --source-maps
+```
+
 ## Troubleshooting
 
 Sentry's `auth_token` requires the `project:releases` or `project:write` scope, See [docs](https://docs.sentry.io/product/cli/dif/#permissions).
