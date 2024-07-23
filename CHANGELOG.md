@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add urlPrefix option to allow subpath for source maps ([#222](https://github.com/getsentry/sentry-dart-plugin/pull/222))
+
 ### Fixes
 
 - Only upload `.dart` files with `upload-sourcemaps` when `upload_sources` is enabled ([#247](https://github.com/getsentry/sentry-dart-plugin/pull/247))
@@ -37,7 +41,6 @@
 - Add option to provide alternative binary directory ([#214](https://github.com/getsentry/sentry-dart-plugin/pull/214))
 - Support configuration arguments via `--sentry-define` ([#198](https://github.com/getsentry/sentry-dart-plugin/pull/198))
 - Provide path to local `sentry-cli` ([#224](https://github.com/getsentry/sentry-dart-plugin/pull/224))
-- Add urlPrefix option to allow subpath for source maps ([#222](https://github.com/getsentry/sentry-dart-plugin/pull/222))
 
 ### Dependencies
 
