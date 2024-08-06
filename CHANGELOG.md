@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add urlPrefix to sentry configuration ([#253](https://github.com/getsentry/sentry-dart-plugin/pull/253))
+
 ### Fixes
 
 - Only upload `.dart` files with `upload-sourcemaps` when `upload_sources` is enabled ([#247](https://github.com/getsentry/sentry-dart-plugin/pull/247))
