@@ -70,6 +70,9 @@ class Configuration {
   /// the Web Build folder, defaults to build/web
   late String webBuildFilesFolder;
 
+  /// The URL prefix, defaults to null
+  late String? urlPrefix;
+
   /// Associate commits with the release. Defaults to `auto` which will discover
   /// commits from the current project and compare them with the ones associated
   /// to the previous release. See docs for other options:
@@ -151,6 +154,7 @@ class Configuration {
     waitForProcessing = configValues.waitForProcessing ?? false;
     authToken = configValues.authToken; // or env. var. SENTRY_AUTH_TOKEN
     url = configValues.url; // or env. var. SENTRY_URL
+    urlPrefix = configValues.urlPrefix;
     logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
     binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
     binPath = configValues.binPath;
