@@ -62,6 +62,7 @@ void main() {
         org: 'org-args-config',
         authToken: 'auth_token-args-config',
         url: 'url-args-config',
+        urlPrefix: 'url-prefix-args-config',
         waitForProcessing: true,
         logLevel: 'warning',
         release: 'release-args-config',
@@ -85,6 +86,7 @@ void main() {
         org: 'org-file-config',
         authToken: 'auth_token-file-config',
         url: 'url-file-config',
+        urlPrefix: 'url-prefix-file-config',
         waitForProcessing: false,
         logLevel: 'debug',
         release: 'release-file-config',
@@ -114,6 +116,7 @@ void main() {
       expect(sut.org, 'org-args-config');
       expect(sut.authToken, 'auth_token-args-config');
       expect(sut.url, 'url-args-config');
+      expect(sut.urlPrefix, 'url-prefix-args-config');
       expect(sut.waitForProcessing, true);
       expect(sut.logLevel, 'warning');
       expect(sut.release, 'release-args-config');
@@ -147,6 +150,7 @@ void main() {
         org: 'org-file-config',
         authToken: 'auth_token-file-config',
         url: 'url-file-config',
+        urlPrefix: 'url-prefix-file-config',
         waitForProcessing: true,
         logLevel: 'debug',
         release: 'release-file-config',
@@ -177,6 +181,7 @@ void main() {
       expect(sut.org, 'org-file-config');
       expect(sut.authToken, 'auth_token-file-config');
       expect(sut.url, 'url-file-config');
+      expect(sut.urlPrefix, 'url-prefix-file-config');
       expect(sut.waitForProcessing, true);
       expect(sut.logLevel, 'debug');
       expect(sut.release, 'release-file-config');

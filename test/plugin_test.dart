@@ -341,13 +341,14 @@ void main() {
               upload_source_maps: true
               release: $configRelease
               dist: $configDist
+              url_prefix: ~/app/
             ''';
             final commandLog = await runWith(version, config);
 
             final args = commonArgs;
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $configRelease',
-              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist',
+              '$cli $args releases $orgAndProject files $configRelease upload-sourcemaps $buildDir/build/web --ext map --ext js --dist $configDist --url-prefix ~/app/',
               '$cli $args releases $orgAndProject set-commits $configRelease --auto',
               '$cli $args releases $orgAndProject finalize $configRelease'
             ]);
