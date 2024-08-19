@@ -10,7 +10,7 @@ environment:
 
 dependencies:
   yaml: ^3.1.0
-  injector: ^3.0.0
+  injector: ^4.0.0
   ansicolor: ^2.0.1
   system_info2: '>=3.0.1 <5.0.0'
   file: '>=6.1.4 <8.0.0'
