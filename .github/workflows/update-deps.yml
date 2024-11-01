@@ -15,5 +15,6 @@ jobs:
     with:
       path: scripts/update-cli.sh
       name: CLI
+      pr-strategy: update
     secrets:
       api-token: ${{ secrets.CI_DEPLOY_KEY }}
