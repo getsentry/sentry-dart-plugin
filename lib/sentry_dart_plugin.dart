@@ -12,6 +12,7 @@ import 'src/utils/log.dart';
 /// debug symbols and source maps
 class SentryDartPlugin {
   late Configuration _configuration;
+  final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
 
   /// SentryDartPlugin ctor. that inits the injectors
   SentryDartPlugin() {
@@ -87,15 +88,8 @@ class SentryDartPlugin {
       }
     }
 
-    if (_configuration.symbolsFolder.isNotEmpty) {
-      final symbolsRootDir = fs.directory(_configuration.symbolsFolder);
-      if (await symbolsRootDir.exists()) {
-        final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
-        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
-          await _executeAndLog(
-              'Failed to upload symbols', [...params, entry.path]);
-        }
-      }
+    for (final path in await _enumerateSymbolFiles()) {
+      await _executeAndLog('Failed to upload symbols', [...params, path]);
     }
 
     Log.taskCompleted(taskName);
@@ -126,6 +120,32 @@ class SentryDartPlugin {
 
     // web
     // TODO
+  }
+
+  Future<Set<String>> _enumerateSymbolFiles() async {
+    final result = <String>{};
+    final fs = injector.get<FileSystem>();
+
+    if (_configuration.symbolsFolder.isNotEmpty) {
+      final symbolsRootDir = fs.directory(_configuration.symbolsFolder);
+      if (await symbolsRootDir.exists()) {
+        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+          result.add(entry.path);
+        }
+      }
+    }
+
+    // for backward compatibility, also check the build dir if it has been
+    // configured with a different path.
+    if (_configuration.buildFilesFolder != _configuration.symbolsFolder) {
+      final symbolsRootDir = fs.directory(_configuration.buildFilesFolder);
+      if (await symbolsRootDir.exists()) {
+        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+          result.add(entry.path);
+        }
+      }
+    }
+    return result;
   }
 
   List<String> _releasesCliParams() {
