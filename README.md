@@ -59,6 +59,7 @@ sentry:
   log_level: error # possible values: trace, debug, info, warn, error
   release: ...
   dist: ...
+  build_path: ...
   web_build_path: ...
   commits: auto
   ignore_missing: true
@@ -88,6 +89,7 @@ wait_for_processing=false
 log_level=error # possible values: trace, debug, info, warn, error
 release=...
 dist=...
+build_path: ...
 web_build_path=...
 commits=auto
 ignore_missing=true
@@ -109,8 +111,8 @@ ignore_missing=true
 | log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
 | release | The release version for source maps, it should match the release set by the SDK | name@version from pubspec (string)  | no | SENTRY_RELEASE |
 | dist | The dist/build number for source maps, it should match the dist set by the SDK | the number after the '+' char from 'version' pubspec (string)  | no | SENTRY_DIST |
-| build_path | The build folder of debug files for upload | `.` current folder (string) | no | - |
-| web_build_path | The web build folder of debug files for upload | `build/web` relative to build_path (string)  | no | - |
+| build_path | The build folder of debug files for upload | `build` (string)  | no | - |
+| web_build_path | The web build folder of debug files for upload relative to build_path | `web` (string) | no | - |
 | commits | Release commits integration | auto (string) | no | - |
 | ignore_missing | Ignore missing commits previously used in the release | false (boolean) | no | - |
 | bin_dir | The folder where the plugin downloads the sentry-cli binary | .dart_tool/pub/bin/sentry_dart_plugin (string) | no | - |

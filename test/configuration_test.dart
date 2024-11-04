@@ -218,13 +218,10 @@ void main() {
       expect(sut.uploadSources, false);
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, false);
-      expect(
-        sut.buildFilesFolder,
-        fixture.fs.currentDirectory.path,
-      );
+      expect(sut.buildFilesFolder, 'build');
       expect(
         sut.webBuildFilesFolder,
-        fixture.fs.path.join(sut.buildFilesFolder, 'build/web'),
+        fixture.fs.path.join(sut.buildFilesFolder, 'web'),
       );
       expect(sut.waitForProcessing, false);
       expect(sut.binDir, '.dart_tool/pub/bin/sentry_dart_plugin');

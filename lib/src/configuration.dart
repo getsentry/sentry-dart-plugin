@@ -15,9 +15,8 @@ import 'utils/log.dart';
 
 class Configuration {
   late final FileSystem _fs = injector.get<FileSystem>();
-  // cannot use ${Directory.current.path}/build since --split-debug-info allows
-  // setting a custom path which is a sibling of build
-  /// The Build folder, defaults to the current directory.
+
+  /// The Build folder, defaults `build`.
   late String buildFilesFolder;
 
   /// Whether to upload debug symbols, defaults to true
@@ -67,7 +66,7 @@ class Configuration {
   /// The Apps name, defaults to [name] from pubspec
   late String name;
 
-  /// the Web Build folder, defaults to build/web
+  /// the Web Build folder, defaults to `web`
   late String webBuildFilesFolder;
 
   /// The URL prefix, defaults to null
@@ -141,12 +140,11 @@ class Configuration {
     commits = configValues.commits ?? 'auto';
     ignoreMissing = configValues.ignoreMissing ?? false;
 
-    buildFilesFolder = configValues.buildPath ?? _fs.currentDirectory.path;
+    buildFilesFolder = configValues.buildPath ?? 'build';
     // uploading JS and Map files need to have the correct folder structure
-    // otherwise symbolication fails, the default path for the web build folder is build/web
+    // otherwise symbolication fails, the default path for the web build folder is web
     // but can be customized so making it flexible.
-    final webBuildPath =
-        configValues.webBuildPath ?? _fs.path.join('build', 'web');
+    final webBuildPath = configValues.webBuildPath ?? 'web';
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
 
     project = configValues.project; // or env. var. SENTRY_PROJECT
