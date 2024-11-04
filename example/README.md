@@ -43,6 +43,9 @@ sentry:
   # default 'web'
   #web_build_path: ...
 
+  # default '.'
+  #symbols_path: ...
+
   # default to name@version from pubspec
   #release: ...
 ```

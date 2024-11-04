@@ -37,7 +37,7 @@ void main() {
     pm = MockProcessManager();
     injector.registerSingleton<ProcessManager>(() => pm, override: true);
     fs = MemoryFileSystem.test();
-    fs.currentDirectory = fs.directory(buildDir)..createSync();
+    fs.directory('$buildDir/app/outputs').createSync(recursive: true);
     injector.registerSingleton<FileSystem>(() => fs, override: true);
     injector.registerSingleton<CLISetup>(() => MockCLI(), override: true);
     configWriter = ConfigWriter(fs, name);
@@ -82,7 +82,7 @@ void main() {
 
           final args = '$commonArgs --log-level debug';
           expect(commandLog, [
-            '$cli $args debug-files upload $orgAndProject --include-sources $buildDir',
+            '$cli $args debug-files upload $orgAndProject --include-sources $buildDir/app/outputs',
             '$cli $args releases $orgAndProject new $release',
             '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/web --ext map --ext js',
             '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
@@ -108,7 +108,7 @@ void main() {
           const release = '$name@$version';
 
           expect(commandLog, [
-            '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
+            '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
             '$cli $commonArgs releases $orgAndProject new $release',
             '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
             '$cli $commonArgs releases $orgAndProject finalize $release'
@@ -129,7 +129,7 @@ void main() {
           const release = '$name@$version';
 
           expect(commandLog, [
-            '$customCliPath $commonArgs debug-files upload $orgAndProject $buildDir',
+            '$customCliPath $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
             '$customCliPath $commonArgs releases $orgAndProject new $release',
             '$customCliPath $commonArgs releases $orgAndProject set-commits $release --auto',
             '$customCliPath $commonArgs releases $orgAndProject finalize $release'
@@ -157,7 +157,7 @@ void main() {
               const release = '$name@$version';
 
               expect(commandLog, [
-                '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
+                '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
                 '$cli $commonArgs releases $orgAndProject new $release',
                 '$cli $commonArgs releases $orgAndProject set-commits $release $expectedArgs',
                 '$cli $commonArgs releases $orgAndProject finalize $release'
@@ -172,7 +172,7 @@ void main() {
             const release = '$name@$version';
 
             expect(commandLog, [
-              '$cli $commonArgs debug-files upload $orgAndProject $buildDir',
+              '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
               '$cli $commonArgs releases $orgAndProject new $release',
               '$cli $commonArgs releases $orgAndProject finalize $release'
             ]);

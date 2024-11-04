@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:file/file.dart';
 import 'package:process/process.dart';
+import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/injector.dart';
@@ -75,13 +77,55 @@ class SentryDartPlugin {
       Log.info('includeSources is disabled, not uploading sources.');
     }
 
-    params.add(_configuration.buildFilesFolder);
-
     _addWait(params);
 
-    await _executeAndLog('Failed to upload symbols', params);
+    final buildDirs = _enumerateBuildDirectories();
+    final fs = injector.get<FileSystem>();
+    await for (final path in buildDirs) {
+      if (await fs.directory(path).exists()) {
+        await _executeAndLog('Failed to upload symbols', [...params, path]);
+      }
+    }
+
+    if (_configuration.symbolsFolder.isNotEmpty) {
+      final symbolsRootDir = fs.directory(_configuration.symbolsFolder);
+      if (await symbolsRootDir.exists()) {
+        final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
+        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+          await _executeAndLog(
+              'Failed to upload symbols', [...params, entry.path]);
+        }
+      }
+    }
 
     Log.taskCompleted(taskName);
+  }
+
+  Stream<String> _enumerateBuildDirectories() async* {
+    final buildDir = _configuration.buildFilesFolder;
+
+    // Android
+    yield '$buildDir/app/outputs';
+    yield '$buildDir/app/intermediates';
+
+    // Windows
+    for (final subdir in ['', '/x64', '/arm64']) {
+      yield '$buildDir/windows$subdir/runner/Release';
+    }
+
+    // Linux
+    for (final subdir in ['/x64', '/arm64']) {
+      yield '$buildDir/linux$subdir/release/bundle';
+    }
+
+    // macOS
+    // TODO
+
+    // iOS
+    // TODO
+
+    // web
+    // TODO
   }
 
   List<String> _releasesCliParams() {

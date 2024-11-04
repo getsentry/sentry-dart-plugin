@@ -69,6 +69,9 @@ class Configuration {
   /// the Web Build folder, defaults to `web`
   late String webBuildFilesFolder;
 
+  /// The directory passed to `--split-debug-info`, defaults to '.'
+  late String symbolsFolder;
+
   /// The URL prefix, defaults to null
   late String? urlPrefix;
 
@@ -146,6 +149,7 @@ class Configuration {
     // but can be customized so making it flexible.
     final webBuildPath = configValues.webBuildPath ?? 'web';
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
+    symbolsFolder = configValues.symbolsPath ?? '.';
 
     project = configValues.project; // or env. var. SENTRY_PROJECT
     org = configValues.org; // or env. var. SENTRY_ORG
