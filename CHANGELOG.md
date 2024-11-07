@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changes
+
+- Upload debug symbols for known release build paths and the configured `symbols_path` ([#277](https://github.com/getsentry/sentry-dart-plugin/pull/277))
+  Previously, all debug symbols recognized by Sentry CLI were uploaded (starting in the current directory by default).
+  Now, the plugin checks the paths where `flutter build` outputs debug symbols for release builds and only uploads those.
+
 ### Features
 
 - Add urlPrefix to sentry configuration ([#253](https://github.com/getsentry/sentry-dart-plugin/pull/253))
@@ -58,7 +64,7 @@
 
 ### Fixes
 
-- Updated the `process` dependency range to `>=4.2.4 <6.0.0` ([#202](https://github.com/getsentry/sentry-dart-plugin/pull/202)). 
+- Updated the `process` dependency range to `>=4.2.4 <6.0.0` ([#202](https://github.com/getsentry/sentry-dart-plugin/pull/202)).
   - This update resolves a version conflict issue when using the `integration_test` package with Flutter version `3.19.0`
 
 ## 1.7.0
@@ -70,7 +76,7 @@
 ### Dependencies
 
 - Bump CLI from v2.21.2 to v2.27.0 ([#180](https://github.com/getsentry/sentry-dart-plugin/pull/180), [#195](https://github.com/getsentry/sentry-dart-plugin/pull/195), [#196](https://github.com/getsentry/sentry-dart-plugin/pull/196))
-  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2270) 
+  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2270)
   - [diff](https://github.com/getsentry/sentry-cli/compare/2.21.2...2.27.0)
 
 ## 1.6.3
