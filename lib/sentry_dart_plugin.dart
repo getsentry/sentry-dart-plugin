@@ -113,13 +113,11 @@ class SentryDartPlugin {
     }
 
     // macOS
-    // TODO
+    yield '$buildDir/macos/Build/Products/Release';
 
     // iOS
-    // TODO
-
-    // web
-    // TODO
+    yield '$buildDir/ios/iphoneos/Runner.App';
+    yield '$buildDir/ios/Release-iphoneos';
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {
