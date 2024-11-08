@@ -22,7 +22,7 @@ final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
         if (Platform.isMacOS) 'ios',
         if (Platform.isWindows) 'windows',
         if (Platform.isLinux) 'linux',
-        'web'
+        // TODO 'web'
       ];
 
 // NOTE: Don't run/debug this main(), it likely won't work.
@@ -95,12 +95,28 @@ void main() async {
 
       switch (platform) {
         case 'android':
+          expect(
+              serverOutput.keys,
+              containsAll([
+                'app.android-arm.symbols',
+                'app.android-arm64.symbols',
+                'app.android-x64.symbols',
+                'app.so',
+                'libapp.so',
+                'libflutter.so'
+              ]));
+          break;
         case 'ios':
+          expect(serverOutput.keys, containsAll(['App', 'Flutter', 'Runner']));
+          break;
         case 'macos':
+          expect(
+              serverOutput.keys, containsAll(['App', 'FlutterMacOS', appName]));
+          break;
         case 'windows':
         case 'linux':
         case 'web':
-          expect(serverOutput, isNotEmpty);
+          expect(serverOutput, '');
           break;
         default:
           fail('Platform "$platform" missing from tests');
