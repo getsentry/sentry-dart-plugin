@@ -80,10 +80,10 @@ class SentryDartPlugin {
 
     _addWait(params);
 
-    final buildDirs = _enumerateBuildDirectories();
+    final debugSymbolPaths = _enumerateDebugSymbolPaths();
     final fs = injector.get<FileSystem>();
-    await for (final path in buildDirs) {
-      if (await fs.directory(path).exists()) {
+    await for (final path in debugSymbolPaths) {
+      if (await fs.directory(path).exists() || await fs.file(path).exists()) {
         await _executeAndLog('Failed to upload symbols', [...params, path]);
       }
     }
@@ -95,7 +95,7 @@ class SentryDartPlugin {
     Log.taskCompleted(taskName);
   }
 
-  Stream<String> _enumerateBuildDirectories() async* {
+  Stream<String> _enumerateDebugSymbolPaths() async* {
     final buildDir = _configuration.buildFilesFolder;
 
     // Android (apk, appbundle)
@@ -106,6 +106,9 @@ class SentryDartPlugin {
     for (final subdir in ['', '/x64', '/arm64']) {
       yield '$buildDir/windows$subdir/runner/Release';
     }
+    // TODO we should delete this once we have windows symbols collected automatically.
+    // Related to https://github.com/getsentry/sentry-dart-plugin/issues/173
+    yield 'windows/flutter/ephemeral/flutter_windows.dll.pdb';
 
     // Linux
     for (final subdir in ['/x64', '/arm64']) {
