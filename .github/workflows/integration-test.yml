@@ -39,7 +39,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - run: sudo apt-get install ninja-build
+      - run: sudo apt-get install ninja-build libgtk-3-dev
         if: runner.os == 'Linux'
 
       - run: (flutter --version)[0] | Out-File flutter.version
