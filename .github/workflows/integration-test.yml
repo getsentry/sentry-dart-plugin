@@ -39,12 +39,15 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - run: apt-get install ninja-build
+      - run: sudo apt-get install ninja-build
         if: runner.os == 'Linux'
+
+      - run: (flutter --version)[0] | Out-File flutter.version
+        shell: pwsh
 
       - uses: actions/cache@v4
         with:
           path: temp/testapp-${{ matrix.target }}
-          key: integration-test-${{ matrix.host }}-${{ matrix.target }}
+          key: integration-test-${{ matrix.host }}-${{ matrix.target }}-${{ hashFiles('flutter.version') }}
 
       - run: dart test --tags integration
