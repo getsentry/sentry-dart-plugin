@@ -39,6 +39,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - run: env
+      - uses: actions/cache@v4
+        with:
+          path: temp/testapp-${{ matrix.target }}
+          key: integration-test-${{ matrix.host }}-${{ matrix.target }}
 
       - run: dart test --tags integration

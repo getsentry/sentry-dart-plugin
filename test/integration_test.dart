@@ -12,6 +12,19 @@ import 'package:test/test.dart';
 const appName = 'testapp';
 late final String serverUri;
 
+// Platforms to be tested are either coming from the CI env var or
+// we test everything that is possible to test on this machine.
+final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
+    ? [Platform.environment['TEST_PLATFORM']!]
+    : [
+        'android',
+        if (Platform.isMacOS) 'macos',
+        if (Platform.isMacOS) 'ios',
+        if (Platform.isWindows) 'windows',
+        if (Platform.isLinux) 'linux',
+        'web'
+      ];
+
 // NOTE: Don't run/debug this main(), it likely won't work.
 // You can use main() in `sentry_native_test.dart`.
 void main() async {
@@ -20,19 +33,6 @@ void main() async {
       ? Directory.current.parent
       : Directory.current;
   final tempDir = Directory('${repoRootDir.path}/temp');
-
-  // Platforms to be tested are either coming from the CI env var or
-  // we test everything that is possible to test on this machine.
-  final testPlatforms = bool.hasEnvironment('TEST_PLATFORM')
-      ? [String.fromEnvironment('TEST_PLATFORM')]
-      : [
-          'android',
-          if (Platform.isMacOS) 'macos',
-          if (Platform.isMacOS) 'ios',
-          if (Platform.isWindows) 'windows',
-          if (Platform.isLinux) 'linux',
-          'web'
-        ];
 
   late Process testServer;
   late Future<Map<String, int>> Function() stopServer;
