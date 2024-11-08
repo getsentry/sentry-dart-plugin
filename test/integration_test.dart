@@ -95,9 +95,10 @@ void main() async {
 
       switch (platform) {
         case 'android':
-        case 'windows':
         case 'ios':
         case 'macos':
+        case 'windows':
+        case 'linux':
         case 'web':
           expect(serverOutput, isNotEmpty);
           break;
