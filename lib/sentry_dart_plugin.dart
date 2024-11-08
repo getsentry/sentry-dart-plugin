@@ -98,7 +98,7 @@ class SentryDartPlugin {
   Stream<String> _enumerateBuildDirectories() async* {
     final buildDir = _configuration.buildFilesFolder;
 
-    // Android
+    // Android (apk, appbundle)
     yield '$buildDir/app/outputs';
     yield '$buildDir/app/intermediates';
 
@@ -115,9 +115,18 @@ class SentryDartPlugin {
     // macOS
     yield '$buildDir/macos/Build/Products/Release';
 
+    // macOS (macOS-framework)
+    yield '$buildDir/macos/framework/Release';
+
     // iOS
     yield '$buildDir/ios/iphoneos/Runner.App';
     yield '$buildDir/ios/Release-iphoneos';
+
+    // iOS (ipa)
+    yield '$buildDir/ios/archive';
+
+    // iOS (ios-framework)
+    yield '$buildDir/ios/framework/Release';
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {

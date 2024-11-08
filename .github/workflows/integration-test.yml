@@ -9,7 +9,7 @@ on:
 
 jobs:
   integration-test:
-    name: ${{ matrix.target }} @ ${{ matrix.host }}
+    name: ${{ matrix.target }}
     runs-on: ${{ matrix.host }}-latest
     strategy:
       fail-fast: false
@@ -18,13 +18,21 @@ jobs:
           - host: macos
             target: macos
           - host: macos
+            target: macos-framework
+          - host: macos
             target: ios
+          - host: macos
+            target: ios-framework
+          - host: macos
+            target: ipa
           - host: ubuntu
             target: linux
           - host: ubuntu
             target: web
           - host: ubuntu
-            target: android
+            target: apk
+          - host: ubuntu
+            target: appbundle
           - host: windows
             target: windows
     env:
