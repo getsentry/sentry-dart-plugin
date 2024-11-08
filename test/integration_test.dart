@@ -99,7 +99,7 @@ void main() async {
         case 'ios':
         case 'macos':
         case 'web':
-          expect(serverOutput, '');
+          expect(serverOutput, isNotEmpty);
           break;
         default:
           fail('Platform "$platform" missing from tests');

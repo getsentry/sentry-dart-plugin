@@ -39,6 +39,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - run: apt-get install ninja-build
+        if: runner.os == 'Linux'
+
       - uses: actions/cache@v4
         with:
           path: temp/testapp-${{ matrix.target }}
