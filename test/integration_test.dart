@@ -35,7 +35,7 @@ void main() async {
   final tempDir = Directory('${repoRootDir.path}/temp');
 
   late Process testServer;
-  late Future<Map<String, int>> Function() stopServer;
+  late Future<Iterable<String>> Function() stopServer;
   setUp(() async {
     // Start a dummy Sentry server that would listen to CLI requests.
     // Also, we collect the output so that we can check it in tests.
@@ -68,8 +68,12 @@ void main() async {
           .toString()
           .split(RegExp('\r?\n'))
           .where((v) => v.isNotEmpty);
+      return serverOutput;
+    };
+  });
 
-      final debugSymbols = serverOutput
+  uploadedDebugSymbols(Iterable<String> serverOutput) =>
+      Map.fromEntries(serverOutput
           .skipWhile((v) => v != 'Upload stats:')
           .skip(1)
           .map((v) => v.trim())
@@ -77,11 +81,7 @@ void main() async {
         final pair = v.split(':');
         return MapEntry(
             pair[0], int.parse(pair[1].replaceFirst(' count=', '')));
-      });
-
-      return Map.fromEntries(debugSymbols);
-    };
-  });
+      }));
 
   tearDown(() async {
     testServer.kill(ProcessSignal.sigkill);
@@ -92,31 +92,50 @@ void main() async {
       final appDir = await _prepareTestApp(tempDir, platform);
       await _runPlugin(appDir);
       final serverOutput = await stopServer();
+      final debugSymbols = uploadedDebugSymbols(serverOutput).keys;
 
       switch (platform) {
         case 'android':
           expect(
-              serverOutput.keys,
+              debugSymbols,
               containsAll([
                 'app.android-arm.symbols',
                 'app.android-arm64.symbols',
                 'app.android-x64.symbols',
                 'app.so',
-                'libapp.so',
                 'libflutter.so'
               ]));
           break;
         case 'ios':
-          expect(serverOutput.keys, containsAll(['App', 'Flutter', 'Runner']));
+          expect(debugSymbols, containsAll(['App', 'Flutter', 'Runner']));
           break;
         case 'macos':
-          expect(
-              serverOutput.keys, containsAll(['App', 'FlutterMacOS', appName]));
+          expect(debugSymbols, containsAll(['App', 'FlutterMacOS', appName]));
           break;
         case 'windows':
+          expect(
+              debugSymbols,
+              containsAll([
+                'app.so',
+                'app.windows-x64.symbols',
+                'flutter_windows.dll',
+                'flutter_windows.dll.pdb',
+              ]));
+          break;
         case 'linux':
+          expect(
+              debugSymbols,
+              containsAll([
+                'app.linux-x64.symbols',
+                'libapp.so',
+                'libflutter_linux_gtk.so',
+              ]));
+          break;
         case 'web':
-          expect(serverOutput, '');
+          expect(
+              serverOutput,
+              anyElement(
+                  contains('~/main.dart.js (sourcemap at main.dart.js.map)')));
           break;
         default:
           fail('Platform "$platform" missing from tests');
