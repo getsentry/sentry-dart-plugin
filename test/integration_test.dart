@@ -22,7 +22,7 @@ final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
         if (Platform.isMacOS) 'ios',
         if (Platform.isWindows) 'windows',
         if (Platform.isLinux) 'linux',
-        // TODO 'web'
+        'web'
       ];
 
 // NOTE: Don't run/debug this main(), it likely won't work.
@@ -90,7 +90,7 @@ void main() async {
   for (var platform in testPlatforms) {
     test(platform, () async {
       final appDir = await _prepareTestApp(tempDir, platform);
-      await _runPlugin(appDir);
+      final pluginOutput = await _runPlugin(appDir);
       final serverOutput = await stopServer();
       final debugSymbols = uploadedDebugSymbols(serverOutput).keys;
 
@@ -132,10 +132,8 @@ void main() async {
               ]));
           break;
         case 'web':
-          expect(
-              serverOutput,
-              anyElement(
-                  contains('~/main.dart.js (sourcemap at main.dart.js.map)')));
+          expect(pluginOutput,
+              anyElement(contains('(sourcemap at main.dart.js.map)')));
           break;
         default:
           fail('Platform "$platform" missing from tests');
@@ -148,7 +146,7 @@ void main() async {
 /// test runner's respective streams. It buffers stdout and returns it.
 ///
 /// Returns [_CommandResult] with exitCode and stdout as a single sting
-Future<String> _exec(String executable, List<String> arguments,
+Future<Iterable<String>> _exec(String executable, List<String> arguments,
     {String? cwd}) async {
   print(
       'executing "$executable ${arguments.join(' ')}"${cwd != null ? ' in $cwd' : ''}');
@@ -175,19 +173,19 @@ Future<String> _exec(String executable, List<String> arguments,
         "$executable ${arguments.join(' ')} failed with exit code $exitCode");
   }
 
-  return output.toString();
+  return output.toString().split(RegExp('\r?\n'));
 }
 
-Future<String> _flutter(List<String> arguments, {String? cwd}) =>
+Future<Iterable<String>> _flutter(List<String> arguments, {String? cwd}) =>
     _exec('flutter', arguments, cwd: cwd);
 
-Future<void> _runPlugin(Directory cwd) => _exec(
+Future<Iterable<String>> _runPlugin(Directory cwd) => _exec(
     'dart', ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
     cwd: cwd.path);
 
 // e.g. Flutter 3.24.4 • channel stable • https://github.com/flutter/flutter.git
 final _flutterVersionInfo =
-    _flutter(['--version']).then((output) => output.split('\n').first);
+    _flutter(['--version']).then((output) => output.first);
 
 Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   final appDir = Directory('${tempDir.path}/$appName-$platform');
