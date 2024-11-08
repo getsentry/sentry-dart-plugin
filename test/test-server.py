@@ -32,6 +32,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/STOP":
             print("HTTP server stopping!")
+            self.writeResponse(HTTPStatus.OK, "text/plain", '')
             threading.Thread(target=self.server.shutdown).start()
             return
 
