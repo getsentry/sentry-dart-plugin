@@ -93,9 +93,9 @@ void main() async {
                 'app.android-arm.symbols',
                 'app.android-arm64.symbols',
                 'app.android-x64.symbols',
-                'libapp.so',
                 'libflutter.so'
               ]));
+          expect(debugSymbols, anyElement(matches(RegExp('^(lib)?app.so\$'))));
           break;
         case 'ios':
         case 'ipa':
