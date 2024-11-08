@@ -255,7 +255,7 @@ class _ProcessStreamCollector {
 
   void _listen(List<int> data) {
     final str = utf8.decode(data);
-    print(str);
+    print(str.trim());
     _output.write(str);
   }
 
