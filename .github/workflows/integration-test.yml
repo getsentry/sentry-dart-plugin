@@ -9,17 +9,24 @@ on:
 
 jobs:
   integration-test:
+    name: ${{ matrix.target }} @ ${{ matrix.host }}
     runs-on: ${{ matrix.host }}-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - host: macos
-            target: [macos, ios, android, web]
+            target: macos
+          - host: macos
+            target: ios
           - host: ubuntu
-            target: [android, linux, web]
+            target: linux
+          - host: ubuntu
+            target: web
+          - host: ubuntu
+            target: android
           - host: windows
-            target: [windows, web]
+            target: windows
     steps:
       - uses: actions/checkout@v4
 
