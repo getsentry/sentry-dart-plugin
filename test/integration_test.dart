@@ -32,15 +32,14 @@ void main() async {
         ];
 
   late Process testServer;
-  late Future<Iterable<String>> Function() stopServer;
+  late Future<Map<String, int>> Function() stopServer;
   setUp(() async {
     // Start a dummy Sentry server that would listen to CLI requests.
     // Also, we collect the output so that we can check it in tests.
     // Note: we're using the python dummy sever because it was already available.
     // If we wanted, we could do all this in plain dart in the future.
-    testServer = await Process.start(
-        'python3', ['test/test-server.py', serverUri],
-        workingDirectory: repoRootDir.path);
+    testServer = await Process.start('python3', ['test-server.py', serverUri],
+        workingDirectory: '${repoRootDir.path}/test');
 
     final testServerOutput = StringBuffer();
     final testServerOutputFutures = <Future>[];
@@ -48,6 +47,7 @@ void main() async {
     // capture & forward streams
     listener(List<int> data) {
       stdout.add(data);
+      stdout.flush();
       testServerOutput.write(utf8.decode(data));
     }
 
@@ -61,10 +61,22 @@ void main() async {
         await future;
       }
       expect(await testServer.exitCode.timeout(const Duration(seconds: 5)), 0);
-      return testServerOutput
+      final serverOutput = testServerOutput
           .toString()
           .split(RegExp('\r?\n'))
           .where((v) => v.isNotEmpty);
+
+      final debugSymbols = serverOutput
+          .skipWhile((v) => v != 'Upload stats:')
+          .skip(1)
+          .map((v) => v.trim())
+          .map((v) {
+        final pair = v.split(':');
+        return MapEntry(
+            pair[0], int.parse(pair[1].replaceFirst(' count=', '')));
+      });
+
+      return Map.fromEntries(debugSymbols);
     };
   });
 
@@ -74,10 +86,22 @@ void main() async {
 
   for (var platform in testPlatforms) {
     test(platform, () async {
-      await _prepareTestApp(tempDir, platform);
+      final appDir = await _prepareTestApp(tempDir, platform);
+      await _runPlugin(appDir);
       final serverOutput = await stopServer();
-      expect(serverOutput, '');
-    });
+
+      switch (platform) {
+        case 'android':
+        case 'windows':
+        case 'ios':
+        case 'macos':
+        case 'web':
+          expect(serverOutput, '');
+          break;
+        default:
+          fail('Platform "$platform" missing from tests');
+      }
+    }, timeout: Timeout(const Duration(minutes: 5)));
   }
 }
 
@@ -100,13 +124,13 @@ Future<String> _exec(String executable, List<String> arguments,
   unawaited(stderr.addStream(process.stderr));
 
   final output = StringBuffer();
-  unawaited(stdout.addStream(process.stdout
-      .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
+  final outputFuture = process.stdout.forEach((data) {
+    stdout.add(data);
     output.write(utf8.decode(data));
-    sink.add(data);
-  }))));
+  });
 
   int exitCode = await process.exitCode;
+  await outputFuture;
   if (exitCode != 0) {
     throw Exception(
         "$executable ${arguments.join(' ')} failed with exit code $exitCode");
@@ -117,6 +141,10 @@ Future<String> _exec(String executable, List<String> arguments,
 
 Future<String> _flutter(List<String> arguments, {String? cwd}) =>
     _exec('flutter', arguments, cwd: cwd);
+
+Future<void> _runPlugin(Directory cwd) => _exec(
+    'dart', ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
+    cwd: cwd.path);
 
 // e.g. Flutter 3.24.4 • channel stable • https://github.com/flutter/flutter.git
 final _flutterVersionInfo =
@@ -159,6 +187,9 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
     await _flutter(['build', ...buildArgs], cwd: appDir.path);
 
     var pubspec = await pubspecFile.readAsString();
+    // Remove the plus symbol from the version. Current python sever has trouble
+    // parsing requests with this.
+    pubspec = pubspec.replaceFirst('version: 1.0.0+1', 'version: 1.0.0');
     pubspec = pubspec.replaceFirst('dev_dependencies:',
         'dev_dependencies:\n  sentry_dart_plugin:\n    path: ../../');
     pubspec = '''
@@ -170,7 +201,6 @@ sentry:
   auth_token: auth-token
   project: sentry-dart-plugin
   org: sentry-sdks
-  url: $serverUri
   log_level: debug
   commits: false
 ''';

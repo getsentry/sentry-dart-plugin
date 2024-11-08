@@ -11,8 +11,8 @@ import json
 apiOrg = 'sentry-sdks'
 apiProject = 'sentry-dart-plugin'
 uri = urlparse(sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8000')
-version = '1.1.0'
-appIdentifier = 'project'
+version = '1.0.0'
+appIdentifier = 'testapp'
 uploads = {}
 
 
@@ -42,11 +42,11 @@ class Handler(BaseHTTPRequestHandler):
                            '"maxRequestSize":33554432,"concurrency":1,"hashAlgorithm":"sha1","compression":["gzip"],'
                            '"accept":["debug_files","release_files","pdbs","sources","bcsymbolmaps"]}')
         elif self.isApi('/api/0/organizations/{}/repos/'.format(apiOrg)):
-            self.writeJSONFile("assets/repos.json")
+            self.writeJSONFile("integration-server-assets/repos.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}@{}/previous-with-commits/'.format(apiOrg, appIdentifier, version)):
             self.writeJSON('{ }')
         elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/files/'.format(apiOrg, apiProject, appIdentifier, version)):
-            self.writeJSONFile("assets/artifacts.json")
+            self.writeJSONFile("integration-server-assets/artifacts.json")
         else:
             self.writeNoApiMatchesError()
 
@@ -75,17 +75,17 @@ class Handler(BaseHTTPRequestHandler):
             jsonResponse = jsonResponse.rstrip(',') + '}'
             self.writeJSON(jsonResponse)
         elif self.isApi('api/0/projects/{}/{}/releases/'.format(apiOrg, apiProject)):
-            self.writeJSONFile("assets/release.json")
+            self.writeJSONFile("integration-server-assets/release.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}@{}/deploys/'.format(apiOrg, appIdentifier, version)):
-            self.writeJSONFile("assets/deploy.json")
+            self.writeJSONFile("integration-server-assets/deploy.json")
         elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/files/'.format(apiOrg, apiProject, appIdentifier, version)):
-            self.writeJSONFile("assets/artifact.json")
+            self.writeJSONFile("integration-server-assets/artifact.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}@{}/assemble/'.format(apiOrg, appIdentifier, version)):
-            self.writeJSONFile("assets/assemble-artifacts-response.json")
+            self.writeJSONFile("integration-server-assets/assemble-artifacts-response.json")
         elif self.isApi('/api/0/projects/{}/{}/files/dsyms/'.format(apiOrg, apiProject)):
-            self.writeJSONFile("assets/debug-info-files.json")
+            self.writeJSONFile("integration-server-assets/debug-info-files.json")
         elif self.isApi('/api/0/projects/{}/{}/files/dsyms/associate/'.format(apiOrg, apiProject)):
-            self.writeJSONFile("assets/associate-dsyms-response.json")
+            self.writeJSONFile("integration-server-assets/associate-dsyms-response.json")
         elif self.isApi('/api/0/projects/{}/{}/reprocessing/'.format(apiOrg, apiProject)):
             self.writeJSON('{ }')
         elif self.isApi('api/0/organizations/{}/chunk-upload/'.format(apiOrg)):
@@ -99,9 +99,9 @@ class Handler(BaseHTTPRequestHandler):
         self.start_response()
 
         if self.isApi('/api/0/organizations/{}/releases/{}@{}/'.format(apiOrg, appIdentifier, version)):
-            self.writeJSONFile("assets/release.json")
+            self.writeJSONFile("integration-server-assets/release.json")
         elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/'.format(apiOrg, apiProject, appIdentifier, version)):
-            self.writeJSONFile("assets/release.json")
+            self.writeJSONFile("integration-server-assets/release.json")
         else:
             self.writeNoApiMatchesError()
 
@@ -139,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def writeNoApiMatchesError(self):
         err = "Error: no API matched {} '{}'".format(self.command, self.path)
-        self.log_error(err)
+        self.log_error(err.replace('%', '%%'))
         self.writeResponse(HTTPStatus.NOT_IMPLEMENTED,
                            "text/plain", err)
 
