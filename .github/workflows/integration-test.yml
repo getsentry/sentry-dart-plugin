@@ -9,11 +9,17 @@ on:
 
 jobs:
   integration-test:
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ matrix.host }}-latest
     strategy:
       fail-fast: false
       matrix:
-        runsOn: [macos, ubuntu, windows]
+        include:
+          - host: macos
+            target: [macos, ios, android, web]
+          - host: ubuntu
+            target: [android, linux, web]
+          - host: windows
+            target: [windows, web]
     steps:
       - uses: actions/checkout@v4
 
@@ -24,14 +30,6 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - run: flutter pub get
-
-      - run: flutter build apk
-
-      - run: flutter build ipa --no-codesign
-        if: matrix.os == 'macos'
-
-      - run: flutter build web --source-maps
-
-      - run: scripts/test.ps1
-        shell: pwsh
+      - run: dart test --tags integration
+        env:
+          TEST_PLATFORM: ${{ matrix.target }}

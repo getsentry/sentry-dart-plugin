@@ -1,3 +1,6 @@
+@Tags(['integration'])
+library integration_test;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';

@@ -37,7 +37,7 @@ jobs:
       - run: scripts/commit-formatted-code.sh $GITHUB_HEAD_REF
         if: env.GITHUB_HEAD_REF != null
 
-      - run: dart test
+      - run: dart test --exclude-tags integration
 
       - name: Build
         run: |
@@ -53,7 +53,7 @@ jobs:
         id: analysis
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: "Check scores"
+      - name: 'Check scores'
         env:
           TOTAL: ${{ steps.analysis.outputs.total }}
           TOTAL_MAX: ${{ steps.analysis.outputs.total_max }}
