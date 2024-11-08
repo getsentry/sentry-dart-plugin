@@ -1,4 +1,4 @@
-name: integration-tests-sentry-cli
+name: integration-tests
 
 on:
   push:
@@ -7,17 +7,13 @@ on:
       - release/**
   pull_request:
 
-defaults:
-  run:
-    working-directory: integration-test
-
 jobs:
   integration-test:
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [macos, ubuntu, windows]
+        runsOn: [macos, ubuntu, windows]
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +27,7 @@ jobs:
       - run: flutter pub get
 
       - run: flutter build apk
-        
+
       - run: flutter build ipa --no-codesign
         if: matrix.os == 'macos'
 
