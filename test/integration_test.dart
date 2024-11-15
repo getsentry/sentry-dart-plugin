@@ -245,7 +245,7 @@ final _serverPort =
 });
 
 class _ProcessStreamCollector {
-  final StringBuffer _output = StringBuffer();
+  final _output = StringBuffer();
   final _futures = <Future>[];
 
   _ProcessStreamCollector(Process process) {

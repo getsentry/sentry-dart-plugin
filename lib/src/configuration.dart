@@ -66,7 +66,8 @@ class Configuration {
   /// The Apps name, defaults to [name] from pubspec
   late String name;
 
-  /// the Web Build folder, defaults to `web`
+  /// the Web Build folder, defaults to `web`.
+  /// Relative to the [buildFilesFolder] so the default resolves to `build/web`.
   late String webBuildFilesFolder;
 
   /// The directory passed to `--split-debug-info`, defaults to '.'

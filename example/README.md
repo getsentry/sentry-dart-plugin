@@ -40,7 +40,7 @@ sentry:
   # default 'build'
   #build_path: ...
 
-  # default 'web'
+  # default 'web' (relative to build_path, i.e. resolves to 'build/web')
   #web_build_path: ...
 
   # default '.'
