@@ -37,8 +37,14 @@ sentry:
   # default 'warning'
   log_level: error
 
-  # default to build/web
+  # default 'build'
+  #build_path: ...
+
+  # default 'web' (relative to build_path, i.e. resolves to 'build/web')
   #web_build_path: ...
+
+  # default '.'
+  #symbols_path: ...
 
   # default to name@version from pubspec
   #release: ...

@@ -19,6 +19,7 @@ class ConfigurationValues {
   final String? dist;
   final String? buildPath;
   final String? webBuildPath;
+  final String? symbolsPath;
   final String? commits;
   final bool? ignoreMissing;
   final String? binDir;
@@ -43,6 +44,7 @@ class ConfigurationValues {
     this.dist,
     this.buildPath,
     this.webBuildPath,
+    this.symbolsPath,
     this.commits,
     this.ignoreMissing,
     this.binDir,
@@ -94,6 +96,7 @@ class ConfigurationValues {
       dist: sentryArguments['dist'],
       buildPath: sentryArguments['build_path'],
       webBuildPath: sentryArguments['web_build_path'],
+      symbolsPath: sentryArguments['symbols_path'],
       commits: sentryArguments['commits'],
       ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
       binDir: sentryArguments['bin_dir'],
@@ -127,6 +130,7 @@ class ConfigurationValues {
       dist: configReader.getString('dist'),
       buildPath: configReader.getString('build_path'),
       webBuildPath: configReader.getString('web_build_path'),
+      symbolsPath: configReader.getString('symbols_path'),
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
       binDir: configReader.getString('bin_dir'),
@@ -180,6 +184,7 @@ class ConfigurationValues {
       dist: platformEnv.dist ?? args.dist ?? file.dist,
       buildPath: args.buildPath ?? file.buildPath,
       webBuildPath: args.webBuildPath ?? file.webBuildPath,
+      symbolsPath: args.symbolsPath ?? file.symbolsPath,
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
       binDir: args.binDir ?? file.binDir,

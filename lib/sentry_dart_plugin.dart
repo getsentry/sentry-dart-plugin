@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:file/file.dart';
 import 'package:process/process.dart';
+import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/injector.dart';
@@ -10,6 +12,7 @@ import 'src/utils/log.dart';
 /// debug symbols and source maps
 class SentryDartPlugin {
   late Configuration _configuration;
+  final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
 
   /// SentryDartPlugin ctor. that inits the injectors
   SentryDartPlugin() {
@@ -75,13 +78,84 @@ class SentryDartPlugin {
       Log.info('includeSources is disabled, not uploading sources.');
     }
 
-    params.add(_configuration.buildFilesFolder);
-
     _addWait(params);
 
-    await _executeAndLog('Failed to upload symbols', params);
+    final debugSymbolPaths = _enumerateDebugSymbolPaths();
+    final fs = injector.get<FileSystem>();
+    await for (final path in debugSymbolPaths) {
+      if (await fs.directory(path).exists() || await fs.file(path).exists()) {
+        await _executeAndLog('Failed to upload symbols', [...params, path]);
+      }
+    }
+
+    for (final path in await _enumerateSymbolFiles()) {
+      await _executeAndLog('Failed to upload symbols', [...params, path]);
+    }
 
     Log.taskCompleted(taskName);
+  }
+
+  Stream<String> _enumerateDebugSymbolPaths() async* {
+    final buildDir = _configuration.buildFilesFolder;
+
+    // Android (apk, appbundle)
+    yield '$buildDir/app/outputs';
+    yield '$buildDir/app/intermediates';
+
+    // Windows
+    for (final subdir in ['', '/x64', '/arm64']) {
+      yield '$buildDir/windows$subdir/runner/Release';
+    }
+    // TODO we should delete this once we have windows symbols collected automatically.
+    // Related to https://github.com/getsentry/sentry-dart-plugin/issues/173
+    yield 'windows/flutter/ephemeral/flutter_windows.dll.pdb';
+
+    // Linux
+    for (final subdir in ['/x64', '/arm64']) {
+      yield '$buildDir/linux$subdir/release/bundle';
+    }
+
+    // macOS
+    yield '$buildDir/macos/Build/Products/Release';
+
+    // macOS (macOS-framework)
+    yield '$buildDir/macos/framework/Release';
+
+    // iOS
+    yield '$buildDir/ios/iphoneos/Runner.App';
+    yield '$buildDir/ios/Release-iphoneos';
+
+    // iOS (ipa)
+    yield '$buildDir/ios/archive';
+
+    // iOS (ios-framework)
+    yield '$buildDir/ios/framework/Release';
+  }
+
+  Future<Set<String>> _enumerateSymbolFiles() async {
+    final result = <String>{};
+    final fs = injector.get<FileSystem>();
+
+    if (_configuration.symbolsFolder.isNotEmpty) {
+      final symbolsRootDir = fs.directory(_configuration.symbolsFolder);
+      if (await symbolsRootDir.exists()) {
+        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+          result.add(entry.path);
+        }
+      }
+    }
+
+    // for backward compatibility, also check the build dir if it has been
+    // configured with a different path.
+    if (_configuration.buildFilesFolder != _configuration.symbolsFolder) {
+      final symbolsRootDir = fs.directory(_configuration.buildFilesFolder);
+      if (await symbolsRootDir.exists()) {
+        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+          result.add(entry.path);
+        }
+      }
+    }
+    return result;
   }
 
   List<String> _releasesCliParams() {

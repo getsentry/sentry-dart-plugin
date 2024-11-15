@@ -17,9 +17,13 @@ late final String serverUri;
 final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
     ? [Platform.environment['TEST_PLATFORM']!]
     : [
-        'android',
+        'apk',
+        'appbundle',
         if (Platform.isMacOS) 'macos',
+        if (Platform.isMacOS) 'macos-framework',
         if (Platform.isMacOS) 'ios',
+        if (Platform.isMacOS) 'ios-framework',
+        if (Platform.isMacOS) 'ipa',
         if (Platform.isWindows) 'windows',
         if (Platform.isLinux) 'linux',
         'web'
@@ -44,27 +48,13 @@ void main() async {
     testServer = await Process.start('python3', ['test-server.py', serverUri],
         workingDirectory: '${repoRootDir.path}/test');
 
-    final testServerOutput = StringBuffer();
-    final testServerOutputFutures = <Future>[];
-
     // capture & forward streams
-    listener(List<int> data) {
-      stdout.add(data);
-      stdout.flush();
-      testServerOutput.write(utf8.decode(data));
-    }
-
-    testServerOutputFutures.clear();
-    testServerOutputFutures.add(testServer.stderr.forEach(listener));
-    testServerOutputFutures.add(testServer.stdout.forEach(listener));
+    final collector = _ProcessStreamCollector(testServer);
 
     stopServer = () async {
       await http.get(Uri.parse('$serverUri/STOP'));
-      for (var future in testServerOutputFutures) {
-        await future;
-      }
       expect(await testServer.exitCode.timeout(const Duration(seconds: 5)), 0);
-      final serverOutput = testServerOutput
+      final serverOutput = (await collector.output)
           .toString()
           .split(RegExp('\r?\n'))
           .where((v) => v.isNotEmpty);
@@ -95,22 +85,30 @@ void main() async {
       final debugSymbols = uploadedDebugSymbols(serverOutput).keys;
 
       switch (platform) {
-        case 'android':
+        case 'apk':
+        case 'appbundle':
           expect(
               debugSymbols,
               containsAll([
                 'app.android-arm.symbols',
                 'app.android-arm64.symbols',
                 'app.android-x64.symbols',
-                'app.so',
                 'libflutter.so'
               ]));
+          expect(debugSymbols, anyElement(matches(RegExp('^(lib)?app.so\$'))));
           break;
         case 'ios':
+        case 'ipa':
           expect(debugSymbols, containsAll(['App', 'Flutter', 'Runner']));
+          break;
+        case 'ios-framework':
+          expect(debugSymbols, containsAll(['App', 'Flutter']));
           break;
         case 'macos':
           expect(debugSymbols, containsAll(['App', 'FlutterMacOS', appName]));
+          break;
+        case 'macos-framework':
+          expect(debugSymbols, containsAll(['App', 'FlutterMacOS']));
           break;
         case 'windows':
           expect(
@@ -157,22 +155,15 @@ Future<Iterable<String>> _exec(String executable, List<String> arguments,
     runInShell: true,
   );
 
-  // forward standard streams
-  unawaited(stderr.addStream(process.stderr));
-
-  final output = StringBuffer();
-  final outputFuture = process.stdout.forEach((data) {
-    stdout.add(data);
-    output.write(utf8.decode(data));
-  });
+  final collector = _ProcessStreamCollector(process);
 
   int exitCode = await process.exitCode;
-  await outputFuture;
   if (exitCode != 0) {
     throw Exception(
         "$executable ${arguments.join(' ')} failed with exit code $exitCode");
   }
 
+  final output = await collector.output;
   return output.toString().split(RegExp('\r?\n'));
 }
 
@@ -192,13 +183,8 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   final pubspecFile = File('${appDir.path}/pubspec.yaml');
 
   final buildArgs = [
-    if (platform == 'ios')
-      'ipa'
-    else if (platform == 'android')
-      'apk'
-    else
-      platform,
-    if (platform == 'ios') '--no-codesign',
+    platform,
+    if (['ipa', 'ios'].contains(platform)) '--no-codesign',
     if (platform == 'web') '--source-maps',
     if (platform != 'web') '--split-debug-info=symbols',
     if (platform != 'web') '--obfuscate'
@@ -257,3 +243,22 @@ final _serverPort =
   socket.close();
   return port;
 });
+
+class _ProcessStreamCollector {
+  final _output = StringBuffer();
+  final _futures = <Future>[];
+
+  _ProcessStreamCollector(Process process) {
+    _futures.add(process.stderr.forEach((_listen)));
+    _futures.add(process.stdout.forEach((_listen)));
+  }
+
+  void _listen(List<int> data) {
+    final str = utf8.decode(data);
+    print(str.trim());
+    _output.write(str);
+  }
+
+  Future<String> get output =>
+      Future.wait(_futures).then((_) => _output.toString());
+}

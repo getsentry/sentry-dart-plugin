@@ -29,6 +29,7 @@ void main() {
         "--sentry-define=dist=fixture-dist",
         "--sentry-define=build_path=fixture-build_path",
         "--sentry-define=web_build_path=fixture-web_build_path",
+        "--sentry-define=symbols_path=fixture-symbols_path",
         "--sentry-define=commits=fixture-commits",
         "--sentry-define=ignore_missing=true",
         "--sentry-define=bin_dir=fixture-bin_dir",
@@ -51,6 +52,7 @@ void main() {
       expect(sut.dist, 'fixture-dist');
       expect(sut.buildPath, 'fixture-build_path');
       expect(sut.webBuildPath, 'fixture-web_build_path');
+      expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'fixture-bin_dir');
@@ -81,7 +83,7 @@ void main() {
     test('from config reader as pubspec', () {
       final sentryPubspec = '''
       version: fixture-sentry-version
-      name: fixture-sentry-name      
+      name: fixture-sentry-name
       upload_debug_symbols: true
       upload_source_maps: true
       upload_sources: true
@@ -92,6 +94,7 @@ void main() {
       dist: fixture-dist
       build_path: fixture-build_path
       web_build_path: fixture-web_build_path
+      symbols_path: fixture-symbols_path
       commits: fixture-commits
       ignore_missing: true
       bin_dir: fixture-bin_dir
@@ -133,6 +136,7 @@ void main() {
       expect(sut.dist, 'fixture-dist');
       expect(sut.buildPath, 'fixture-build_path');
       expect(sut.webBuildPath, 'fixture-web_build_path');
+      expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'fixture-bin_dir');
@@ -142,7 +146,7 @@ void main() {
     test('from config reader as properties', () {
       final sentryProperties = '''
       version=fixture-sentry-version
-      name=fixture-sentry-name   
+      name=fixture-sentry-name
       upload_debug_symbols=true
       upload_source_maps=true
       upload_sources=true
@@ -153,6 +157,7 @@ void main() {
       dist=fixture-dist
       build_path=fixture-build_path
       web_build_path=fixture-web_build_path
+      symbols_path: fixture-symbols_path
       commits=fixture-commits
       ignore_missing=true
       bin_dir=fixture-bin_dir
@@ -194,6 +199,7 @@ void main() {
       expect(sut.dist, 'fixture-dist');
       expect(sut.buildPath, 'fixture-build_path');
       expect(sut.webBuildPath, 'fixture-web_build_path');
+      expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, true);
       expect(sut.binDir, 'fixture-bin_dir');
