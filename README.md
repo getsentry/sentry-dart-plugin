@@ -23,16 +23,8 @@ The `flutter build apk`, `flutter build ios` (or _macos_) or `flutter build web`
 
 ## Run
 
-### Dart
-
 ```bash
 dart run sentry_dart_plugin
-```
-
-### Flutter
-
-```bash
-flutter packages pub run sentry_dart_plugin
 ```
 
 ## Configuration (Optional)
@@ -59,7 +51,9 @@ sentry:
   log_level: error # possible values: trace, debug, info, warn, error
   release: ...
   dist: ...
+  build_path: ...
   web_build_path: ...
+  symbols_path: ...
   commits: auto
   ignore_missing: true
 ```
@@ -69,7 +63,7 @@ in the format `--sentry-define=<KEY>=<VALUE>`. They take precedence over your fi
 but not over the alternative environment variables.
 
 ```bash
-flutter packages pub run sentry_dart_plugin --sentry-define=release=app-internal-test@0.0.1
+dart run sentry_dart_plugin --sentry-define=release=app-internal-test@0.0.1
 ```
 
 ### sentry.properties
@@ -88,7 +82,9 @@ wait_for_processing=false
 log_level=error # possible values: trace, debug, info, warn, error
 release=...
 dist=...
+build_path: ...
 web_build_path=...
+symbols_path=...
 commits=auto
 ignore_missing=true
 ```
@@ -109,8 +105,9 @@ ignore_missing=true
 | log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
 | release | The release version for source maps, it should match the release set by the SDK | name@version from pubspec (string)  | no | SENTRY_RELEASE |
 | dist | The dist/build number for source maps, it should match the dist set by the SDK | the number after the '+' char from 'version' pubspec (string)  | no | SENTRY_DIST |
-| build_path | The build folder of debug files for upload | `.` current folder (string) | no | - |
-| web_build_path | The web build folder of debug files for upload | `build/web` relative to build_path (string)  | no | - |
+| build_path | The build folder of debug files for upload | `build` (string)  | no | - |
+| web_build_path | The web build folder of debug files for upload relative to build_path | `web` (string) | no | - |
+| symbols_path | The directory containing debug symbols (i.e. the `--split-debug-info=` parameter value you pass to `flutter build`) | `.` (string) | no | - |
 | commits | Release commits integration | auto (string) | no | - |
 | ignore_missing | Ignore missing commits previously used in the release | false (boolean) | no | - |
 | bin_dir | The folder where the plugin downloads the sentry-cli binary | .dart_tool/pub/bin/sentry_dart_plugin (string) | no | - |

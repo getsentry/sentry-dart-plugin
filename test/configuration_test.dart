@@ -69,6 +69,7 @@ void main() {
         dist: 'dist-args-config',
         buildPath: 'build_path-args-config',
         webBuildPath: 'web_build_path-args-config',
+        symbolsPath: 'symbols_path-args-config',
         commits: 'commits-args-config',
         ignoreMissing: true,
         binDir: 'binDir-args-config',
@@ -93,6 +94,7 @@ void main() {
         dist: 'dist-file-config',
         buildPath: 'build_path-file-config',
         webBuildPath: 'web_build_path-file-config',
+        symbolsPath: 'symbols_path-args-config',
         commits: 'commits-file-config',
         ignoreMissing: false,
         binDir: 'binDir-file-config',
@@ -122,6 +124,7 @@ void main() {
       expect(sut.release, 'release-args-config');
       expect(sut.dist, 'dist-args-config');
       expect(sut.buildFilesFolder, 'build_path-args-config');
+      expect(sut.symbolsFolder, 'symbols_path-args-config');
       expect(
         sut.webBuildFilesFolder,
         fixture.fs.path.join(
@@ -157,6 +160,7 @@ void main() {
         dist: 'dist-file-config',
         buildPath: 'build_path-file-config',
         webBuildPath: 'web_build_path-file-config',
+        symbolsPath: 'symbols_path-args-config',
         commits: 'commits-file-config',
         ignoreMissing: true,
         binDir: 'binDir-file-config',
@@ -187,6 +191,7 @@ void main() {
       expect(sut.release, 'release-file-config');
       expect(sut.dist, 'dist-file-config');
       expect(sut.buildFilesFolder, 'build_path-file-config');
+      expect(sut.symbolsFolder, 'symbols_path-args-config');
       expect(
         sut.webBuildFilesFolder,
         fixture.fs.path
@@ -218,13 +223,10 @@ void main() {
       expect(sut.uploadSources, false);
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, false);
-      expect(
-        sut.buildFilesFolder,
-        fixture.fs.currentDirectory.path,
-      );
+      expect(sut.buildFilesFolder, 'build');
       expect(
         sut.webBuildFilesFolder,
-        fixture.fs.path.join(sut.buildFilesFolder, 'build/web'),
+        fixture.fs.path.join(sut.buildFilesFolder, 'web'),
       );
       expect(sut.waitForProcessing, false);
       expect(sut.binDir, '.dart_tool/pub/bin/sentry_dart_plugin');

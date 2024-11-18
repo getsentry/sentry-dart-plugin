@@ -1,0 +1,67 @@
+name: integration-tests
+
+on:
+  push:
+    branches:
+      - main
+      - release/**
+  pull_request:
+
+jobs:
+  integration-test:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: macos
+            target: macos
+          - host: macos
+            target: macos-framework
+          - host: macos
+            target: ios
+          - host: macos
+            target: ios-framework
+          - host: macos
+            target: ipa
+          - host: ubuntu
+            target: linux
+          - host: ubuntu
+            target: web
+          - host: ubuntu
+            target: apk
+          - host: ubuntu
+            target: appbundle
+          - host: windows
+            target: windows
+    env:
+      TEST_PLATFORM: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@44ac965b96f18d999802d4b807e3256d5a3f9fa1 #2.16.0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - run: sudo apt-get install ninja-build libgtk-3-dev
+        if: runner.os == 'Linux'
+
+      - run: (flutter --version)[0] | Out-File flutter.version
+        shell: pwsh
+
+      - uses: actions/cache@v4
+        with:
+          path: temp/testapp-${{ matrix.target }}
+          key: integration-test-${{ matrix.host }}-${{ matrix.target }}-${{ hashFiles('flutter.version') }}
+
+      - run: dart test --tags integration
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ${{ matrix.target }}-build
+          path: temp/testapp-${{ matrix.target }}/build
