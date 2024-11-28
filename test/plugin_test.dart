@@ -85,7 +85,7 @@ void main() {
             '$cli $args debug-files upload $orgAndProject --include-sources $buildDir/app/outputs',
             '$cli $args releases $orgAndProject new $release',
             '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir/web --ext map --ext js',
-            '$cli $args releases $orgAndProject files $release upload-sourcemaps $buildDir --ext dart',
+            '$cli $args releases $orgAndProject files $release upload-sourcemaps lib --ext dart',
             '$cli $args releases $orgAndProject set-commits $release --auto --ignore-missing',
             '$cli $args releases $orgAndProject finalize $release'
           ]);

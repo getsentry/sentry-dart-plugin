@@ -220,8 +220,7 @@ class SentryDartPlugin {
       List<String> releaseDartFilesParams = [];
       releaseDartFilesParams.addAll(params);
 
-      _addExtensionToParams(['dart'], releaseDartFilesParams, release,
-          _configuration.buildFilesFolder);
+      _addExtensionToParams(['dart'], releaseDartFilesParams, release, 'lib');
 
       _addWait(releaseDartFilesParams);
 
