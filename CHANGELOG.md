@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Dart source context on web missing ([#285](https://github.com/getsentry/sentry-dart-plugin/pull/285))
+
 ## 2.2.0
 
 ### Changes
