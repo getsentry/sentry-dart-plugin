@@ -5,3 +5,6 @@ artifactProvider:
 targets:
   - name: pub-dev
   - name: github
+  - name: registry
+    sdks:
+      pub:sentry_dart_plugin
