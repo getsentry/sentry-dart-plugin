@@ -7,4 +7,4 @@ targets:
   - name: github
   - name: registry
     sdks:
-      pub:sentry_dart_plugin
+      pub:sentry_dart_plugin:
