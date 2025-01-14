@@ -80,8 +80,8 @@ class SentryDartPlugin {
 
     _addWait(params);
 
-    final debugSymbolPaths = _enumerateDebugSymbolPaths();
     final fs = injector.get<FileSystem>();
+    final debugSymbolPaths = _enumerateDebugSymbolPaths(fs);
     await for (final path in debugSymbolPaths) {
       if (await fs.directory(path).exists() || await fs.file(path).exists()) {
         await _executeAndLog('Failed to upload symbols', [...params, path]);
@@ -95,7 +95,7 @@ class SentryDartPlugin {
     Log.taskCompleted(taskName);
   }
 
-  Stream<String> _enumerateDebugSymbolPaths() async* {
+  Stream<String> _enumerateDebugSymbolPaths(FileSystem fs) async* {
     final buildDir = _configuration.buildFilesFolder;
 
     // Android (apk, appbundle)
@@ -122,8 +122,15 @@ class SentryDartPlugin {
     yield '$buildDir/macos/framework/Release';
 
     // iOS
-    yield '$buildDir/ios/iphoneos/Runner.App';
-    yield '$buildDir/ios/Release-iphoneos';
+    yield '$buildDir/ios/iphoneos/Runner.app';
+    if (await fs.directory('$buildDir/ios').exists()) {
+      final regexp = RegExp(r'^Release(-.*)?-iphoneos$');
+      yield* fs
+          .directory('$buildDir/ios')
+          .list()
+          .where((v) => regexp.hasMatch(v.basename))
+          .map((e) => e.path);
+    }
 
     // iOS (ipa)
     yield '$buildDir/ios/archive';

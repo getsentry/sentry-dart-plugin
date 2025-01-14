@@ -353,6 +353,43 @@ void main() {
               '$cli $args releases $orgAndProject finalize $configRelease'
             ]);
           });
+
+          test('uploads debug symbols from all known paths', () async {
+            const version = '1.0.0';
+            final config = 'upload_debug_symbols: true';
+
+            final outputDirectories = [
+              'app/outputs',
+              'app/intermediates',
+              'windows/runner/Release',
+              'windows/x64/runner/Release',
+              'windows/arm64/runner/Release',
+              'linux/x64/release/bundle',
+              'linux/arm64/release/bundle',
+              'macos/Build/Products/Release',
+              'macos/framework/Release',
+              'ios/iphoneos/Runner.app',
+              'ios/Release-iphoneos',
+              'ios/Release-anyrandomflavor-iphoneos',
+              'ios/archive',
+              'ios/framework/Release'
+            ];
+            for (final dir in outputDirectories) {
+              fs
+                  .directory(buildDir)
+                  .childDirectory(dir)
+                  .createSync(recursive: true);
+            }
+
+            final commandLog = await runWith(version, config);
+
+            for (final dir in outputDirectories) {
+              expect(
+                  commandLog,
+                  contains(
+                      '$cli $commonArgs debug-files upload $orgAndProject $buildDir/$dir'));
+            }
+          });
         });
       });
     }
