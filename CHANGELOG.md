@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Support flavors in iOS symbol upload ([#292](https://github.com/getsentry/sentry-dart-plugin/pull/292))
+
 ### Dependencies
 
 - Bump CLI from v2.38.1 to v2.39.1 ([#282](https://github.com/getsentry/sentry-dart-plugin/pull/282))
