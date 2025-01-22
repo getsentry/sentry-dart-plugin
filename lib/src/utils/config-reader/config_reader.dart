@@ -32,7 +32,7 @@ abstract class ConfigReader {
 
     final propertiesFile = injector.get<FileSystem>().file("sentry.properties");
     if (propertiesFile.existsSync()) {
-      Log.info('retrieving config from sentry.properties');
+      Log.info('Found config from sentry.properties');
       // Loads properties class via string as there are issues loading the file
       // from path if run in the test suite
       final properties =
