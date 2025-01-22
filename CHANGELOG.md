@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Enhancements
+
+- Merge `pubspec.yaml` and `sentry.properties` values ([#295](https://github.com/getsentry/sentry-dart-plugin/pull/295))
+
 ## 2.3.0
 
 ### Features
