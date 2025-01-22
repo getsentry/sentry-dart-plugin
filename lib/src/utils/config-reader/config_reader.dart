@@ -1,4 +1,5 @@
 import 'package:properties/properties.dart';
+import 'package:sentry_dart_plugin/src/utils/config-reader/fallback_config_reader.dart';
 import 'package:yaml/yaml.dart';
 import 'package:file/file.dart';
 
@@ -13,20 +14,22 @@ abstract class ConfigReader {
   bool? getBool(String key, {String? deprecatedKey});
   bool contains(String key);
 
-  /// By default this ConfigReader factory will try to load pubspec.yaml first.
-  /// If the sentry config doesn't exist on pubspec.yaml it will use sentry.properties as fallback.
+  /// This factory will try to load both pubspec.yaml and sentry.properties.
+  /// If a sentry config key doesn't exist on pubspec.yaml it will use sentry.properties as fallback.
   factory ConfigReader() {
-    // Attempt to retrieve the config from pubspec.yaml first
+    YamlConfigReader? pubspecReader;
+
     final pubspec = getPubspec();
     final sentryConfig = pubspec['sentry'] as YamlMap?;
     if (sentryConfig != null) {
-      Log.info('retrieving config from pubspec.yaml');
-      return YamlConfigReader(sentryConfig);
+      Log.info('Found config from pubspec.yaml');
+      pubspecReader = YamlConfigReader(sentryConfig);
     } else {
       Log.info('sentry config not found in pubspec.yaml');
     }
 
-    // If sentry config is not found in pubspec.yaml, try loading from sentry.properties
+    PropertiesConfigReader? propertiesReader;
+
     final propertiesFile = injector.get<FileSystem>().file("sentry.properties");
     if (propertiesFile.existsSync()) {
       Log.info('retrieving config from sentry.properties');
@@ -34,10 +37,16 @@ abstract class ConfigReader {
       // from path if run in the test suite
       final properties =
           Properties.fromString(propertiesFile.readAsStringSync());
-      return PropertiesConfigReader(properties);
+      propertiesReader = PropertiesConfigReader(properties);
     }
-    Log.error('no config found, please use sentry.properties or pubspec.yaml.');
-    return NoOpConfigReader();
+
+    if (pubspecReader == null && propertiesReader == null) {
+      Log.error(
+          'no config found, please use sentry.properties or pubspec.yaml.');
+      return NoOpConfigReader();
+    } else {
+      return FallbackConfigReader(pubspecReader, propertiesReader);
+    }
   }
 
   static dynamic getPubspec() {
