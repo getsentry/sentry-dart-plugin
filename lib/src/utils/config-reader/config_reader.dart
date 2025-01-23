@@ -42,7 +42,7 @@ abstract class ConfigReader {
 
     if (pubspecReader == null && propertiesReader == null) {
       Log.error(
-          'no config found, please use sentry.properties or pubspec.yaml.');
+          'No config found, please use sentry.properties or pubspec.yaml.');
       return NoOpConfigReader();
     } else {
       return FallbackConfigReader(pubspecReader, propertiesReader);
