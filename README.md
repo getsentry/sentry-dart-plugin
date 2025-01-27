@@ -30,9 +30,10 @@ dart run sentry_dart_plugin
 ## Configuration (Optional)
 
 This tool comes with a default configuration. You can configure it to suit your needs.
-By default the plugin will look for the Sentry configuration in the `pubspec.yaml` file.
-If the configuration doesn't exist, the plugin will look for a `sentry.properties` file.
-If the `sentry.properties` file doesn't exist, the plugin will look for environment variables.
+By default the plugin will look for the Sentry configuration in the `pubspec.yaml` and `sentry.properties` file.
+If a Sentry value does not exist in `pubspec.yaml`, the plugin will fallback to `sentry.properties` file.
+If a value exists in both, the `pubspec.yaml` takes precedence over the `sentry.properties` values.
+Environment and argument variables will take precedence over the file based ones.
 
 ### pubspec.yaml
 

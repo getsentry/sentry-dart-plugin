@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Enhancements
+
+- Merge `pubspec.yaml` and `sentry.properties` values ([#295](https://github.com/getsentry/sentry-dart-plugin/pull/295))
+
 ### Dependencies
 
 - Bump CLI from v2.39.1 to v2.41.1 ([#290](https://github.com/getsentry/sentry-dart-plugin/pull/290))

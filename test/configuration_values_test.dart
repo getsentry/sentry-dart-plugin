@@ -207,6 +207,65 @@ void main() {
       expect(sut.sentryCliVersion, '1.0.0');
     });
 
+    test('from config reader pubspec & properties', () {
+      final sentryPubspec = '''
+      version: pubspec-version
+      name: pubspec-name
+      upload_debug_symbols: true
+      upload_source_maps: true
+      ''';
+
+      final sentryProperties = '''
+      version=properties-version
+      url=properties-url
+      upload_debug_symbols=false
+      upload_sources=true
+      ''';
+
+      FileSystem fs = MemoryFileSystem.test();
+      fs.currentDirectory = fs.directory('/subdir')..createSync();
+      injector.registerSingleton<FileSystem>(() => fs, override: true);
+
+      final propertiesConfig = ConfigFormatter.formatConfig(
+        sentryProperties,
+        ConfigFileType.sentryProperties,
+        null,
+      );
+      final propertiesWriter = ConfigWriter(fs, 'fixture-name');
+      propertiesWriter.write(
+        'fixture-version',
+        ConfigFileType.sentryProperties,
+        propertiesConfig,
+      );
+
+      final pubspecConfig = ConfigFormatter.formatConfig(
+        sentryPubspec,
+        ConfigFileType.pubspecYaml,
+        null,
+      );
+      final pubspecWriter = ConfigWriter(fs, 'fixture-name');
+      pubspecWriter.write(
+        'fixture-version',
+        ConfigFileType.pubspecYaml,
+        pubspecConfig,
+      );
+
+      final reader = ConfigReader();
+      final sut = ConfigurationValues.fromReader(reader);
+
+      // string
+
+      expect(sut.version, 'pubspec-version'); // pubspec before properties
+      expect(sut.name, 'pubspec-name'); // pubspec only
+      expect(sut.url, 'properties-url'); // properties only
+
+      // bool
+
+      expect(sut.uploadDebugSymbols, true); // pubspec before properties
+      expect(sut.uploadSourceMaps, true); // pubspec only
+      expect(sut.uploadSources, true); // properties only
+    });
+
     test("fromPlatformEnvironment", () {
       final arguments = {
         'SENTRY_RELEASE': 'fixture-release',
