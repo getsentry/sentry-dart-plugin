@@ -24,8 +24,6 @@ abstract class ConfigReader {
     if (sentryConfig != null) {
       Log.info('Found config from pubspec.yaml');
       pubspecReader = YamlConfigReader(sentryConfig);
-    } else {
-      Log.info('sentry config not found in pubspec.yaml');
     }
 
     PropertiesConfigReader? propertiesReader;
@@ -41,7 +39,7 @@ abstract class ConfigReader {
     }
 
     if (pubspecReader == null && propertiesReader == null) {
-      Log.warn(
+      Log.info(
           'No file config found. Reading values from arguments or environment.');
       return NoOpConfigReader();
     } else {
