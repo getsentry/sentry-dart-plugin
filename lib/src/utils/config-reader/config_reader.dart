@@ -19,6 +19,8 @@ abstract class ConfigReader {
   factory ConfigReader() {
     YamlConfigReader? pubspecReader;
 
+    Log.info('Searching for pubspec.yaml or sentry.properties config...');
+
     final pubspec = getPubspec();
     final sentryConfig = pubspec['sentry'] as YamlMap?;
     if (sentryConfig != null) {
