@@ -214,8 +214,13 @@ class SentryDartPlugin {
     List<String> releaseJsFilesParams = [];
     releaseJsFilesParams.addAll(params);
 
-    _addExtensionToParams(['map', 'js'], releaseJsFilesParams, release,
-        _configuration.webBuildFilesFolder);
+    _addExtensionToParams(
+      ['map', 'js'],
+      releaseJsFilesParams,
+      release,
+      _configuration.webBuildFilesFolder,
+      null,
+    );
 
     _addWait(releaseJsFilesParams);
     _addUrlPrefix(releaseJsFilesParams);
@@ -227,7 +232,13 @@ class SentryDartPlugin {
       List<String> releaseDartFilesParams = [];
       releaseDartFilesParams.addAll(params);
 
-      _addExtensionToParams(['dart'], releaseDartFilesParams, release, 'lib');
+      _addExtensionToParams(
+        ['dart'],
+        releaseDartFilesParams,
+        release,
+        'lib',
+        '~/lib/',
+      );
 
       _addWait(releaseDartFilesParams);
 
@@ -292,8 +303,8 @@ class SentryDartPlugin {
     }
   }
 
-  void _addExtensionToParams(
-      List<String> exts, List<String> params, String release, String folder) {
+  void _addExtensionToParams(List<String> exts, List<String> params,
+      String release, String folder, String? urlPrefix) {
     params.add('files');
     params.add(release);
     params.add('upload-sourcemaps');
@@ -313,6 +324,11 @@ class SentryDartPlugin {
       params.add('--dist');
       final values = release.split('+');
       params.add(values.last);
+    }
+
+    if (urlPrefix != null) {
+      params.add("--url-prefix");
+      params.add(urlPrefix);
     }
   }
 

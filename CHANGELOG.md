@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Add missing prefix to source file upload ([#306](https://github.com/getsentry/sentry-dart-plugin/pull/306))
+
 ## 2.4.0
 
 ### Enhancements
