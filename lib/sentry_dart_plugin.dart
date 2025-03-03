@@ -104,7 +104,7 @@ class SentryDartPlugin {
 
     // Windows
     for (final subdir in ['', '/x64', '/arm64']) {
-      yield* _enumerateDirectoryWithFlavors(fs, basePath: '$buildDir/windows$subdir/runner');
+      yield '$buildDir/windows$subdir/runner/Release';
     }
     // TODO we should delete this once we have windows symbols collected automatically.
     // Related to https://github.com/getsentry/sentry-dart-plugin/issues/173
