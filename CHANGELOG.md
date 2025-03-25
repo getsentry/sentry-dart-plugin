@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Enhancements
+
+- set `upload_sourcemaps` to true by default ([#313](https://github.com/getsentry/sentry-dart-plugin/pull/313))
+
 ## 2.4.1
 
 ### Fixes
