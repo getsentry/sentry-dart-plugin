@@ -139,7 +139,7 @@ class Configuration {
     version = configValues.version ?? pubspec['version'].toString();
     name = configValues.name ?? pubspec['name'].toString();
     uploadDebugSymbols = configValues.uploadDebugSymbols ?? true;
-    uploadSourceMaps = configValues.uploadSourceMaps ?? false;
+    uploadSourceMaps = configValues.uploadSourceMaps ?? true;
     uploadSources = configValues.uploadSources ?? false;
     commits = configValues.commits ?? 'auto';
     ignoreMissing = configValues.ignoreMissing ?? false;

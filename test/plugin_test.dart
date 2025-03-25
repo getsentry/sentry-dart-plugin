@@ -110,6 +110,7 @@ void main() {
           expect(commandLog, [
             '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
             '$cli $commonArgs releases $orgAndProject new $release',
+            '$cli $commonArgs releases $orgAndProject files $release upload-sourcemaps $buildDir/web --ext map --ext js',
             '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
             '$cli $commonArgs releases $orgAndProject finalize $release'
           ]);
@@ -131,6 +132,7 @@ void main() {
           expect(commandLog, [
             '$customCliPath $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
             '$customCliPath $commonArgs releases $orgAndProject new $release',
+            '$customCliPath $commonArgs releases $orgAndProject files $release upload-sourcemaps $buildDir/web --ext map --ext js',
             '$customCliPath $commonArgs releases $orgAndProject set-commits $release --auto',
             '$customCliPath $commonArgs releases $orgAndProject finalize $release'
           ]);
@@ -159,6 +161,7 @@ void main() {
               expect(commandLog, [
                 '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
                 '$cli $commonArgs releases $orgAndProject new $release',
+                '$cli $commonArgs releases $orgAndProject files $release upload-sourcemaps $buildDir/web --ext map --ext js',
                 '$cli $commonArgs releases $orgAndProject set-commits $release $expectedArgs',
                 '$cli $commonArgs releases $orgAndProject finalize $release'
               ]);
@@ -174,6 +177,7 @@ void main() {
             expect(commandLog, [
               '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
               '$cli $commonArgs releases $orgAndProject new $release',
+              '$cli $commonArgs releases $orgAndProject files $release upload-sourcemaps $buildDir/web --ext map --ext js',
               '$cli $commonArgs releases $orgAndProject finalize $release'
             ]);
           });

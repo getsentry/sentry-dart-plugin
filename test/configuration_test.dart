@@ -219,7 +219,7 @@ void main() {
       expect(sut.name, 'name-pubspec-config');
       expect(sut.version, 'version-pubspec-config');
       expect(sut.uploadDebugSymbols, true);
-      expect(sut.uploadSourceMaps, false);
+      expect(sut.uploadSourceMaps, true);
       expect(sut.uploadSources, false);
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, false);
