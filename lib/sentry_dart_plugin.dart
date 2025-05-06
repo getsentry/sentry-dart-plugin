@@ -165,11 +165,16 @@ class SentryDartPlugin {
     return result;
   }
 
-  List<String> _releasesCliParams() {
+  List<String> _baseCliParams() {
     final params = <String>[];
     _setUrlAndTokenAndLog(params);
-    params.add('releases');
     _addOrgAndProject(params);
+    return params;
+  }
+
+  List<String> _releasesCliParams() {
+    final params = _baseCliParams();
+    params.add('releases');
     return params;
   }
 
@@ -204,28 +209,51 @@ class SentryDartPlugin {
     await _executeAndLog('Failed to set commits', params);
   }
 
+  Future<List<String>> findAllJsFiles() async {
+    final List<String> jsFiles = [];
+    final fs = injector.get<FileSystem>();
+    final webDir = fs.directory(_configuration.webBuildFilesFolder);
+
+    if (await webDir.exists()) {
+      await for (final entity
+          in webDir.list(recursive: true, followLinks: false)) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.js')) {
+          jsFiles.add(entity.path);
+        }
+      }
+    } else {
+      Log.warn(
+        'Web build directory "${_configuration.webBuildFilesFolder}" does not exist, skipping JS file enumeration.',
+      );
+    }
+    return jsFiles;
+  }
+
   Future<void> _executeCliForSourceMaps(String release) async {
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
 
-    List<String> params = _releasesCliParams();
+    List<String> params = _baseCliParams();
+    params.add('sourcemaps');
+
+    // inject debug ids
+    final files = await findAllJsFiles();
+    params.add('inject');
+    for (final file in files) {
+      params.add(file);
+    }
+
+    await _executeAndLog('Failed to inject debug ids', params);
+
+    params = _baseCliParams();
 
     // upload source maps (js and map)
-    List<String> releaseJsFilesParams = [];
-    releaseJsFilesParams.addAll(params);
+    params.add('sourcemaps');
+    params.add('upload');
+    _addWait(params);
+    _addUrlPrefix(params);
 
-    _addExtensionToParams(
-      ['map', 'js'],
-      releaseJsFilesParams,
-      release,
-      _configuration.webBuildFilesFolder,
-      null,
-    );
-
-    _addWait(releaseJsFilesParams);
-    _addUrlPrefix(releaseJsFilesParams);
-
-    await _executeAndLog('Failed to upload source maps', releaseJsFilesParams);
+    await _executeAndLog('Failed to upload source maps', params);
 
     if (_configuration.uploadSources) {
       // upload source files (dart)
