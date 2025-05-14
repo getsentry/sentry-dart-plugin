@@ -30,11 +30,11 @@ class SentryDartPlugin {
         return 1;
       }
 
-      // if (_configuration.uploadDebugSymbols) {
-      //   await _executeCliForDebugSymbols();
-      // } else {
-      //   Log.info('uploadNativeSymbols is disabled.');
-      // }
+      if (_configuration.uploadDebugSymbols) {
+        await _executeCliForDebugSymbols();
+      } else {
+        Log.info('uploadNativeSymbols is disabled.');
+      }
 
       final release = _release;
 
@@ -211,7 +211,7 @@ class SentryDartPlugin {
     await _executeAndLog('Failed to set commits', params);
   }
 
-  Future<List<String>> findAllJsFiles() async {
+  Future<List<String>> _findAllJsFiles() async {
     final List<String> jsFiles = [];
     final fs = injector.get<FileSystem>();
     final webDir = fs.directory(_configuration.webBuildFilesFolder);
@@ -235,7 +235,11 @@ class SentryDartPlugin {
     List<String> params = [];
     params.add('sourcemaps');
 
-    final files = await findAllJsFiles();
+    // There is currently a sentry-cli bug that mutates the Flutter Web source map
+    // in such a way that it becomes corrupt / invalid -> that's why we need to
+    // inject each file separately instead of using a directory
+    // TODO(buenaflor): in the future we should use the directory when sentry-cli is fixed
+    final files = await _findAllJsFiles();
     params.add('inject');
     for (final file in files) {
       params.add(file);
