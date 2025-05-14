@@ -8,7 +8,7 @@ enum HostPlatform {
 }
 
 extension HostPlatformUtils on HostPlatform {
-  get executableExtension =>
+  String get executableExtension =>
       (this == HostPlatform.windows32bit || this == HostPlatform.windows64bit)
           ? '.exe'
           : '';
