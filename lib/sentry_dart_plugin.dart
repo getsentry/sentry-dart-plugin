@@ -41,7 +41,6 @@ class SentryDartPlugin {
       await _executeNewRelease(release);
 
       if (_configuration.uploadSourceMaps) {
-        print('here');
         await _executeCliForSourceMaps(release);
       } else {
         Log.info('uploadSourceMaps is disabled.');
