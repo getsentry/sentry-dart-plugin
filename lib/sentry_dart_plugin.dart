@@ -210,7 +210,7 @@ class SentryDartPlugin {
     await _executeAndLog('Failed to set commits', params);
   }
 
-  Future<List<String>> _findAllJsFiles() async {
+  Future<List<String>> _findAllJsFilePaths() async {
     final List<String> jsFiles = [];
     final fs = injector.get<FileSystem>();
     final webDir = fs.directory(_configuration.webBuildFilesFolder);
@@ -230,6 +230,26 @@ class SentryDartPlugin {
     return jsFiles;
   }
 
+  Future<List<File>> _findAllSourceMapFiles() async {
+    final List<File> sourceMapFiles = [];
+    final fs = injector.get<FileSystem>();
+    final webDir = fs.directory(_configuration.webBuildFilesFolder);
+
+    if (await webDir.exists()) {
+      await for (final entity
+          in webDir.list(recursive: true, followLinks: false)) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.js.map')) {
+          sourceMapFiles.add(entity.absolute);
+        }
+      }
+    } else {
+      Log.warn(
+        'Web build directory "${_configuration.webBuildFilesFolder}" does not exist, skipping source map file enumeration.',
+      );
+    }
+    return sourceMapFiles;
+  }
+
   Future<void> _injectDebugIds() async {
     List<String> params = [];
     params.add('sourcemaps');
@@ -238,10 +258,10 @@ class SentryDartPlugin {
     // in such a way that it becomes corrupt / invalid -> that's why we need to
     // inject each file separately instead of using a directory
     // TODO(buenaflor): in the future we should use the directory when sentry-cli is fixed
-    final files = await _findAllJsFiles();
+    final jsFilePaths = await _findAllJsFilePaths();
     params.add('inject');
-    for (final file in files) {
-      params.add(file);
+    for (final path in jsFilePaths) {
+      params.add(path);
     }
 
     params.addAll(_baseCliParams());
@@ -261,6 +281,13 @@ class SentryDartPlugin {
     params.add('--ext');
     params.add('map');
 
+    final sourceMapFiles = await _findAllSourceMapFiles();
+    final prefixesToStrip = await _extractPrefixesToStrip(sourceMapFiles);
+    for (final prefix in prefixesToStrip) {
+      params.add('--strip-prefix');
+      params.add(prefix);
+    }
+
     if (_configuration.uploadSources) {
       // In the sourcemap dart source files are prefixed with /lib - we'd have to
       // add the --url-prefix ~/lib however this would be applied to all files - even the source map -
@@ -273,6 +300,57 @@ class SentryDartPlugin {
 
     params.addAll(_baseCliParams());
     await _executeAndLog('Failed to sources files', params);
+  }
+
+  /// Reads available source maps and returns the list of prefixes that should
+  /// be stripped from the source maps. This step is important to make the
+  /// paths clearer and less verbose.
+  ///
+  /// Example 1:
+  /// - expected: `lib/main.dart`
+  /// - actual: `../../../../lib/main.dart`
+  ///
+  /// Example 2:
+  /// - expected: '/flutter/packages/flutter/lib/src/foo.dart'
+  /// - actual '../../SomePath/flutter/packages/flutter/lib/src/foo.dart'
+  Future<Set<String>> _extractPrefixesToStrip(List<File> sourceMapFiles) async {
+    final Set<String> prefixes = {};
+    for (final sourceMapFile in sourceMapFiles) {
+      late final Map<String, dynamic> sourceMap;
+      try {
+        final content = await sourceMapFile.readAsString();
+        sourceMap = jsonDecode(content) as Map<String, dynamic>;
+      } catch (e) {
+        continue;
+      }
+
+      final sources = sourceMap['sources'];
+      if (sources is! List) {
+        continue;
+      }
+
+      final pattern = RegExp(r'^(?:\.\./)+');
+      const flutterFragment = '/flutter/packages/flutter/lib/src/';
+      for (final entry in sources.whereType<String>()) {
+        // Get prefixes for /flutter/packages/flutter/lib/src/
+        // Normalize path separators so the `indexOf` search works on Windows too.
+        final normalised = entry.replaceAll('\\', '/');
+        final idx = normalised.indexOf(flutterFragment);
+        if (idx > 0) {
+          prefixes.add(normalised.substring(0, idx));
+        }
+
+        // Get prefixes for parent dir (../)
+        final match = pattern.firstMatch(entry);
+        if (match != null) {
+          final prefix = match.group(0)!;
+          // Each ../ segment is 3 characters long.
+          final matchCount = prefix.length ~/ 3;
+          prefixes.add('../' * matchCount);
+        }
+      }
+    }
+    return prefixes;
   }
 
   Future<void> _executeCliForSourceMaps(String release) async {
