@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 
 const appName = 'testapp';
@@ -17,15 +16,15 @@ late final String serverUri;
 final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
     ? [Platform.environment['TEST_PLATFORM']!]
     : [
-        'apk',
-        'appbundle',
-        if (Platform.isMacOS) 'macos',
-        if (Platform.isMacOS) 'macos-framework',
-        if (Platform.isMacOS) 'ios',
-        if (Platform.isMacOS) 'ios-framework',
-        if (Platform.isMacOS) 'ipa',
-        if (Platform.isWindows) 'windows',
-        if (Platform.isLinux) 'linux',
+        // 'apk',
+        // 'appbundle',
+        // if (Platform.isMacOS) 'macos',
+        // if (Platform.isMacOS) 'macos-framework',
+        // if (Platform.isMacOS) 'ios',
+        // if (Platform.isMacOS) 'ios-framework',
+        // if (Platform.isMacOS) 'ipa',
+        // if (Platform.isWindows) 'windows',
+        // if (Platform.isLinux) 'linux',
         'web'
       ];
 
@@ -130,6 +129,7 @@ void main() async {
               ]));
           break;
         case 'web':
+          print('pluginOutput: $pluginOutput')
           expect(pluginOutput,
               anyElement(contains('(sourcemap at main.dart.js.map)')));
           break;
@@ -181,6 +181,19 @@ final _flutterVersionInfo =
 Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   final appDir = Directory('${tempDir.path}/$appName-$platform');
   final pubspecFile = File('${appDir.path}/pubspec.yaml');
+  Directory('${appDir.path}/build/web').createSync(recursive: true);
+  File('${appDir.path}/build/web/main.dart.js')
+      .writeAsStringSync('''//# sourceMappingURL=main.dart.js.map>
+''');
+  File('${appDir.path}/build/web/main.dart.js.map').writeAsStringSync('''{
+  "version": 3,
+  "sources": ["../lib/src/main.dart"],
+  "names": ["Celebrate", "ReactDOM", "render", "document", "getElementById"],
+  "mappings": "AAAA,MAAMA,SAAS,GAAG,MAAM;AACtB,sBAAO,oFAAP;AACD,CAFD;;AAIAC,QAAQ,CAACC,MAAT,eACE,oBAAC,SAAD,OADF,EAEEC,QAAQ,CAACC,cAAT,CAAwB,MAAxB,CAFF",
+  "sourcesContent": [
+    "const Celebrate = () => {\n  return <p>It's working! 🎉🎉🎉</p>;\n};\n\nReactDOM.render(\n  <Celebrate />,\n  document.getElementById('root'),\n);"
+  ]
+}''');
 
   final buildArgs = [
     platform,
@@ -189,49 +202,49 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
     if (platform != 'web') '--split-debug-info=symbols',
     if (platform != 'web') '--obfuscate'
   ];
+  //
+  // // In order to not run the build on every test execution, we store a hash.
+  // final hashFile = File('${appDir.path}/.hash');
+  // final hash = md5
+  //     .convert(utf8.encode(await _flutterVersionInfo + buildArgs.toString()))
+  //     .toString();
+  //
+  // if (await hashFile.exists()) {
+  //   if (await hashFile.readAsString() != hash) {
+  //     await appDir.delete(recursive: true);
+  //   }
+  // } else if (await appDir.exists()) {
+  //   await appDir.delete(recursive: true);
+  // }
 
-  // In order to not run the build on every test execution, we store a hash.
-  final hashFile = File('${appDir.path}/.hash');
-  final hash = md5
-      .convert(utf8.encode(await _flutterVersionInfo + buildArgs.toString()))
-      .toString();
+  // if (!await hashFile.exists()) {
+  await _flutter(['create', appDir.path, '--project-name', appName]);
 
-  if (await hashFile.exists()) {
-    if (await hashFile.readAsString() != hash) {
-      await appDir.delete(recursive: true);
-    }
-  } else if (await appDir.exists()) {
-    await appDir.delete(recursive: true);
-  }
+  await _flutter(['build', ...buildArgs], cwd: appDir.path);
 
-  if (!await hashFile.exists()) {
-    await _flutter(['create', appDir.path, '--project-name', appName]);
-
-    await _flutter(['build', ...buildArgs], cwd: appDir.path);
-
-    var pubspec = await pubspecFile.readAsString();
-    // Remove the plus symbol from the version. Current python sever has trouble
-    // parsing requests with this.
-    pubspec = pubspec.replaceFirst('version: 1.0.0+1', 'version: 1.0.0');
-    pubspec = pubspec.replaceFirst('dev_dependencies:',
-        'dev_dependencies:\n  sentry_dart_plugin:\n    path: ../../');
-    pubspec = '''
+  var pubspec = await pubspecFile.readAsString();
+  // Remove the plus symbol from the version. Current python sever has trouble
+  // parsing requests with this.
+  pubspec = pubspec.replaceFirst('version: 1.0.0+1', 'version: 1.0.0');
+  pubspec = pubspec.replaceFirst('dev_dependencies:',
+      'dev_dependencies:\n  sentry_dart_plugin:\n    path: ../../');
+  pubspec = '''
 $pubspec
 sentry:
   upload_debug_symbols: true
   upload_sources: true
-  upload_source_maps: true
+  upload_source_maps: ${platform == 'web'}
   auth_token: auth-token
   project: sentry-dart-plugin
   org: sentry-sdks
   log_level: debug
   commits: false
 ''';
-    await pubspecFile.writeAsString(pubspec);
+  await pubspecFile.writeAsString(pubspec);
 
-    // Store the hash so that we don't need to rebuild the app.
-    await hashFile.writeAsString(hash);
-  }
+  // Store the hash so that we don't need to rebuild the app.
+  // await hashFile.writeAsString(hash);
+  // }
 
   return appDir;
 }

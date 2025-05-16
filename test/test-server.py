@@ -40,7 +40,7 @@ class Handler(BaseHTTPRequestHandler):
             self.writeJSON('{"url":"' + uri.geturl() + self.path + '",'
                            '"chunkSize":8388608,"chunksPerRequest":64,"maxFileSize":2147483648,'
                            '"maxRequestSize":33554432,"concurrency":1,"hashAlgorithm":"sha1","compression":["gzip"],'
-                           '"accept":["debug_files","release_files","pdbs","sources","bcsymbolmaps"]}')
+                           '"accept":["debug_files","release_files","pdbs","sources","bcsymbolmaps", "artifact_bundles", "artifact_bundles_v2"]}')
         elif self.isApi('/api/0/organizations/{}/repos/'.format(apiOrg)):
             self.writeJSONFile("integration-server-assets/repos.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}@{}/previous-with-commits/'.format(apiOrg, appIdentifier, version)):
@@ -90,6 +90,8 @@ class Handler(BaseHTTPRequestHandler):
             self.writeJSON('{ }')
         elif self.isApi('api/0/organizations/{}/chunk-upload/'.format(apiOrg)):
             self.writeJSON('{ }')
+        elif self.isApi('/api/0/organizations/{}/artifactbundle/assemble/'.format(apiOrg)):
+            self.writeJSON('{"state":"created","missingChunks":[]}')
         else:
             self.writeNoApiMatchesError()
 
