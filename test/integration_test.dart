@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
@@ -16,15 +17,15 @@ late final String serverUri;
 final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
     ? [Platform.environment['TEST_PLATFORM']!]
     : [
-        // 'apk',
-        // 'appbundle',
-        // if (Platform.isMacOS) 'macos',
-        // if (Platform.isMacOS) 'macos-framework',
-        // if (Platform.isMacOS) 'ios',
-        // if (Platform.isMacOS) 'ios-framework',
-        // if (Platform.isMacOS) 'ipa',
-        // if (Platform.isWindows) 'windows',
-        // if (Platform.isLinux) 'linux',
+        'apk',
+        'appbundle',
+        if (Platform.isMacOS) 'macos',
+        if (Platform.isMacOS) 'macos-framework',
+        if (Platform.isMacOS) 'ios',
+        if (Platform.isMacOS) 'ios-framework',
+        if (Platform.isMacOS) 'ipa',
+        if (Platform.isWindows) 'windows',
+        if (Platform.isLinux) 'linux',
         'web'
       ];
 
@@ -129,9 +130,8 @@ void main() async {
               ]));
           break;
         case 'web':
-          print('pluginOutput: $pluginOutput')
-          expect(pluginOutput,
-              anyElement(contains('(sourcemap at main.dart.js.map)')));
+          final output = pluginOutput.join('\n');
+          expect(output, contains('sourcemap at main.dart.js.map'));
           break;
         default:
           fail('Platform "$platform" missing from tests');
@@ -202,33 +202,33 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
     if (platform != 'web') '--split-debug-info=symbols',
     if (platform != 'web') '--obfuscate'
   ];
-  //
-  // // In order to not run the build on every test execution, we store a hash.
-  // final hashFile = File('${appDir.path}/.hash');
-  // final hash = md5
-  //     .convert(utf8.encode(await _flutterVersionInfo + buildArgs.toString()))
-  //     .toString();
-  //
-  // if (await hashFile.exists()) {
-  //   if (await hashFile.readAsString() != hash) {
-  //     await appDir.delete(recursive: true);
-  //   }
-  // } else if (await appDir.exists()) {
-  //   await appDir.delete(recursive: true);
-  // }
 
-  // if (!await hashFile.exists()) {
-  await _flutter(['create', appDir.path, '--project-name', appName]);
+  // In order to not run the build on every test execution, we store a hash.
+  final hashFile = File('${appDir.path}/.hash');
+  final hash = md5
+      .convert(utf8.encode(await _flutterVersionInfo + buildArgs.toString()))
+      .toString();
 
-  await _flutter(['build', ...buildArgs], cwd: appDir.path);
+  if (await hashFile.exists()) {
+    if (await hashFile.readAsString() != hash) {
+      await appDir.delete(recursive: true);
+    }
+  } else if (await appDir.exists()) {
+    await appDir.delete(recursive: true);
+  }
 
-  var pubspec = await pubspecFile.readAsString();
-  // Remove the plus symbol from the version. Current python sever has trouble
-  // parsing requests with this.
-  pubspec = pubspec.replaceFirst('version: 1.0.0+1', 'version: 1.0.0');
-  pubspec = pubspec.replaceFirst('dev_dependencies:',
-      'dev_dependencies:\n  sentry_dart_plugin:\n    path: ../../');
-  pubspec = '''
+  if (!await hashFile.exists()) {
+    await _flutter(['create', appDir.path, '--project-name', appName]);
+
+    await _flutter(['build', ...buildArgs], cwd: appDir.path);
+
+    var pubspec = await pubspecFile.readAsString();
+    // Remove the plus symbol from the version. Current python sever has trouble
+    // parsing requests with this.
+    pubspec = pubspec.replaceFirst('version: 1.0.0+1', 'version: 1.0.0');
+    pubspec = pubspec.replaceFirst('dev_dependencies:',
+        'dev_dependencies:\n  sentry_dart_plugin:\n    path: ../../');
+    pubspec = '''
 $pubspec
 sentry:
   upload_debug_symbols: true
@@ -240,11 +240,11 @@ sentry:
   log_level: debug
   commits: false
 ''';
-  await pubspecFile.writeAsString(pubspec);
+    await pubspecFile.writeAsString(pubspec);
 
-  // Store the hash so that we don't need to rebuild the app.
-  // await hashFile.writeAsString(hash);
-  // }
+    // Store the hash so that we don't need to rebuild the app.
+    await hashFile.writeAsString(hash);
+  }
 
   return appDir;
 }
