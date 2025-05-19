@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Support injecting debug ids for Flutter Web ([#319](https://github.com/getsentry/sentry-dart-plugin/pull/319))
+
 ## 2.4.1
 
 ### Fixes

@@ -130,8 +130,9 @@ void main() async {
               ]));
           break;
         case 'web':
-          final output = pluginOutput.join('\n');
-          expect(output, contains('sourcemap at main.dart.js.map'));
+          expect(pluginOutput,
+              anyElement(contains('sourcemap at main.dart.js.map, debug id')));
+          expect(pluginOutput, anyElement(contains('☑ uploading source maps')));
           break;
         default:
           fail('Platform "$platform" missing from tests');
@@ -183,7 +184,7 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   final pubspecFile = File('${appDir.path}/pubspec.yaml');
   Directory('${appDir.path}/build/web').createSync(recursive: true);
   File('${appDir.path}/build/web/main.dart.js')
-      .writeAsStringSync('''//# sourceMappingURL=main.dart.js.map>
+      .writeAsStringSync('''//# sourceMappingURL=main.dart.js.map
 ''');
   File('${appDir.path}/build/web/main.dart.js.map').writeAsStringSync('''{
   "version": 3,
