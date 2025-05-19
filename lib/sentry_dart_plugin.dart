@@ -314,8 +314,8 @@ class SentryDartPlugin {
   /// - actual: `../../../../lib/main.dart`
   ///
   /// Example 2:
-  /// - expected: '/flutter/packages/flutter/lib/src/foo.dart'
-  /// - actual '../../SomePath/flutter/packages/flutter/lib/src/foo.dart'
+  /// - expected: `/flutter/packages/flutter/lib/src/foo.dart`
+  /// - actual `../../SomePath/flutter/packages/flutter/lib/src/foo.dart`
   Future<Set<String>> _extractPrefixesToStrip(List<File> sourceMapFiles) async {
     final Set<String> prefixes = {};
     for (final sourceMapFile in sourceMapFiles) {
@@ -332,19 +332,19 @@ class SentryDartPlugin {
         continue;
       }
 
-      final pattern = RegExp(r'^(?:\.\./)+');
+      final parentDirPattern = RegExp(r'^(?:\.\./)+');
       const flutterFragment = '/flutter/packages/flutter/lib/src/';
       for (final entry in sources.whereType<String>()) {
+        // Normalize path separators so Windows works as well.
+        final normalisedEntry = entry.replaceAll('\\', '/');
+
         // Get prefixes for /flutter/packages/flutter/lib/src/
-        // Normalize path separators so the `indexOf` search works on Windows too.
-        final normalised = entry.replaceAll('\\', '/');
-        final idx = normalised.indexOf(flutterFragment);
+        final idx = normalisedEntry.indexOf(flutterFragment);
         if (idx > 0) {
-          prefixes.add(normalised.substring(0, idx));
+          prefixes.add(normalisedEntry.substring(0, idx));
         }
 
-        // Get prefixes for parent dir (../)
-        final match = pattern.firstMatch(entry);
+        final match = parentDirPattern.firstMatch(normalisedEntry);
         if (match != null) {
           final prefix = match.group(0)!;
           // Each ../ segment is 3 characters long.
