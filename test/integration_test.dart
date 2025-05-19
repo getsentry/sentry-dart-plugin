@@ -184,7 +184,7 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   final pubspecFile = File('${appDir.path}/pubspec.yaml');
   Directory('${appDir.path}/build/web').createSync(recursive: true);
   File('${appDir.path}/build/web/main.dart.js')
-      .writeAsStringSync('''//# sourceMappingURL=main.dart.js.map>
+      .writeAsStringSync('''//# sourceMappingURL=main.dart.js.map
 ''');
   File('${appDir.path}/build/web/main.dart.js.map').writeAsStringSync('''{
   "version": 3,
