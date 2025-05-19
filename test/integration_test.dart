@@ -5,8 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
 const appName = 'testapp';
@@ -131,7 +131,7 @@ void main() async {
           break;
         case 'web':
           expect(pluginOutput,
-              anyElement(contains('(sourcemap at main.dart.js.map)')));
+              anyElement(contains('sourcemap at main.dart.js.map, debug id')));
           break;
         default:
           fail('Platform "$platform" missing from tests');
@@ -181,6 +181,19 @@ final _flutterVersionInfo =
 Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   final appDir = Directory('${tempDir.path}/$appName-$platform');
   final pubspecFile = File('${appDir.path}/pubspec.yaml');
+  Directory('${appDir.path}/build/web').createSync(recursive: true);
+  File('${appDir.path}/build/web/main.dart.js')
+      .writeAsStringSync('''//# sourceMappingURL=main.dart.js.map>
+''');
+  File('${appDir.path}/build/web/main.dart.js.map').writeAsStringSync('''{
+  "version": 3,
+  "sources": ["../lib/src/main.dart"],
+  "names": ["Celebrate", "ReactDOM", "render", "document", "getElementById"],
+  "mappings": "AAAA,MAAMA,SAAS,GAAG,MAAM;AACtB,sBAAO,oFAAP;AACD,CAFD;;AAIAC,QAAQ,CAACC,MAAT,eACE,oBAAC,SAAD,OADF,EAEEC,QAAQ,CAACC,cAAT,CAAwB,MAAxB,CAFF",
+  "sourcesContent": [
+    "const Celebrate = () => {\n  return <p>It's working! 🎉🎉🎉</p>;\n};\n\nReactDOM.render(\n  <Celebrate />,\n  document.getElementById('root'),\n);"
+  ]
+}''');
 
   final buildArgs = [
     platform,
@@ -220,7 +233,7 @@ $pubspec
 sentry:
   upload_debug_symbols: true
   upload_sources: true
-  upload_source_maps: true
+  upload_source_maps: ${platform == 'web'}
   auth_token: auth-token
   project: sentry-dart-plugin
   org: sentry-sdks

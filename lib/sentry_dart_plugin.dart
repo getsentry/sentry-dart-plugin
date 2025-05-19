@@ -167,7 +167,6 @@ class SentryDartPlugin {
 
   List<String> _baseCliParams({bool includeRelease = false}) {
     final params = <String>[];
-    _setUrlAndTokenAndLog(params);
     if (includeRelease) {
       params.add('releases');
     }
@@ -176,7 +175,10 @@ class SentryDartPlugin {
   }
 
   List<String> _releasesCliParams() {
-    return _baseCliParams(includeRelease: true);
+    final params = <String>[];
+    _setUrlAndTokenAndLog(params);
+    params.addAll(_baseCliParams(includeRelease: true));
+    return params;
   }
 
   Future<void> _executeNewRelease(String release) async {
@@ -251,6 +253,7 @@ class SentryDartPlugin {
 
   Future<void> _uploadSourceMaps() async {
     List<String> params = [];
+    _setUrlAndTokenAndLog(params);
     params.add('sourcemaps');
     params.add('upload');
     _addWait(params);
