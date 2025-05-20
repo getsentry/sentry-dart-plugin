@@ -309,13 +309,14 @@ class SentryDartPlugin {
   /// be stripped from the source maps. This step is important to make the
   /// paths clearer and less verbose.
   ///
-  /// Example 1:
-  /// - expected: `lib/main.dart`
-  /// - actual: `../../../../lib/main.dart`
+  /// Prefixes must be ordered from most specific to least specific,
+  /// because they are applied sequentially. If a general prefix like '../'
+  /// is applied first, it may strip parts of the path that a more specific
+  /// prefix (e.g. '../../') would otherwise match, effectively preventing
+  /// the latter from being applied. This ensures correct and non-overlapping
+  /// path stripping behavior in sentry-cli.
   ///
-  /// Example 2:
-  /// - expected: `/flutter/packages/flutter/lib/src/foo.dart`
-  /// - actual `../../SomePath/flutter/packages/flutter/lib/src/foo.dart`
+  /// Returns a list of sorted prefixes.
   Future<Set<String>> _extractPrefixesToStrip(List<File> sourceMapFiles) async {
     final Set<String> prefixes = {};
     final Set<String> parentDirs = {};
@@ -333,9 +334,6 @@ class SentryDartPlugin {
         continue;
       }
 
-      // Adding prefixes to strip in sentry-cli should be done in order from
-      // most specific to least specific since the first one will be applied
-      // then the second and etc..
       final parentDirPattern = RegExp(r'^(?:\.\./)+');
       const flutterFragment = '/flutter/packages/flutter/lib/src/';
       for (final entry in sources.whereType<String>()) {
