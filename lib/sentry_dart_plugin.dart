@@ -305,7 +305,7 @@ class SentryDartPlugin {
     await _executeAndLog('Failed to sources files', params);
   }
 
-  /// Extracts and returns a set of path prefixes to strip from source maps.
+  /// Extracts and returns a list of path prefixes to strip from source maps.
   ///
   /// The prefixes are sorted from most specific to least specific to ensure
   /// correct stripping behavior. This includes:
