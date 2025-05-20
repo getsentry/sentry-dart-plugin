@@ -6,6 +6,10 @@
 
 - Support injecting debug ids for Flutter Web ([#319](https://github.com/getsentry/sentry-dart-plugin/pull/319))
 
+### Enhancements
+
+- Improve Flutter Web stacktraces by stripping verbose source prefixes ([#320](https://github.com/getsentry/sentry-dart-plugin/pull/320))
+
 ## 2.4.1
 
 ### Fixes
