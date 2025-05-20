@@ -320,6 +320,9 @@ class SentryDartPlugin {
   Future<Set<String>> _extractPrefixesToStrip(List<File> sourceMapFiles) async {
     final Set<String> prefixes = {};
     final Set<String> parentDirs = {};
+    final parentDirPattern = RegExp(r'^(?:\.\./)+');
+    const flutterFragment = '/flutter/packages/flutter/lib/src/';
+
     for (final sourceMapFile in sourceMapFiles) {
       late final Map<String, dynamic> sourceMap;
       try {
@@ -334,14 +337,13 @@ class SentryDartPlugin {
         continue;
       }
 
-      final parentDirPattern = RegExp(r'^(?:\.\./)+');
-      const flutterFragment = '/flutter/packages/flutter/lib/src/';
       for (final entry in sources.whereType<String>()) {
         final index = entry.indexOf(flutterFragment);
         if (index > 0) {
           prefixes.add(entry.substring(0, index));
         }
       }
+
       for (final entry in sources.whereType<String>()) {
         final match = parentDirPattern.firstMatch(entry);
         if (match != null) {
