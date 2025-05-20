@@ -332,19 +332,21 @@ class SentryDartPlugin {
         continue;
       }
 
+      // Adding prefixes to strip in sentry-cli should be done in order from
+      // most specific to least specific since the first one will be applied
+      // then the second and etc..
+      // e.g path: ../flutter/path with prefixes: ../ and ../flutter
+      // will result in /flutter/path because the ../ has been applied first
       final parentDirPattern = RegExp(r'^(?:\.\./)+');
       const flutterFragment = '/flutter/packages/flutter/lib/src/';
       for (final entry in sources.whereType<String>()) {
-        // Normalize path separators so Windows works as well.
-        final normalisedEntry = entry.replaceAll('\\', '/');
-
         // Get prefixes for /flutter/packages/flutter/lib/src/
-        final idx = normalisedEntry.indexOf(flutterFragment);
-        if (idx > 0) {
-          prefixes.add(normalisedEntry.substring(0, idx));
+        final index = flutterFragment.indexOf(entry);
+        if (index > 0) {
+          prefixes.add(entry.substring(0, index));
         }
 
-        final match = parentDirPattern.firstMatch(normalisedEntry);
+        final match = parentDirPattern.firstMatch(entry);
         if (match != null) {
           final prefix = match.group(0)!;
           // Each ../ segment is 3 characters long.
