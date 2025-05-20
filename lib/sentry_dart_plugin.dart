@@ -337,7 +337,6 @@ class SentryDartPlugin {
       final parentDirPattern = RegExp(r'^(?:\.\./)+');
       const flutterFragment = '/flutter/packages/flutter/lib/src/';
       for (final entry in sources.whereType<String>()) {
-        // Get prefixes for /flutter/packages/flutter/lib/src/
         final index = entry.indexOf(flutterFragment);
         if (index > 0) {
           prefixes.add(entry.substring(0, index));
