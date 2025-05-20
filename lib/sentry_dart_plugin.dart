@@ -318,6 +318,7 @@ class SentryDartPlugin {
   /// - actual `../../SomePath/flutter/packages/flutter/lib/src/foo.dart`
   Future<Set<String>> _extractPrefixesToStrip(List<File> sourceMapFiles) async {
     final Set<String> prefixes = {};
+    final Set<String> parentDirs = {};
     for (final sourceMapFile in sourceMapFiles) {
       late final Map<String, dynamic> sourceMap;
       try {
@@ -335,26 +336,30 @@ class SentryDartPlugin {
       // Adding prefixes to strip in sentry-cli should be done in order from
       // most specific to least specific since the first one will be applied
       // then the second and etc..
-      // e.g path: ../flutter/path with prefixes: ../ and ../flutter
-      // will result in /flutter/path because the ../ has been applied first
       final parentDirPattern = RegExp(r'^(?:\.\./)+');
       const flutterFragment = '/flutter/packages/flutter/lib/src/';
       for (final entry in sources.whereType<String>()) {
         // Get prefixes for /flutter/packages/flutter/lib/src/
-        final index = flutterFragment.indexOf(entry);
+        final index = entry.indexOf(flutterFragment);
         if (index > 0) {
           prefixes.add(entry.substring(0, index));
         }
-
+      }
+      for (final entry in sources.whereType<String>()) {
         final match = parentDirPattern.firstMatch(entry);
         if (match != null) {
           final prefix = match.group(0)!;
           // Each ../ segment is 3 characters long.
           final matchCount = prefix.length ~/ 3;
-          prefixes.add('../' * matchCount);
+          parentDirs.add('../' * matchCount);
         }
       }
     }
+
+    final sortedParentDirs = parentDirs.toList()
+      ..sort((a, b) => b.split('../').length.compareTo(a.split('../').length));
+    prefixes.addAll(sortedParentDirs);
+
     return prefixes;
   }
 
