@@ -305,21 +305,16 @@ class SentryDartPlugin {
     await _executeAndLog('Failed to sources files', params);
   }
 
-  /// Reads available source maps and returns the list of prefixes that should
-  /// be stripped from the source maps. This step is important to make the
-  /// paths clearer and less verbose.
+  /// Extracts and returns a set of path prefixes to strip from source maps.
   ///
-  /// Prefixes must be ordered from most specific to least specific,
-  /// because they are applied sequentially. If a general prefix like '../'
-  /// is applied first, it may strip parts of the path that a more specific
-  /// prefix (e.g. '../../') would otherwise match, effectively preventing
-  /// the latter from being applied. This ensures correct and non-overlapping
-  /// path stripping behavior in sentry-cli.
-  ///
-  /// Returns a list of sorted prefixes.
-  Future<Set<String>> _extractPrefixesToStrip(List<File> sourceMapFiles) async {
-    final Set<String> prefixes = {};
-    final Set<String> parentDirs = {};
+  /// The prefixes are sorted from most specific to least specific to ensure
+  /// correct stripping behavior. This includes:
+  /// - Paths leading up to Flutter source references
+  /// - General relative path prefixes like '../', '../../', etc.
+  Future<List<String>> _extractPrefixesToStrip(
+      List<File> sourceMapFiles) async {
+    final Set<String> flutterPrefixes = {};
+    final Set<String> parentDirPrefixes = {};
     final parentDirPattern = RegExp(r'^(?:\.\./)+');
     const flutterFragment = '/flutter/packages/flutter/lib/src/';
 
@@ -340,7 +335,7 @@ class SentryDartPlugin {
       for (final entry in sources.whereType<String>()) {
         final index = entry.indexOf(flutterFragment);
         if (index > 0) {
-          prefixes.add(entry.substring(0, index));
+          flutterPrefixes.add(entry.substring(0, index));
         }
       }
 
@@ -350,16 +345,18 @@ class SentryDartPlugin {
           final prefix = match.group(0)!;
           // Each ../ segment is 3 characters long.
           final matchCount = prefix.length ~/ 3;
-          parentDirs.add('../' * matchCount);
+          parentDirPrefixes.add('../' * matchCount);
         }
       }
     }
 
-    final sortedParentDirs = parentDirs.toList()
+    final sortedParentDirPrefixes = parentDirPrefixes.toList()
       ..sort((a, b) => b.split('../').length.compareTo(a.split('../').length));
-    prefixes.addAll(sortedParentDirs);
 
-    return prefixes;
+    return [
+      ...flutterPrefixes,
+      ...sortedParentDirPrefixes,
+    ];
   }
 
   Future<void> _executeCliForSourceMaps(String release) async {
