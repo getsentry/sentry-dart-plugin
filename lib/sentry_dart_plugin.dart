@@ -273,6 +273,7 @@ class SentryDartPlugin {
 
   Future<void> _uploadSourceMaps() async {
     List<String> params = [];
+
     _setUrlAndTokenAndLog(params);
     params.add('sourcemaps');
     params.add('upload');
@@ -286,9 +287,11 @@ class SentryDartPlugin {
 
     final sourceMapFiles = await _findAllSourceMapFiles();
     final prefixesToStrip = await _extractPrefixesToStrip(sourceMapFiles);
+
     if (prefixesToStrip.isEmpty) {
       Log.info('No prefixes to strip found in source maps.');
     }
+
     for (final prefix in prefixesToStrip) {
       params.add('--strip-prefix');
       params.add(prefix);
@@ -305,6 +308,7 @@ class SentryDartPlugin {
     }
 
     params.addAll(_baseCliParams());
+
     await _executeAndLog('Failed to sources files', params);
   }
 
