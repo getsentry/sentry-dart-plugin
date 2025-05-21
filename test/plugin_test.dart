@@ -72,6 +72,14 @@ void main() {
           // the debug id into
           fs.directory('$buildDir/web').createSync(recursive: true);
           fs.file('$buildDir/web/file.js').createSync();
+          fs.file('$buildDir/web/file.js.map').writeAsStringSync('''{
+  "mappings": "AAAAA,SAASC,cAAc,WAAWC, ...",
+  "sources": ["../../lib/something.dart", "../lib/foo.dart", "../../../../lib/main.dart", "../../Documents/flutter/packages/flutter/lib/src/widgets/icon_data.dart"],
+  "sourcesContent": ["document.querySelector('button')"],
+  "names": ["document","querySelector"],
+  "version": 3,
+  "file": "example.min.js.map"
+}''');
 
           const version = '1.0.0';
           final config = '''
@@ -89,7 +97,7 @@ void main() {
             '$cli $args debug-files upload $orgAndProject --include-sources $buildDir/app/outputs',
             '$cli $args releases $orgAndProject new $release',
             '$cli sourcemaps inject $buildDir/web/file.js $orgAndProject',
-            '$cli $args sourcemaps upload $buildDir/web --ext js --ext map ./ --ext dart $orgAndProject',
+            '$cli $args sourcemaps upload $buildDir/web --ext js --ext map --strip-prefix ../../Documents --strip-prefix ../../../../ --strip-prefix ../../ --strip-prefix ../ ./ --ext dart $orgAndProject',
             '$cli $args releases $orgAndProject set-commits $release --auto --ignore-missing',
             '$cli $args releases $orgAndProject finalize $release'
           ]);
