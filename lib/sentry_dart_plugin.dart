@@ -288,11 +288,10 @@ class SentryDartPlugin {
     final prefixesToStrip = await _extractPrefixesToStrip(sourceMapFiles);
     if (prefixesToStrip.isEmpty) {
       Log.info('No prefixes to strip found in source maps.');
-    } else {
-      for (final prefix in prefixesToStrip) {
-        params.add('--strip-prefix');
-        params.add(prefix);
-      }
+    }
+    for (final prefix in prefixesToStrip) {
+      params.add('--strip-prefix');
+      params.add(prefix);
     }
 
     if (_configuration.uploadSources) {
@@ -328,13 +327,15 @@ class SentryDartPlugin {
         final content = await sourceMapFile.readAsString();
         sourceMap = jsonDecode(content) as Map<String, dynamic>;
       } catch (e) {
-        Log.warn('Prefix Extraction: could not decode source map file ${sourceMapFile.path}');
+        Log.warn(
+            'Prefix Extraction: could not decode source map file ${sourceMapFile.path}');
         continue;
       }
 
       final sources = sourceMap['sources'];
       if (sources is! List) {
-        Log.info('Prefix Extraction: no sources found in source map file ${sourceMapFile.path}')
+        Log.info(
+            'Prefix Extraction: no sources found in source map file ${sourceMapFile.path}');
         continue;
       }
 
