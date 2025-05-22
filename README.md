@@ -48,6 +48,7 @@ sentry:
   org: ...
   auth_token: ...
   url: ...
+  url_prefix: ...
   wait_for_processing: false
   log_level: error # possible values: trace, debug, info, warn, error
   release: ...
@@ -127,14 +128,14 @@ If provided, the plugin will take your `release` and `dist` values without furth
 
 ## Web
 
-If you're publishing your app on the web and it's not deployed at the root of your URL, you need to configure a `prefix` and update your stack frames.
+If you're publishing your app on the web and it's not deployed at the root of your URL, you need to configure a `url_prefix` and update your stack frames.
 
 Add the prefix to your `pubspec.yaml` in addition to your other configurations. Make sure that you have `upload_source_maps` enabled:
 
 ```properties
 sentry:
   upload_source_maps=true
-  prefix: ~/your_prefix/
+  url_prefix: ~/your_prefix/
 ```
 
 The absolute path of your stack frames also needs to include the same prefix so that the source maps can be found for deobfuscation. Below is an example of how to update the stack frame's absolute path to include the prefix using the `beforeSend` hook:
