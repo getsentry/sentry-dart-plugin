@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Support flavors in macOS symbol upload ([#308](https://github.com/getsentry/sentry-dart-plugin/pull/308))
+
 ## 2.4.1
 
 ### Fixes

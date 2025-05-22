@@ -116,10 +116,10 @@ class SentryDartPlugin {
     }
 
     // macOS
-    yield '$buildDir/macos/Build/Products/Release';
+    yield* _enumerateDirectoryWithFlavors(fs, basePath: '$buildDir/macos/Build/Products');
 
     // macOS (macOS-framework)
-    yield '$buildDir/macos/framework/Release';
+    yield* _enumerateDirectoryWithFlavors(fs, basePath: '$buildDir/macos/framework');
 
     // iOS
     yield '$buildDir/ios/iphoneos/Runner.app';
@@ -136,7 +136,20 @@ class SentryDartPlugin {
     yield '$buildDir/ios/archive';
 
     // iOS (ios-framework)
-    yield '$buildDir/ios/framework/Release';
+    yield* _enumerateDirectoryWithFlavors(fs, basePath: '$buildDir/ios/framework');
+  }
+
+  Stream<String> _enumerateDirectoryWithFlavors(FileSystem fs, {
+    required String basePath,
+    String targetDirectoryName = "Release"
+  }) async* {
+    if (await fs.directory(basePath).exists()) {
+      yield* fs
+          .directory(basePath)
+          .list()
+          .where((v) => v.basename.startsWith(targetDirectoryName))
+          .map((e) => e.path);
+    }
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {
@@ -282,9 +295,8 @@ class SentryDartPlugin {
     int? exitCode;
 
     try {
-      final process = await injector
-          .get<ProcessManager>()
-          .start([_configuration.cliPath!, ...params]);
+      final process =
+          await injector.get<ProcessManager>().start([_configuration.cliPath!, ...params]);
 
       process.stdout.transform(utf8.decoder).listen((data) {
         Log.info(data.trim());
@@ -303,8 +315,8 @@ class SentryDartPlugin {
     }
   }
 
-  void _addExtensionToParams(List<String> exts, List<String> params,
-      String release, String folder, String? urlPrefix) {
+  void _addExtensionToParams(
+      List<String> exts, List<String> params, String release, String folder, String? urlPrefix) {
     params.add('files');
     params.add(release);
     params.add('upload-sourcemaps');
