@@ -134,7 +134,7 @@ Add the prefix to your `pubspec.yaml` in addition to your other configurations. 
 ```properties
 sentry:
   upload_source_maps=true
-  prefix: ~/your_prefix/
+  url_prefix: ~/your_prefix/
 ```
 
 The absolute path of your stack frames also needs to include the same prefix so that the source maps can be found for deobfuscation. Below is an example of how to update the stack frame's absolute path to include the prefix using the `beforeSend` hook:
