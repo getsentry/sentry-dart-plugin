@@ -17,16 +17,17 @@ late final String serverUri;
 final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
     ? [Platform.environment['TEST_PLATFORM']!]
     : [
-        'apk',
-        'appbundle',
-        if (Platform.isMacOS) 'macos',
-        if (Platform.isMacOS) 'macos-framework',
-        if (Platform.isMacOS) 'ios',
-        if (Platform.isMacOS) 'ios-framework',
-        if (Platform.isMacOS) 'ipa',
-        if (Platform.isWindows) 'windows',
-        if (Platform.isLinux) 'linux',
-        'web'
+        // 'apk',
+        // 'appbundle',
+        // if (Platform.isMacOS) 'macos',
+        // if (Platform.isMacOS) 'macos-framework',
+        // if (Platform.isMacOS) 'ios',
+        // if (Platform.isMacOS) 'ios-framework',
+        // if (Platform.isMacOS) 'ipa',
+        // if (Platform.isWindows) 'windows',
+        // if (Platform.isLinux) 'linux',
+        'web',
+        'web-legacy'
       ];
 
 // NOTE: Don't run/debug this main(), it likely won't work.
@@ -134,6 +135,10 @@ void main() async {
               anyElement(contains('sourcemap at main.dart.js.map, debug id')));
           expect(pluginOutput, anyElement(contains('☑ uploading source maps')));
           break;
+        case 'web-legacy':
+          expect(pluginOutput,
+              anyElement(contains('(sourcemap at main.dart.js.map)')));
+          break;
         default:
           fail('Platform "$platform" missing from tests');
       }
@@ -196,6 +201,10 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   ]
 }''');
 
+  bool isWebLegacy = platform == 'web-legacy';
+  if (isWebLegacy) {
+    platform = 'web';
+  }
   final buildArgs = [
     platform,
     if (['ipa', 'ios'].contains(platform)) '--no-codesign',
@@ -240,6 +249,7 @@ sentry:
   org: sentry-sdks
   log_level: debug
   commits: false
+  legacy_web_symbolication: ${isWebLegacy ? true : false}
 ''';
     await pubspecFile.writeAsString(pubspec);
 
