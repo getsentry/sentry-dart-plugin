@@ -375,6 +375,35 @@ class SentryDartPlugin {
   }
 
   Future<void> _executeCliForLegacySourceMaps(String release) async {
+    void addExtensionToParams(List<String> exts, List<String> params,
+        String release, String folder, String? urlPrefix) {
+      params.add('files');
+      params.add(release);
+      params.add('upload-sourcemaps');
+      params.add(folder);
+
+      for (final ext in exts) {
+        params.add('--ext');
+        params.add(ext);
+      }
+
+      final configDist = _configuration.dist ?? "";
+      if (configDist.isNotEmpty) {
+        // Don't mutate dist users provide through env or plugin config.
+        params.add('--dist');
+        params.add(configDist);
+      } else if (release.contains('+')) {
+        params.add('--dist');
+        final values = release.split('+');
+        params.add(values.last);
+      }
+
+      if (urlPrefix != null) {
+        params.add("--url-prefix");
+        params.add(urlPrefix);
+      }
+    }
+
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
 
@@ -387,7 +416,7 @@ class SentryDartPlugin {
     List<String> releaseJsFilesParams = [];
     releaseJsFilesParams.addAll(params);
 
-    _addExtensionToParams(
+    addExtensionToParams(
       ['map', 'js'],
       releaseJsFilesParams,
       release,
@@ -405,7 +434,7 @@ class SentryDartPlugin {
       List<String> releaseDartFilesParams = [];
       releaseDartFilesParams.addAll(params);
 
-      _addExtensionToParams(
+      addExtensionToParams(
         ['dart'],
         releaseDartFilesParams,
         release,
@@ -430,35 +459,6 @@ class SentryDartPlugin {
     await _uploadSourceMaps();
 
     Log.taskCompleted(taskName);
-  }
-
-  void _addExtensionToParams(List<String> exts, List<String> params,
-      String release, String folder, String? urlPrefix) {
-    params.add('files');
-    params.add(release);
-    params.add('upload-sourcemaps');
-    params.add(folder);
-
-    for (final ext in exts) {
-      params.add('--ext');
-      params.add(ext);
-    }
-
-    final configDist = _configuration.dist ?? "";
-    if (configDist.isNotEmpty) {
-      // Don't mutate dist users provide through env or plugin config.
-      params.add('--dist');
-      params.add(configDist);
-    } else if (release.contains('+')) {
-      params.add('--dist');
-      final values = release.split('+');
-      params.add(values.last);
-    }
-
-    if (urlPrefix != null) {
-      params.add("--url-prefix");
-      params.add(urlPrefix);
-    }
   }
 
   void _addUrlPrefix(List<String> releaseDartFilesParams) {

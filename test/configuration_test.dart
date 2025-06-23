@@ -76,6 +76,7 @@ void main() {
         binPath: 'binPath-args-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
         sentryCliVersion: '1.0.0-args-config',
+        legacyWebSymbolication: true,
       );
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
@@ -101,6 +102,7 @@ void main() {
         binPath: 'binPath-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
         sentryCliVersion: '1.0.0-file-config',
+        legacyWebSymbolication: false,
       );
 
       final sut = fixture.getSut(
@@ -111,15 +113,15 @@ void main() {
 
       expect(sut.name, 'name-args-config');
       expect(sut.version, 'version-args-config');
-      expect(sut.uploadDebugSymbols, true);
-      expect(sut.uploadSourceMaps, true);
-      expect(sut.uploadSources, true);
+      expect(sut.uploadDebugSymbols, isTrue);
+      expect(sut.uploadSourceMaps, isTrue);
+      expect(sut.uploadSources, isTrue);
       expect(sut.project, 'project-args-config');
       expect(sut.org, 'org-args-config');
       expect(sut.authToken, 'auth_token-args-config');
       expect(sut.url, 'url-args-config');
       expect(sut.urlPrefix, 'url-prefix-args-config');
-      expect(sut.waitForProcessing, true);
+      expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'warning');
       expect(sut.release, 'release-args-config');
       expect(sut.dist, 'dist-args-config');
@@ -133,11 +135,12 @@ void main() {
         ),
       );
       expect(sut.commits, 'commits-args-config');
-      expect(sut.ignoreMissing, true);
+      expect(sut.ignoreMissing, isTrue);
       expect(sut.binDir, 'binDir-args-config');
       expect(sut.binPath, 'binPath-args-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-args-config');
       expect(sut.sentryCliVersion, '1.0.0-args-config');
+      expect(sut.legacyWebSymbolication, isTrue);
     });
 
     test("takes values from file config", () {
@@ -167,6 +170,7 @@ void main() {
         binPath: 'binPath-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
         sentryCliVersion: '1.0.0-file-config',
+        legacyWebSymbolication: true,
       );
 
       final sut = fixture.getSut(
@@ -178,15 +182,15 @@ void main() {
       expect(sut.name, 'name-file-config');
       expect(sut.version, 'version-file-config');
 
-      expect(sut.uploadDebugSymbols, false);
-      expect(sut.uploadSourceMaps, true);
-      expect(sut.uploadSources, true);
+      expect(sut.uploadDebugSymbols, isFalse);
+      expect(sut.uploadSourceMaps, isTrue);
+      expect(sut.uploadSources, isTrue);
       expect(sut.project, 'project-file-config');
       expect(sut.org, 'org-file-config');
       expect(sut.authToken, 'auth_token-file-config');
       expect(sut.url, 'url-file-config');
       expect(sut.urlPrefix, 'url-prefix-file-config');
-      expect(sut.waitForProcessing, true);
+      expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'debug');
       expect(sut.release, 'release-file-config');
       expect(sut.dist, 'dist-file-config');
@@ -198,11 +202,12 @@ void main() {
             .join(sut.buildFilesFolder, 'web_build_path-file-config'),
       );
       expect(sut.commits, 'commits-file-config');
-      expect(sut.ignoreMissing, true);
+      expect(sut.ignoreMissing, isTrue);
       expect(sut.binDir, 'binDir-file-config');
       expect(sut.binPath, 'binPath-file-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-file-config');
       expect(sut.sentryCliVersion, '1.0.0-file-config');
+      expect(sut.legacyWebSymbolication, isTrue);
     });
 
     test("falls back to default values", () {
@@ -218,22 +223,23 @@ void main() {
 
       expect(sut.name, 'name-pubspec-config');
       expect(sut.version, 'version-pubspec-config');
-      expect(sut.uploadDebugSymbols, true);
-      expect(sut.uploadSourceMaps, false);
-      expect(sut.uploadSources, false);
+      expect(sut.uploadDebugSymbols, isTrue);
+      expect(sut.uploadSourceMaps, isFalse);
+      expect(sut.uploadSources, isFalse);
       expect(sut.commits, 'auto');
-      expect(sut.ignoreMissing, false);
+      expect(sut.ignoreMissing, isFalse);
       expect(sut.buildFilesFolder, 'build');
       expect(
         sut.webBuildFilesFolder,
         fixture.fs.path.join(sut.buildFilesFolder, 'web'),
       );
-      expect(sut.waitForProcessing, false);
+      expect(sut.waitForProcessing, isFalse);
       expect(sut.binDir, '.dart_tool/pub/bin/sentry_dart_plugin');
       expect(
         sut.sentryCliCdnUrl,
         'https://downloads.sentry-cdn.com/sentry-cli',
       );
+      expect(sut.legacyWebSymbolication, isFalse);
     });
   });
 }
