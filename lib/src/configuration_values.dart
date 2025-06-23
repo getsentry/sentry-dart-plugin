@@ -26,6 +26,7 @@ class ConfigurationValues {
   final String? binPath;
   final String? sentryCliCdnUrl;
   final String? sentryCliVersion;
+  final bool? legacyWebSymbolication;
 
   ConfigurationValues({
     this.version,
@@ -51,6 +52,7 @@ class ConfigurationValues {
     this.binPath,
     this.sentryCliCdnUrl,
     this.sentryCliVersion,
+    this.legacyWebSymbolication,
   });
 
   factory ConfigurationValues.fromArguments(List<String> arguments) {
@@ -103,6 +105,9 @@ class ConfigurationValues {
       binPath: sentryArguments['bin_path'],
       sentryCliCdnUrl: sentryArguments['sentry_cli_cdn_url'],
       sentryCliVersion: sentryArguments['sentry_cli_version'],
+      legacyWebSymbolication: boolFromString(
+        sentryArguments['legacy_web_symbolication'],
+      ),
     );
   }
 
@@ -137,6 +142,7 @@ class ConfigurationValues {
       binPath: configReader.getString('bin_path'),
       sentryCliCdnUrl: configReader.getString('sentry_cli_cdn_url'),
       sentryCliVersion: configReader.getString('sentry_cli_version'),
+      legacyWebSymbolication: configReader.getBool('legacy_web_symbolication'),
     );
   }
 
@@ -193,6 +199,8 @@ class ConfigurationValues {
           args.sentryCliCdnUrl ??
           file.sentryCliCdnUrl,
       sentryCliVersion: args.sentryCliVersion ?? file.sentryCliVersion,
+      legacyWebSymbolication:
+          args.legacyWebSymbolication ?? file.legacyWebSymbolication,
     );
   }
 }

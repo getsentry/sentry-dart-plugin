@@ -41,7 +41,11 @@ class SentryDartPlugin {
       await _executeNewRelease(release);
 
       if (_configuration.uploadSourceMaps) {
-        await _executeCliForSourceMaps(release);
+        if (_configuration.legacyWebSymbolication) {
+          await _executeCliForLegacySourceMaps(release);
+        } else {
+          await _executeCliForSourceMaps(release);
+        }
       } else {
         Log.info('uploadSourceMaps is disabled.');
       }
@@ -370,6 +374,54 @@ class SentryDartPlugin {
     ];
   }
 
+  Future<void> _executeCliForLegacySourceMaps(String release) async {
+    const taskName = 'uploading source maps';
+    Log.startingTask(taskName);
+
+    final params = <String>[];
+    _setUrlAndTokenAndLog(params);
+    params.add('releases');
+    _addOrgAndProject(params);
+
+    // upload source maps (js and map)
+    List<String> releaseJsFilesParams = [];
+    releaseJsFilesParams.addAll(params);
+
+    _addExtensionToParams(
+      ['map', 'js'],
+      releaseJsFilesParams,
+      release,
+      _configuration.webBuildFilesFolder,
+      null,
+    );
+
+    _addWait(releaseJsFilesParams);
+    _addUrlPrefix(releaseJsFilesParams);
+
+    await _executeAndLog('Failed to upload source maps', releaseJsFilesParams);
+
+    if (_configuration.uploadSources) {
+      // upload source files (dart)
+      List<String> releaseDartFilesParams = [];
+      releaseDartFilesParams.addAll(params);
+
+      _addExtensionToParams(
+        ['dart'],
+        releaseDartFilesParams,
+        release,
+        'lib',
+        '~/lib/',
+      );
+
+      _addWait(releaseDartFilesParams);
+
+      await _executeAndLog(
+          'Failed to upload source files', releaseDartFilesParams);
+    }
+
+    Log.taskCompleted(taskName);
+  }
+
   Future<void> _executeCliForSourceMaps(String release) async {
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
@@ -378,6 +430,35 @@ class SentryDartPlugin {
     await _uploadSourceMaps();
 
     Log.taskCompleted(taskName);
+  }
+
+  void _addExtensionToParams(List<String> exts, List<String> params,
+      String release, String folder, String? urlPrefix) {
+    params.add('files');
+    params.add(release);
+    params.add('upload-sourcemaps');
+    params.add(folder);
+
+    for (final ext in exts) {
+      params.add('--ext');
+      params.add(ext);
+    }
+
+    final configDist = _configuration.dist ?? "";
+    if (configDist.isNotEmpty) {
+      // Don't mutate dist users provide through env or plugin config.
+      params.add('--dist');
+      params.add(configDist);
+    } else if (release.contains('+')) {
+      params.add('--dist');
+      final values = release.split('+');
+      params.add(values.last);
+    }
+
+    if (urlPrefix != null) {
+      params.add("--url-prefix");
+      params.add(urlPrefix);
+    }
   }
 
   void _addUrlPrefix(List<String> releaseDartFilesParams) {
