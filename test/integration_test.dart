@@ -257,6 +257,10 @@ sentry:
     await hashFile.writeAsString(hash);
   }
 
+  if (isWebLegacy) {
+    platform = 'web-legacy';
+  }
+
   return appDir;
 }
 
