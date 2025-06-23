@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+Version 3.0.0 marks a major release of the Sentry Dart Plugin containing breaking changes for Flutter Web.
+
+### Breaking Changes
+
+1. Automatic Debug-ID Injection
+   - **What’s new:** By default, the plugin now embeds [Debug IDs](https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js/debug-ids/) into your generated source maps.
+   - **Why it matters:** Debug IDs make symbolication of Flutter Web stack traces far more stable and reliable.
+2. **Minimum Flutter SDK Requirement**
+   - The Debug-ID feature **only works** with **Sentry Flutter SDK 9.1.0 or newer**.
+   - If you’re on **9.0.0** (or below), you **won’t** get Debug IDs automatically.
+3. **Legacy Symbolication Mode**
+   - If you **cannot upgrade** to Flutter SDK ≥ 9.1.0 **yet**, add this flag to your Sentry Dart Plugin config:
+       ```yaml
+       sentry:
+         dart_plugin:
+           legacy_web_symbolication: true
+       ```
+     * This switches back to the “classic” source-map symbolication method you’ve been using.
+
+### Features
+
+- Support injecting debug ids for Flutter Web ([#319](https://github.com/getsentry/sentry-dart-plugin/pull/319))
+  - Debug id loading will be the default symbolication in v3
+  - We have added the new field `legacy_web_symbolication` which you can set to `true` if you want to keep using the old symbolication. It is set to `false` by default.
+
+### Enhancements
+
+- Improve Flutter Web stacktraces by stripping verbose source prefixes ([#320](https://github.com/getsentry/sentry-dart-plugin/pull/320))
+  - This is only applied if you use the debug id symbolication which is enabled by default.
+  - This will not work with the legacy web symbolication.
+
 ## 2.4.1
 
 ### Fixes

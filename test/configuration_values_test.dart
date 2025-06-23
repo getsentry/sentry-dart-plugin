@@ -35,18 +35,19 @@ void main() {
         "--sentry-define=bin_dir=fixture-bin_dir",
         "--sentry-define=sentry_cli_cdn_url=fixture-sentry_cli_cdn_url",
         "--sentry-define=sentry_cli_version=1.0.0",
+        "--sentry-define=legacy_web_symbolication=true"
       ];
       final sut = ConfigurationValues.fromArguments(arguments);
       expect(sut.name, 'fixture-sentry-name');
       expect(sut.version, 'fixture-sentry-version');
-      expect(sut.uploadDebugSymbols, true);
-      expect(sut.uploadSourceMaps, true);
-      expect(sut.uploadSources, true);
+      expect(sut.uploadDebugSymbols, isTrue);
+      expect(sut.uploadSourceMaps, isTrue);
+      expect(sut.uploadSources, isTrue);
       expect(sut.project, 'fixture-project');
       expect(sut.org, 'fixture-org');
       expect(sut.authToken, 'fixture-auth_token');
       expect(sut.url, 'fixture-url');
-      expect(sut.waitForProcessing, true);
+      expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
@@ -54,10 +55,11 @@ void main() {
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
-      expect(sut.ignoreMissing, true);
+      expect(sut.ignoreMissing, isTrue);
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.sentryCliVersion, '1.0.0');
+      expect(sut.legacyWebSymbolication, isTrue);
     });
 
     test("fromArguments supports deprecated fields", () {
@@ -66,8 +68,8 @@ void main() {
         "--sentry-define=include_native_sources=true",
       ];
       final sut = ConfigurationValues.fromArguments(arguments);
-      expect(sut.uploadDebugSymbols, true);
-      expect(sut.uploadSources, true);
+      expect(sut.uploadDebugSymbols, isTrue);
+      expect(sut.uploadSources, isTrue);
     });
 
     test("fromArguments correctly reads values containing '=' delimiter", () {
@@ -100,6 +102,7 @@ void main() {
       bin_dir: fixture-bin_dir
       sentry_cli_cdn_url: fixture-sentry_cli_cdn_url
       sentry_cli_version: 1.0.0
+      legacy_web_symbolication: true
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
@@ -123,14 +126,14 @@ void main() {
 
       expect(sut.version, 'fixture-sentry-version');
       expect(sut.name, 'fixture-sentry-name');
-      expect(sut.uploadDebugSymbols, true);
-      expect(sut.uploadSourceMaps, true);
-      expect(sut.uploadSources, true);
+      expect(sut.uploadDebugSymbols, isTrue);
+      expect(sut.uploadSourceMaps, isTrue);
+      expect(sut.uploadSources, isTrue);
       expect(sut.project, 'p');
       expect(sut.org, 'o');
       expect(sut.authToken, 't');
       expect(sut.url, 'fixture-url');
-      expect(sut.waitForProcessing, true);
+      expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
@@ -138,9 +141,10 @@ void main() {
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
-      expect(sut.ignoreMissing, true);
+      expect(sut.ignoreMissing, isTrue);
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
+      expect(sut.legacyWebSymbolication, isTrue);
     });
 
     test('from config reader as properties', () {
@@ -186,14 +190,14 @@ void main() {
 
       expect(sut.version, 'fixture-sentry-version');
       expect(sut.name, 'fixture-sentry-name');
-      expect(sut.uploadDebugSymbols, true);
-      expect(sut.uploadSourceMaps, true);
-      expect(sut.uploadSources, true);
+      expect(sut.uploadDebugSymbols, isTrue);
+      expect(sut.uploadSourceMaps, isTrue);
+      expect(sut.uploadSources, isTrue);
       expect(sut.project, 'p');
       expect(sut.org, 'o');
       expect(sut.authToken, 't');
       expect(sut.url, 'fixture-url');
-      expect(sut.waitForProcessing, true);
+      expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
@@ -201,7 +205,7 @@ void main() {
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
-      expect(sut.ignoreMissing, true);
+      expect(sut.ignoreMissing, isTrue);
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.sentryCliVersion, '1.0.0');
@@ -261,9 +265,9 @@ void main() {
 
       // bool
 
-      expect(sut.uploadDebugSymbols, true); // pubspec before properties
-      expect(sut.uploadSourceMaps, true); // pubspec only
-      expect(sut.uploadSources, true); // properties only
+      expect(sut.uploadDebugSymbols, isTrue); // pubspec before properties
+      expect(sut.uploadSourceMaps, isTrue); // pubspec only
+      expect(sut.uploadSources, isTrue); // properties only
     });
 
     test("fromPlatformEnvironment", () {

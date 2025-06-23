@@ -5,8 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
 const appName = 'testapp';
@@ -26,7 +26,8 @@ final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
         if (Platform.isMacOS) 'ipa',
         if (Platform.isWindows) 'windows',
         if (Platform.isLinux) 'linux',
-        'web'
+        'web',
+        'web-legacy'
       ];
 
 // NOTE: Don't run/debug this main(), it likely won't work.
@@ -131,6 +132,11 @@ void main() async {
           break;
         case 'web':
           expect(pluginOutput,
+              anyElement(contains('sourcemap at main.dart.js.map, debug id')));
+          expect(pluginOutput, anyElement(contains('☑ uploading source maps')));
+          break;
+        case 'web-legacy':
+          expect(pluginOutput,
               anyElement(contains('(sourcemap at main.dart.js.map)')));
           break;
         default:
@@ -181,7 +187,24 @@ final _flutterVersionInfo =
 Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   final appDir = Directory('${tempDir.path}/$appName-$platform');
   final pubspecFile = File('${appDir.path}/pubspec.yaml');
+  Directory('${appDir.path}/build/web').createSync(recursive: true);
+  File('${appDir.path}/build/web/main.dart.js')
+      .writeAsStringSync('''//# sourceMappingURL=main.dart.js.map
+''');
+  File('${appDir.path}/build/web/main.dart.js.map').writeAsStringSync('''{
+  "version": 3,
+  "sources": ["../lib/src/main.dart"],
+  "names": ["Celebrate", "ReactDOM", "render", "document", "getElementById"],
+  "mappings": "AAAA,MAAMA,SAAS,GAAG,MAAM;AACtB,sBAAO,oFAAP;AACD,CAFD;;AAIAC,QAAQ,CAACC,MAAT,eACE,oBAAC,SAAD,OADF,EAEEC,QAAQ,CAACC,cAAT,CAAwB,MAAxB,CAFF",
+  "sourcesContent": [
+    "const Celebrate = () => {\n  return <p>It's working! 🎉🎉🎉</p>;\n};\n\nReactDOM.render(\n  <Celebrate />,\n  document.getElementById('root'),\n);"
+  ]
+}''');
 
+  bool isWebLegacy = platform == 'web-legacy';
+  if (isWebLegacy) {
+    platform = 'web';
+  }
   final buildArgs = [
     platform,
     if (['ipa', 'ios'].contains(platform)) '--no-codesign',
@@ -220,17 +243,22 @@ $pubspec
 sentry:
   upload_debug_symbols: true
   upload_sources: true
-  upload_source_maps: true
+  upload_source_maps: ${platform == 'web'}
   auth_token: auth-token
   project: sentry-dart-plugin
   org: sentry-sdks
   log_level: debug
   commits: false
+  legacy_web_symbolication: ${isWebLegacy ? true : false}
 ''';
     await pubspecFile.writeAsString(pubspec);
 
     // Store the hash so that we don't need to rebuild the app.
     await hashFile.writeAsString(hash);
+  }
+
+  if (isWebLegacy) {
+    platform = 'web-legacy';
   }
 
   return appDir;
