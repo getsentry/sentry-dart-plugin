@@ -17,15 +17,15 @@ late final String serverUri;
 final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
     ? [Platform.environment['TEST_PLATFORM']!]
     : [
-        // 'apk',
-        // 'appbundle',
-        // if (Platform.isMacOS) 'macos',
-        // if (Platform.isMacOS) 'macos-framework',
-        // if (Platform.isMacOS) 'ios',
-        // if (Platform.isMacOS) 'ios-framework',
-        // if (Platform.isMacOS) 'ipa',
-        // if (Platform.isWindows) 'windows',
-        // if (Platform.isLinux) 'linux',
+        'apk',
+        'appbundle',
+        if (Platform.isMacOS) 'macos',
+        if (Platform.isMacOS) 'macos-framework',
+        if (Platform.isMacOS) 'ios',
+        if (Platform.isMacOS) 'ios-framework',
+        if (Platform.isMacOS) 'ipa',
+        if (Platform.isWindows) 'windows',
+        if (Platform.isLinux) 'linux',
         'web',
         'web-legacy'
       ];
