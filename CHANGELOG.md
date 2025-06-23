@@ -5,6 +5,8 @@
 ### Features
 
 - Support injecting debug ids for Flutter Web ([#319](https://github.com/getsentry/sentry-dart-plugin/pull/319))
+  - Debug id loading will be the default symbolication in v3
+  - We have added the new field `legacyWebSymbolication` which you can set to `true` if you want to keep using the old symbolication. It is set to `false` by default.
 
 ### Enhancements
 

@@ -103,6 +103,9 @@ class Configuration {
   /// Override the sentry-cli version that should be downloaded
   late String? sentryCliVersion;
 
+  /// Whether to use legacy web symbolication. Defaults to `false`.
+  late bool legacyWebSymbolication;
+
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
@@ -164,6 +167,7 @@ class Configuration {
     sentryCliCdnUrl = configValues.sentryCliCdnUrl ??
         'https://downloads.sentry-cdn.com/sentry-cli';
     sentryCliVersion = configValues.sentryCliVersion;
+    legacyWebSymbolication = configValues.legacyWebSymbolication ?? false;
   }
 
   /// Validates the configuration values and log an error if required fields
