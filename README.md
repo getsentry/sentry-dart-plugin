@@ -100,7 +100,7 @@ ignore_missing=true
 | upload_debug_symbols | Enables or disables the automatic upload of debug symbols | true (boolean) | no | - |
 | upload_source_maps | Enables or disables the automatic upload of source maps | false (boolean) | no | - |
 | upload_sources | Does or doesn't include the source code of native code | false (boolean) | no | - |
-| legacy_web_symbolication | Uses legacy symbolication method for Flutter Web instead of Debug IDs (requires Sentry Flutter SDK < 9.1.0) | false (boolean) | no | - |
+| legacy_web_symbolication | Uses legacy symbolication method for Flutter Web instead of Debug IDs | false (boolean) | no | - |
 | project | Project's name | e.g. sentry-flutter (string) | yes | SENTRY_PROJECT |
 | org | Organization's slug | e.g. sentry-sdks (string) | yes | SENTRY_ORG |
 | auth_token | Auth Token | e.g. 64 random characteres (string)  | yes | SENTRY_AUTH_TOKEN |
@@ -133,8 +133,7 @@ Starting with version 3.0.0, the plugin now automatically embeds [Debug IDs](htt
 
 ```yaml
 sentry:
-  dart_plugin:
-    legacy_web_symbolication: true
+  legacy_web_symbolication: true
 ```
 
 ## Release
