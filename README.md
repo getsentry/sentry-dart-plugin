@@ -14,7 +14,7 @@ In your `pubspec.yaml`, add `sentry_dart_plugin` as a new dev dependency.
 
 ```yaml
 dev_dependencies:
-  sentry_dart_plugin: ^2.0.0
+  sentry_dart_plugin: ^3.0.0
 ```
 
 ## Build App
@@ -44,6 +44,7 @@ sentry:
   upload_debug_symbols: true
   upload_source_maps: false
   upload_sources: false
+  legacy_web_symbolication: false
   project: ...
   org: ...
   auth_token: ...
@@ -76,6 +77,7 @@ Create a `sentry.properties` file at the root of your project:
 upload_debug_symbols=true
 upload_source_maps=false
 upload_sources=false
+legacy_web_symbolication=false
 project=...
 org=...
 auth_token=...
@@ -98,6 +100,7 @@ ignore_missing=true
 | upload_debug_symbols | Enables or disables the automatic upload of debug symbols | true (boolean) | no | - |
 | upload_source_maps | Enables or disables the automatic upload of source maps | false (boolean) | no | - |
 | upload_sources | Does or doesn't include the source code of native code | false (boolean) | no | - |
+| legacy_web_symbolication | Uses legacy symbolication method for Flutter Web instead of Debug IDs | false (boolean) | no | - |
 | project | Project's name | e.g. sentry-flutter (string) | yes | SENTRY_PROJECT |
 | org | Organization's slug | e.g. sentry-sdks (string) | yes | SENTRY_ORG |
 | auth_token | Auth Token | e.g. 64 random characteres (string)  | yes | SENTRY_AUTH_TOKEN |
@@ -116,6 +119,22 @@ ignore_missing=true
 | bin_path | Path to the sentry-cli binary to use instead of downloading. Make sure to use the correct version. | null (string) | no | - |
 | sentry_cli_cdn_url | Alternative place to download sentry-cli | https://downloads.sentry-cdn.com/sentry-cli (string) | no | SENTRYCLI_CDNURL |
 | sentry_cli_version | Override the sentry-cli version that should be downloaded. | (string) | no | - |
+
+## Breaking Changes in v3.0.0
+
+### Debug IDs for Flutter Web
+
+Starting with version 3.0.0, the plugin now automatically embeds [Debug IDs](https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js/debug-ids/) into your generated source maps for Flutter Web by default. This makes symbolication of Flutter Web stack traces far more stable and reliable.
+
+**Important:** Debug IDs only work with **Sentry Flutter SDK 9.1.0 or newer**. If you're using an older version of the Sentry Flutter SDK (9.0.0 or below), you have two options:
+
+1. **Recommended:** Upgrade to Sentry Flutter SDK 9.1.0 or newer to use Debug IDs
+2. **Legacy mode:** Add the following to your configuration to use the classic symbolication method:
+
+```yaml
+sentry:
+  legacy_web_symbolication: true
+```
 
 ## Release
 
