@@ -37,14 +37,15 @@ class SentryDartPlugin {
       }
 
       final release = _release;
+      final dist = _dist;
 
       await _executeNewRelease(release);
 
       if (_configuration.uploadSourceMaps) {
         if (_configuration.legacyWebSymbolication) {
-          await _executeCliForLegacySourceMaps(release);
+          await _executeCliForLegacySourceMaps(release: release, dist: dist);
         } else {
-          await _executeCliForSourceMaps(release);
+          await _executeCliForSourceMaps(release: release, dist: dist);
         }
       } else {
         Log.info('uploadSourceMaps is disabled.');
@@ -169,9 +170,9 @@ class SentryDartPlugin {
     return result;
   }
 
-  List<String> _baseCliParams({bool includeRelease = false}) {
+  List<String> _baseCliParams({bool addReleases = false}) {
     final params = <String>[];
-    if (includeRelease) {
+    if (addReleases) {
       params.add('releases');
     }
     _addOrgAndProject(params);
@@ -181,7 +182,7 @@ class SentryDartPlugin {
   List<String> _releasesCliParams() {
     final params = <String>[];
     _setUrlAndTokenAndLog(params);
-    params.addAll(_baseCliParams(includeRelease: true));
+    params.addAll(_baseCliParams(addReleases: true));
     return params;
   }
 
@@ -275,12 +276,19 @@ class SentryDartPlugin {
     await _executeAndLog('Failed to inject debug ids', params);
   }
 
-  Future<void> _uploadSourceMaps() async {
+  Future<void> _uploadSourceMaps(
+      {required String release, required String? dist}) async {
     List<String> params = [];
 
     _setUrlAndTokenAndLog(params);
     params.add('sourcemaps');
     params.add('upload');
+    params.add('--release');
+    params.add(release);
+    if (dist != null) {
+      params.add('--dist');
+      params.add(dist);
+    }
     _addWait(params);
     _addUrlPrefix(params);
     params.add(_configuration.webBuildFilesFolder);
@@ -374,7 +382,8 @@ class SentryDartPlugin {
     ];
   }
 
-  Future<void> _executeCliForLegacySourceMaps(String release) async {
+  Future<void> _executeCliForLegacySourceMaps(
+      {required String release, required String? dist}) async {
     void addExtensionToParams(List<String> exts, List<String> params,
         String release, String folder, String? urlPrefix) {
       params.add('files');
@@ -419,7 +428,7 @@ class SentryDartPlugin {
     addExtensionToParams(
       ['map', 'js'],
       releaseJsFilesParams,
-      release,
+      _release,
       _configuration.webBuildFilesFolder,
       null,
     );
@@ -451,12 +460,13 @@ class SentryDartPlugin {
     Log.taskCompleted(taskName);
   }
 
-  Future<void> _executeCliForSourceMaps(String release) async {
+  Future<void> _executeCliForSourceMaps(
+      {required String release, required String? dist}) async {
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
 
     await _injectDebugIds();
-    await _uploadSourceMaps();
+    await _uploadSourceMaps(release: release, dist: dist);
 
     Log.taskCompleted(taskName);
   }
