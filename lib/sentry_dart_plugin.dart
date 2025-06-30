@@ -256,7 +256,7 @@ class SentryDartPlugin {
     return sourceMapFiles;
   }
 
-  Future<void> _injectDebugIds() async {
+  Future<bool> _injectDebugIds() async {
     List<String> params = [];
     params.add('sourcemaps');
 
@@ -265,6 +265,10 @@ class SentryDartPlugin {
     // inject each file separately instead of using a directory
     // TODO(buenaflor): in the future we should use the directory when sentry-cli is fixed
     final jsFilePaths = await _findAllJsFilePaths();
+    if (jsFilePaths.isEmpty) {
+      return false;
+    }
+
     params.add('inject');
     for (final path in jsFilePaths) {
       params.add(path);
@@ -272,7 +276,7 @@ class SentryDartPlugin {
 
     params.addAll(_baseCliParams());
 
-    await _executeAndLog('Failed to inject debug ids', params);
+    return await _executeAndLog('Failed to inject debug ids', params);
   }
 
   Future<void> _uploadSourceMaps() async {
@@ -455,8 +459,12 @@ class SentryDartPlugin {
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
 
-    await _injectDebugIds();
-    await _uploadSourceMaps();
+    final debugIdInjectionSucceeded = await _injectDebugIds();
+    if (debugIdInjectionSucceeded) {
+      await _uploadSourceMaps();
+    } else {
+      Log.warn('Skipping source maps upload. Could not inject debug ids.');
+    }
 
     Log.taskCompleted(taskName);
   }
@@ -490,7 +498,7 @@ class SentryDartPlugin {
     }
   }
 
-  Future<void> _executeAndLog(String errorMessage, List<String> params) async {
+  Future<bool> _executeAndLog(String errorMessage, List<String> params) async {
     int? exitCode;
 
     try {
@@ -509,10 +517,11 @@ class SentryDartPlugin {
       exitCode = await process.exitCode;
     } on Exception catch (exception) {
       Log.error('$errorMessage: \n$exception');
+      return false;
     }
-    if (exitCode != null) {
-      Log.processExitCode(exitCode);
-    }
+
+    Log.processExitCode(exitCode);
+    return exitCode == 0;
   }
 
   String get _release {
