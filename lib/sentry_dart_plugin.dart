@@ -463,8 +463,7 @@ class SentryDartPlugin {
     if (debugIdInjectionSucceeded) {
       await _uploadSourceMaps();
     } else {
-      Log.warn(
-          'Skipping source maps upload due to debug ID injection failure.');
+      Log.warn('Skipping source maps upload. Could not inject debug ids.');
     }
 
     Log.taskCompleted(taskName);
