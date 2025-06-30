@@ -428,7 +428,7 @@ class SentryDartPlugin {
     addExtensionToParams(
       ['map', 'js'],
       releaseJsFilesParams,
-      _release,
+      release,
       _configuration.webBuildFilesFolder,
       null,
     );
