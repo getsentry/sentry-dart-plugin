@@ -276,7 +276,7 @@ void main() {
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $release',
               '$cli sourcemaps inject build/web/file.js $orgAndProject',
-              '$cli $args sourcemaps --release $release --dist $build upload $buildDir/web --ext js --ext map --strip-prefix ../../Documents --strip-prefix ../../../../ --strip-prefix ../../ --strip-prefix ../ $orgAndProject',
+              '$cli $args sourcemaps upload --release $release --dist $build $buildDir/web --ext js --ext map --strip-prefix ../../Documents --strip-prefix ../../../../ --strip-prefix ../../ --strip-prefix ../ $orgAndProject',
               '$cli $args releases $orgAndProject set-commits $release --auto',
               '$cli $args releases $orgAndProject finalize $release'
             ]);
