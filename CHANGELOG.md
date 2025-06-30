@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Should not exit program when web build path is not found ([#337](https://github.com/getsentry/sentry-dart-plugin/pull/337))
+
 ## 3.0.0
 
 Version 3.0.0 marks a major release of the Sentry Dart Plugin containing breaking changes for Flutter Web.
