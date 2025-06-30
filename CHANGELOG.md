@@ -7,6 +7,10 @@
 - Add release and dist to sourcemaps upload command ([#333](https://github.com/getsentry/sentry-dart-plugin/pull/333))
   - This enables the uploaded bundle to be associated with the release for informational purposes
 
+### Fixes
+
+- Should not exit program when web build path is not found ([#337](https://github.com/getsentry/sentry-dart-plugin/pull/337))
+
 ## 3.0.0
 
 Version 3.0.0 marks a major release of the Sentry Dart Plugin containing breaking changes for Flutter Web.
