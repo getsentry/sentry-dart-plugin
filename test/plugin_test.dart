@@ -275,8 +275,8 @@ void main() {
             final args = commonArgs;
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $release',
-              '$cli sourcemaps inject $orgAndProject',
-              '$cli $args sourcemaps upload $buildDir/web --ext js --ext map $orgAndProject',
+              '$cli sourcemaps inject build/web/file.js $orgAndProject',
+              '$cli $args sourcemaps upload $buildDir/web --ext js --ext map --strip-prefix ../../Documents --strip-prefix ../../../../ --strip-prefix ../../ --strip-prefix ../ $orgAndProject',
               '$cli $args releases $orgAndProject set-commits $release --auto',
               '$cli $args releases $orgAndProject finalize $release'
             ]);
@@ -344,8 +344,8 @@ void main() {
             final args = commonArgs;
             expect(commandLog, [
               '$cli $args releases $orgAndProject new $release',
-              '$cli sourcemaps inject $orgAndProject',
-              '$cli $args sourcemaps upload $buildDir/web --ext js --ext map $orgAndProject',
+              '$cli sourcemaps inject build/web/file.js $orgAndProject',
+              '$cli $args sourcemaps upload $buildDir/web --ext js --ext map --strip-prefix ../../Documents --strip-prefix ../../../../ --strip-prefix ../../ --strip-prefix ../ $orgAndProject',
               '$cli $args releases $orgAndProject set-commits $release --auto',
               '$cli $args releases $orgAndProject finalize $release'
             ]);
