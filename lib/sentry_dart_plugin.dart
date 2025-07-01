@@ -375,12 +375,12 @@ class SentryDartPlugin {
       // add the --url-prefix ~/lib however this would be applied to all files - even the source map -
       // and not only the dart source files meaning symbolication would not work correctly
       // TODO(buenaflor): revisit this approach when we can add --url-prefixes to specific files
+      // TODO(buenaflor): additionally the better way would be to get the paths from the sourcemaps and reference them directly instead of specifying the root dir
       params.add('./');
       params.add('--ext');
       params.add('dart');
       params.add('--ignore');
       // we want to ignore the test folder by default
-      // TODO(buenaflor): the better way would be to get the paths from the sourcemaps and reference them directly instead of specifying the root dir
       params.add('test/**/*.dart');
     }
 
