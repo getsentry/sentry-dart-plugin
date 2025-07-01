@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:file/file.dart';
+import 'package:glob/glob.dart';
 import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
@@ -232,17 +233,14 @@ class SentryDartPlugin {
           final relativePath = fs.path
               .relative(entity.path, from: _configuration.webBuildFilesFolder);
 
-          bool shouldIgnoreFile = false;
-          for (final ignorePattern in _configuration.ignoreWebSourcePaths) {
-            if (_matchesIgnorePattern(relativePath, ignorePattern)) {
-              shouldIgnoreFile = true;
-            }
-          }
+          final shouldIgnore =
+              _configuration.ignoreWebSourcePaths.any((pattern) {
+            final glob = Glob(pattern);
+            return glob.matches(relativePath);
+          });
 
-          if (!shouldIgnoreFile) {
+          if (!shouldIgnore) {
             jsFiles.add(entity.path);
-          } else {
-            Log.info('Ignoring JS file: $relativePath');
           }
         }
       }
@@ -252,46 +250,6 @@ class SentryDartPlugin {
       );
     }
     return jsFiles;
-  }
-
-  /// Matches a file path against an ignore pattern
-  /// Supports simple glob patterns with * and directory matching
-  bool _matchesIgnorePattern(String filePath, String pattern) {
-    // Normalize paths for comparison
-    final normalizedPath = filePath.replaceAll('\\', '/');
-    final normalizedPattern = pattern.replaceAll('\\', '/');
-
-    // Handle exact matches
-    if (normalizedPath == normalizedPattern) {
-      return true;
-    }
-
-    // Handle directory patterns (e.g., "packages/" matches any file in packages directory)
-    if (normalizedPattern.endsWith('/')) {
-      final dirPattern =
-          normalizedPattern.substring(0, normalizedPattern.length - 1);
-      if (normalizedPath.startsWith('$dirPattern/')) {
-        return true;
-      }
-    }
-
-    // Handle wildcard patterns (e.g., "*.min.js" matches any file ending with .min.js)
-    if (normalizedPattern.contains('*')) {
-      final regexPattern =
-          normalizedPattern.replaceAll('.', r'\.').replaceAll('*', '.*');
-      final regex = RegExp('^$regexPattern\$');
-      if (regex.hasMatch(normalizedPath)) {
-        return true;
-      }
-    }
-
-    // Handle substring matches for patterns that don't end with /
-    if (!normalizedPattern.endsWith('/') &&
-        normalizedPath.contains(normalizedPattern)) {
-      return true;
-    }
-
-    return false;
   }
 
   Future<List<File>> _findAllSourceMapFiles() async {
@@ -306,17 +264,14 @@ class SentryDartPlugin {
           final relativePath = fs.path
               .relative(entity.path, from: _configuration.webBuildFilesFolder);
 
-          bool shouldIgnoreFile = false;
-          for (final ignorePattern in _configuration.ignoreWebSourcePaths) {
-            if (_matchesIgnorePattern(relativePath, ignorePattern)) {
-              shouldIgnoreFile = true;
-            }
-          }
+          final shouldIgnore =
+              _configuration.ignoreWebSourcePaths.any((pattern) {
+            final glob = Glob(pattern);
+            return glob.matches(relativePath);
+          });
 
-          if (!shouldIgnoreFile) {
+          if (!shouldIgnore) {
             sourceMapFiles.add(entity.absolute);
-          } else {
-            Log.info('Ignoring source map file: $relativePath');
           }
         }
       }
