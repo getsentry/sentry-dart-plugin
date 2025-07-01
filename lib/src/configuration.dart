@@ -106,6 +106,8 @@ class Configuration {
   /// Whether to use legacy web symbolication. Defaults to `false`.
   late bool legacyWebSymbolication;
 
+  late List<String> ignoreWebSourcePaths;
+
   /// Loads the configuration values
   Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
@@ -168,6 +170,7 @@ class Configuration {
         'https://downloads.sentry-cdn.com/sentry-cli';
     sentryCliVersion = configValues.sentryCliVersion;
     legacyWebSymbolication = configValues.legacyWebSymbolication ?? false;
+    ignoreWebSourcePaths = configValues.ignoreWebSourcePaths ?? [];
   }
 
   /// Validates the configuration values and log an error if required fields

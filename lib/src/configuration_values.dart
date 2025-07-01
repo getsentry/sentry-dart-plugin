@@ -27,6 +27,7 @@ class ConfigurationValues {
   final String? sentryCliCdnUrl;
   final String? sentryCliVersion;
   final bool? legacyWebSymbolication;
+  final List<String>? ignoreWebSourcePaths;
 
   ConfigurationValues({
     this.version,
@@ -53,6 +54,7 @@ class ConfigurationValues {
     this.sentryCliCdnUrl,
     this.sentryCliVersion,
     this.legacyWebSymbolication,
+    this.ignoreWebSourcePaths,
   });
 
   factory ConfigurationValues.fromArguments(List<String> arguments) {
@@ -108,6 +110,7 @@ class ConfigurationValues {
       legacyWebSymbolication: boolFromString(
         sentryArguments['legacy_web_symbolication'],
       ),
+      ignoreWebSourcePaths: sentryArguments['ignore_web_source_paths']?.split(',').map((e) => e.trim()).toList(),
     );
   }
 
@@ -143,6 +146,7 @@ class ConfigurationValues {
       sentryCliCdnUrl: configReader.getString('sentry_cli_cdn_url'),
       sentryCliVersion: configReader.getString('sentry_cli_version'),
       legacyWebSymbolication: configReader.getBool('legacy_web_symbolication'),
+      ignoreWebSourcePaths: configReader.getList('ignore_web_source_paths'),
     );
   }
 
@@ -201,6 +205,7 @@ class ConfigurationValues {
       sentryCliVersion: args.sentryCliVersion ?? file.sentryCliVersion,
       legacyWebSymbolication:
           args.legacyWebSymbolication ?? file.legacyWebSymbolication,
+      ignoreWebSourcePaths: args.ignoreWebSourcePaths ?? file.ignoreWebSourcePaths,
     );
   }
 }

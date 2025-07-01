@@ -19,6 +19,12 @@ class FallbackConfigReader implements ConfigReader {
   }
 
   @override
+  List<String>? getList(String key, {String? deprecatedKey}) {
+    return _configReader?.getList(key, deprecatedKey: deprecatedKey) ??
+        _fallbackConfigReader?.getList(key, deprecatedKey: deprecatedKey);
+  }
+
+  @override
   bool contains(String key) {
     return _configReader?.contains(key) ??
         _fallbackConfigReader?.contains(key) ??
