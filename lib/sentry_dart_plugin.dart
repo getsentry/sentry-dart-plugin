@@ -303,7 +303,21 @@ class SentryDartPlugin {
       await for (final entity
           in webDir.list(recursive: true, followLinks: false)) {
         if (entity is File && entity.path.toLowerCase().endsWith('.js.map')) {
-          sourceMapFiles.add(entity.absolute);
+          final relativePath = fs.path
+              .relative(entity.path, from: _configuration.webBuildFilesFolder);
+
+          bool shouldIgnoreFile = false;
+          for (final ignorePattern in _configuration.ignoreWebSourcePaths) {
+            if (_matchesIgnorePattern(relativePath, ignorePattern)) {
+              shouldIgnoreFile = true;
+            }
+          }
+
+          if (!shouldIgnoreFile) {
+            sourceMapFiles.add(entity.absolute);
+          } else {
+            Log.info('Ignoring source map file: $relativePath');
+          }
         }
       }
     } else {
