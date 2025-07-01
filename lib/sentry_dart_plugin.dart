@@ -46,10 +46,7 @@ class SentryDartPlugin {
         if (_configuration.legacyWebSymbolication) {
           await _executeCliForLegacySourceMaps(release: release, dist: dist);
         } else {
-          await _executeCliForSourceMaps(
-              release: release,
-              dist: dist,
-              ignoreSourcePaths: _configuration.ignoreWebSourcePaths);
+          await _executeCliForSourceMaps(release: release, dist: dist);
         }
       } else {
         Log.info('uploadSourceMaps is disabled.');
@@ -500,9 +497,7 @@ class SentryDartPlugin {
   }
 
   Future<void> _executeCliForSourceMaps(
-      {required String release,
-      required String? dist,
-      required List<String> ignoreSourcePaths}) async {
+      {required String release, required String? dist}) async {
     const taskName = 'uploading source maps';
     Log.startingTask(taskName);
 
