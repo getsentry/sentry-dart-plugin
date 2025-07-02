@@ -345,9 +345,6 @@ class SentryDartPlugin {
       params.add('./');
       params.add('--ext');
       params.add('dart');
-      params.add('--ignore');
-      // we want to ignore the test folder by default
-      params.add('test/**/*.dart');
     }
 
     for (final ignorePattern in _configuration.ignoreWebSourcePaths) {
