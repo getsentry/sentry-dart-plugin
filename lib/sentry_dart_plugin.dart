@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:vmservice_io';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
@@ -314,11 +315,7 @@ class SentryDartPlugin {
     }
 
     if (_configuration.uploadSources) {
-      // In the sourcemap dart source files are prefixed with /lib - we'd have to
-      // add the --url-prefix ~/lib however this would be applied to all files - even the source map -
-      // and not only the dart source files meaning symbolication would not work correctly
-      // TODO(buenaflor): revisit this approach when we can add --url-prefixes to specific files
-      params.add('./');
+      params.add('./lib');
       params.add('--ext');
       params.add('dart');
     }
@@ -336,10 +333,12 @@ class SentryDartPlugin {
   /// - General relative path prefixes like '../', '../../', etc.
   Future<List<String>> _extractPrefixesToStrip(
       List<File> sourceMapFiles) async {
+    final List<String> allPrefixes = [];
     final Set<String> flutterPrefixes = {};
     final Set<String> parentDirPrefixes = {};
     final parentDirPattern = RegExp(r'^(?:\.\./)+');
     const flutterFragment = '/flutter/packages/flutter/lib/src/';
+    const logPrefix = 'Prefix Extraction';
 
     for (final sourceMapFile in sourceMapFiles) {
       late final Map<String, dynamic> sourceMap;
@@ -348,15 +347,27 @@ class SentryDartPlugin {
         sourceMap = jsonDecode(content) as Map<String, dynamic>;
       } catch (e) {
         Log.warn(
-            'Prefix Extraction: could not decode source map file ${sourceMapFile.path}');
+            '$logPrefix: could not decode source map file ${sourceMapFile.path}');
         continue;
       }
 
       final sources = sourceMap['sources'];
       if (sources is! List) {
         Log.info(
-            'Prefix Extraction: no sources found in source map file ${sourceMapFile.path}');
+            '$logPrefix: no sources found in source map file ${sourceMapFile.path}');
         continue;
+      }
+
+      // The main lib path is almost always ../../../lib
+      // There might be edge cases but we can resolve them as they come up
+      final foundMainLibPath = sources
+          .whereType<String>()
+          .any((entry) => entry.contains('../../../lib'));
+      if (!foundMainLibPath) {
+        Log.warn(
+            '$logPrefix: could not find main lib path. This may impact source context.');
+      } else {
+        allPrefixes.add('../../../lib');
       }
 
       for (final entry in sources.whereType<String>()) {
@@ -380,10 +391,10 @@ class SentryDartPlugin {
     final sortedParentDirPrefixes = parentDirPrefixes.toList()
       ..sort((a, b) => b.split('../').length.compareTo(a.split('../').length));
 
-    return [
-      ...flutterPrefixes,
-      ...sortedParentDirPrefixes,
-    ];
+    allPrefixes.addAll(flutterPrefixes);
+    allPrefixes.addAll(sortedParentDirPrefixes);
+
+    return allPrefixes;
   }
 
   Future<void> _executeCliForLegacySourceMaps(
