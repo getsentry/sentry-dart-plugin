@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:file/file.dart';
+import 'package:glob/glob.dart';
 import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
@@ -226,7 +227,18 @@ class SentryDartPlugin {
       await for (final entity
           in webDir.list(recursive: true, followLinks: false)) {
         if (entity is File && entity.path.toLowerCase().endsWith('.js')) {
-          jsFiles.add(entity.path);
+          final relativePath = fs.path
+              .relative(entity.path, from: _configuration.webBuildFilesFolder);
+
+          final shouldIgnore =
+              _configuration.ignoreWebSourcePaths.any((pattern) {
+            final glob = Glob(pattern);
+            return glob.matches(relativePath);
+          });
+
+          if (!shouldIgnore) {
+            jsFiles.add(entity.path);
+          }
         }
       }
     } else {
@@ -246,7 +258,18 @@ class SentryDartPlugin {
       await for (final entity
           in webDir.list(recursive: true, followLinks: false)) {
         if (entity is File && entity.path.toLowerCase().endsWith('.js.map')) {
-          sourceMapFiles.add(entity.absolute);
+          final relativePath = fs.path
+              .relative(entity.path, from: _configuration.webBuildFilesFolder);
+
+          final shouldIgnore =
+              _configuration.ignoreWebSourcePaths.any((pattern) {
+            final glob = Glob(pattern);
+            return glob.matches(relativePath);
+          });
+
+          if (!shouldIgnore) {
+            sourceMapFiles.add(entity.absolute);
+          }
         }
       }
     } else {
@@ -318,9 +341,15 @@ class SentryDartPlugin {
       // add the --url-prefix ~/lib however this would be applied to all files - even the source map -
       // and not only the dart source files meaning symbolication would not work correctly
       // TODO(buenaflor): revisit this approach when we can add --url-prefixes to specific files
+      // TODO(buenaflor): additionally the better way would be to get the paths from the sourcemaps and reference them directly instead of specifying the root dir
       params.add('./');
       params.add('--ext');
       params.add('dart');
+    }
+
+    for (final ignorePattern in _configuration.ignoreWebSourcePaths) {
+      params.add('--ignore');
+      params.add(ignorePattern);
     }
 
     params.addAll(_baseCliParams());

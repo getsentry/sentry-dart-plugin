@@ -12,6 +12,7 @@ import 'yaml_config_reader.dart';
 abstract class ConfigReader {
   String? getString(String key, {String? deprecatedKey});
   bool? getBool(String key, {String? deprecatedKey});
+  List<String>? getList(String key, {String? deprecatedKey});
   bool contains(String key);
 
   /// This factory will try to load both pubspec.yaml and sentry.properties.

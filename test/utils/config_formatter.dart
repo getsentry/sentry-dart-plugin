@@ -31,7 +31,9 @@ class ConfigFormatter {
         .replaceAll(': ', '=')
         .split('\n')
         .map((line) => line.trim())
-        .join('\n');
+        .join('\n')
+        .replaceAll('[', '')
+        .replaceAll(']', ''); // support for arrays
   }
 
   static String _formatPubspecYamlConfig(String config) {
