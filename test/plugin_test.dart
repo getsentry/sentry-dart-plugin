@@ -93,7 +93,7 @@ void main() {
             upload_source_maps: true
             log_level: debug
             ignore_missing: true
-            ignore_web_source_paths: [testdir]
+            ignore_web_source_paths: [testdir/**/*.js]
           ''';
           final commandLog = await runWith(version, config);
           const release = '$name@$version';
@@ -103,7 +103,7 @@ void main() {
             '$cli $args debug-files upload $orgAndProject --include-sources $buildDir/app/outputs',
             '$cli $args releases $orgAndProject new $release',
             '$cli sourcemaps inject $buildDir/web/file.js $orgAndProject',
-            '$cli $args sourcemaps upload --release $release $buildDir/web --ext js --ext map --strip-prefix ../../Documents --strip-prefix ../../../../ --strip-prefix ../../ --strip-prefix ../ ./ --ext dart --ignore testdir $orgAndProject',
+            '$cli $args sourcemaps upload --release $release $buildDir/web --ext js --ext map --strip-prefix ../../Documents --strip-prefix ../../../../ --strip-prefix ../../ --strip-prefix ../ ./ --ext dart --ignore testdir/**/*.js $orgAndProject',
             '$cli $args releases $orgAndProject set-commits $release --auto --ignore-missing',
             '$cli $args releases $orgAndProject finalize $release'
           ]);

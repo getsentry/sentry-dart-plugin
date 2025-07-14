@@ -107,7 +107,7 @@ void main() {
       legacy_web_symbolication: true
       ignore_web_source_paths:
         - some/
-        - **/*.js
+        - '**/*.js'
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
