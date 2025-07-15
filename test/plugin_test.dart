@@ -432,10 +432,7 @@ void main() {
                   .createSync(recursive: true);
             }
             for (final dir in alternativeOutputDirectories) {
-              fs
-                  .directory(buildDir)
-                  .childDirectory(dir)
-                  .createSync(recursive: true);
+              fs.directory(dir).createSync(recursive: true);
             }
 
             final commandLog = await runWith(version, config);
@@ -443,10 +440,15 @@ void main() {
             for (final dir in outputDirectories) {
               expect(
                   commandLog,
-                  contains(anyOf([
-                    '$cli $commonArgs debug-files upload $orgAndProject $buildDir/$dir',
-                    '$cli $commonArgs debug-files upload $orgAndProject $dir'
-                  ])));
+                  contains(
+                      '$cli $commonArgs debug-files upload $orgAndProject $buildDir/$dir'));
+            }
+
+            for (final dir in alternativeOutputDirectories) {
+              expect(
+                  commandLog,
+                  contains(
+                      '$cli $commonArgs debug-files upload $orgAndProject $dir'));
             }
           });
         });
