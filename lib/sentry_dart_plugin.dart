@@ -102,6 +102,7 @@ class SentryDartPlugin {
 
   Stream<String> _enumerateDebugSymbolPaths(FileSystem fs) async* {
     final buildDir = _configuration.buildFilesFolder;
+    final projectRoot = fs.currentDirectory.path;
 
     // Android (apk, appbundle)
     yield '$buildDir/app/outputs';
@@ -142,6 +143,9 @@ class SentryDartPlugin {
 
     // iOS (ios-framework)
     yield '$buildDir/ios/framework/Release';
+
+    // iOS in Fastlane
+    yield '$projectRoot/ios/build';
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {
