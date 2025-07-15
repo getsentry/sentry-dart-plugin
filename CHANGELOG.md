@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Fixes
-
-- Add additional path to check for iOS debug symbols ([#342](https://github.com/getsentry/sentry-dart-plugin/pull/342))
-
 ## 3.1.0
 
 ### Features
