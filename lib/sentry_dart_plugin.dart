@@ -102,7 +102,7 @@ class SentryDartPlugin {
 
   Stream<String> _enumerateDebugSymbolPaths(FileSystem fs) async* {
     final buildDir = _configuration.buildFilesFolder;
-    final String projectRoot = fs.currentDirectory.path;
+    final projectRoot = fs.currentDirectory.path;
 
     // Android (apk, appbundle)
     yield '$buildDir/app/outputs';
