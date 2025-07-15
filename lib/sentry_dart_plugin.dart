@@ -145,7 +145,11 @@ class SentryDartPlugin {
     yield '$buildDir/ios/framework/Release';
 
     // iOS in Fastlane
-    yield '$projectRoot/ios/build';
+    if (projectRoot == '/') {
+      yield 'ios/build';
+    } else {
+      yield '$projectRoot/ios/build';
+    }
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {
