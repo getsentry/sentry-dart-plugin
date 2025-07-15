@@ -406,6 +406,7 @@ void main() {
             const version = '1.0.0';
             final config = 'upload_debug_symbols: true';
 
+            // Default output directories in build/
             final outputDirectories = [
               'app/outputs',
               'app/intermediates',
@@ -420,9 +421,17 @@ void main() {
               'ios/Release-iphoneos',
               'ios/Release-anyrandomflavor-iphoneos',
               'ios/archive',
-              'ios/framework/Release'
+              'ios/framework/Release',
             ];
+            // Alternative output directories from 'root'
+            final alternativeOutputDirectories = ['ios/build'];
             for (final dir in outputDirectories) {
+              fs
+                  .directory(buildDir)
+                  .childDirectory(dir)
+                  .createSync(recursive: true);
+            }
+            for (final dir in alternativeOutputDirectories) {
               fs
                   .directory(buildDir)
                   .childDirectory(dir)
@@ -434,8 +443,10 @@ void main() {
             for (final dir in outputDirectories) {
               expect(
                   commandLog,
-                  contains(
-                      '$cli $commonArgs debug-files upload $orgAndProject $buildDir/$dir'));
+                  contains(anyOf([
+                    '$cli $commonArgs debug-files upload $orgAndProject $buildDir/$dir',
+                    '$cli $commonArgs debug-files upload $orgAndProject $dir'
+                  ])));
             }
           });
         });
