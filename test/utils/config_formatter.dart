@@ -37,7 +37,8 @@ class ConfigFormatter {
       if (line.isEmpty) continue;
 
       // 1) normalise key/value separator once
-      line = line.replaceFirst(RegExp(r':\s*'), '=');
+      line = line.replaceFirstMapped(
+          RegExp(r'^([^=:\s]+):\s*'), (m) => '${m.group(1)}=');
 
       // 2) inline array
       final mInline = RegExp(r'(.*)=\[(.*)\]').firstMatch(line);
