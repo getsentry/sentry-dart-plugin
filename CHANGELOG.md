@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Ignore path list for web ([#340](https://github.com/getsentry/sentry-dart-plugin/pull/340))
+  - You can use the `ignore_web_source_paths` field: e.g `ignore_web_source_paths: [test/**/*.js]`
+  - This will ignore all specified files and directories from being uploaded
+
 ## 3.1.1
 
 ### Fixes

@@ -77,6 +77,7 @@ void main() {
         sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
         sentryCliVersion: '1.0.0-args-config',
         legacyWebSymbolication: true,
+        ignoreWebSourcePaths: ['some/', '**/*.js'],
       );
       final fileConfig = ConfigurationValues(
         version: 'version-file-config',
@@ -103,6 +104,7 @@ void main() {
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
         sentryCliVersion: '1.0.0-file-config',
         legacyWebSymbolication: false,
+        ignoreWebSourcePaths: ['some-other/'],
       );
 
       final sut = fixture.getSut(
@@ -141,6 +143,7 @@ void main() {
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-args-config');
       expect(sut.sentryCliVersion, '1.0.0-args-config');
       expect(sut.legacyWebSymbolication, isTrue);
+      expect(sut.ignoreWebSourcePaths, ['some/', '**/*.js']);
     });
 
     test("takes values from file config", () {
@@ -171,6 +174,7 @@ void main() {
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
         sentryCliVersion: '1.0.0-file-config',
         legacyWebSymbolication: true,
+        ignoreWebSourcePaths: ['some/', '**/*.js'],
       );
 
       final sut = fixture.getSut(
@@ -208,6 +212,7 @@ void main() {
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-file-config');
       expect(sut.sentryCliVersion, '1.0.0-file-config');
       expect(sut.legacyWebSymbolication, isTrue);
+      expect(sut.ignoreWebSourcePaths, ['some/', '**/*.js']);
     });
 
     test("falls back to default values", () {
@@ -240,6 +245,7 @@ void main() {
         'https://downloads.sentry-cdn.com/sentry-cli',
       );
       expect(sut.legacyWebSymbolication, isFalse);
+      expect(sut.ignoreWebSourcePaths, []);
     });
   });
 }

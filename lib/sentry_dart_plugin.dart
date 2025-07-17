@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:file/file.dart';
+import 'package:glob/glob.dart';
 import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
@@ -225,45 +226,63 @@ class SentryDartPlugin {
     await _executeAndLog('Failed to set commits', params);
   }
 
-  Future<List<String>> _findAllJsFilePaths() async {
-    final List<String> jsFiles = [];
+  /// Returns every file inside [_configuration.webBuildFilesFolder] whose
+  /// path ends with [extension] **and** is *not* matched by an ignore glob.
+  ///
+  /// The generic type `T` lets the caller decide what they want back
+  /// (e.g. `String` path vs. `File` object).
+  Future<List<T>> _collectWebFiles<T>({
+    required String extension,
+    required T Function(File) builder,
+  }) async {
     final fs = injector.get<FileSystem>();
     final webDir = fs.directory(_configuration.webBuildFilesFolder);
 
-    if (await webDir.exists()) {
-      await for (final entity
-          in webDir.list(recursive: true, followLinks: false)) {
-        if (entity is File && entity.path.toLowerCase().endsWith('.js')) {
-          jsFiles.add(entity.path);
-        }
-      }
-    } else {
+    // Fast-fail if the directory doesn’t exist.
+    if (!await webDir.exists()) {
       Log.warn(
-        'Web build directory "${_configuration.webBuildFilesFolder}" does not exist, skipping JS file enumeration.',
+        'Web build directory "${_configuration.webBuildFilesFolder}" does not exist, '
+        'skipping $extension enumeration.',
       );
+      return <T>[];
     }
-    return jsFiles;
+
+    // Compile ignore globs once instead of on every iteration.
+    final ignoreGlobs =
+        _configuration.ignoreWebSourcePaths.map((p) => Glob(p)).toList();
+
+    bool shouldIgnore(String relative) =>
+        ignoreGlobs.any((g) => g.matches(relative));
+
+    final results = <T>[];
+
+    await for (final entity
+        in webDir.list(recursive: true, followLinks: false)) {
+      if (entity is! File) continue;
+
+      final path = entity.path;
+      if (!path.toLowerCase().endsWith(extension)) continue;
+
+      final relative =
+          fs.path.relative(path, from: _configuration.webBuildFilesFolder);
+
+      if (!shouldIgnore(relative)) {
+        results.add(builder(entity));
+      }
+    }
+
+    return results;
   }
 
-  Future<List<File>> _findAllSourceMapFiles() async {
-    final List<File> sourceMapFiles = [];
-    final fs = injector.get<FileSystem>();
-    final webDir = fs.directory(_configuration.webBuildFilesFolder);
-
-    if (await webDir.exists()) {
-      await for (final entity
-          in webDir.list(recursive: true, followLinks: false)) {
-        if (entity is File && entity.path.toLowerCase().endsWith('.js.map')) {
-          sourceMapFiles.add(entity.absolute);
-        }
-      }
-    } else {
-      Log.warn(
-        'Web build directory "${_configuration.webBuildFilesFolder}" does not exist, skipping source map file enumeration.',
+  Future<List<String>> _findAllJsFilePaths() => _collectWebFiles<String>(
+        extension: '.js',
+        builder: (file) => file.path,
       );
-    }
-    return sourceMapFiles;
-  }
+
+  Future<List<File>> _findAllSourceMapFiles() => _collectWebFiles<File>(
+        extension: '.js.map',
+        builder: (file) => file.absolute,
+      );
 
   Future<bool> _injectDebugIds() async {
     List<String> params = [];
@@ -329,6 +348,11 @@ class SentryDartPlugin {
       params.add('./');
       params.add('--ext');
       params.add('dart');
+    }
+
+    for (final ignorePattern in _configuration.ignoreWebSourcePaths) {
+      params.add('--ignore');
+      params.add(ignorePattern);
     }
 
     params.addAll(_baseCliParams());
