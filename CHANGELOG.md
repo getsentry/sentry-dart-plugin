@@ -8,6 +8,12 @@
   - You can use the `ignore_web_source_paths` field: e.g `ignore_web_source_paths: [test/**/*.js]`
   - This will ignore all specified files and directories from being uploaded
 
+## 3.1.1
+
+### Fixes
+
+- Add additional path to check for iOS debug symbols ([#342](https://github.com/getsentry/sentry-dart-plugin/pull/342))
+
 ## 3.1.0
 
 ### Features
