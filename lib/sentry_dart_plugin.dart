@@ -60,6 +60,8 @@ class SentryDartPlugin {
       await _executeFinalizeRelease(release);
     } on ExitError catch (e) {
       return e.code;
+    } finally {
+      Log.tasksSummary();
     }
     return 0;
   }
@@ -195,13 +197,27 @@ class SentryDartPlugin {
   }
 
   Future<void> _executeNewRelease(String release) async {
-    await _executeAndLog('Failed to create a new release',
+    final taskName = 'create new release: $release';
+    Log.startingTask(taskName);
+    final isSuccess = await _executeAndLog('Failed to create a new release',
         [..._releasesCliParams(), 'new', release]);
+    if (isSuccess) {
+      Log.taskCompleted(taskName);
+    } else {
+      Log.taskSkipped(taskName);
+    }
   }
 
   Future<void> _executeFinalizeRelease(String release) async {
-    await _executeAndLog('Failed to finalize the new release',
+    final taskName = 'finalize new release: $release';
+    Log.startingTask(taskName);
+    final isSuccess = await _executeAndLog('Failed to finalize the new release',
         [..._releasesCliParams(), 'finalize', release]);
+    if (isSuccess) {
+      Log.taskCompleted(taskName);
+    } else {
+      Log.taskSkipped(taskName);
+    }
   }
 
   Future<void> _executeSetCommits(String release) async {
@@ -222,7 +238,14 @@ class SentryDartPlugin {
       params.add('--ignore-missing');
     }
 
-    await _executeAndLog('Failed to set commits', params);
+    final taskName = 'set commits';
+    Log.startingTask(taskName);
+    final isSuccess = await _executeAndLog('Failed to set commits', params);
+    if (isSuccess) {
+      Log.taskCompleted(taskName);
+    } else {
+      Log.taskSkipped(taskName);
+    }
   }
 
   Future<List<String>> _findAllJsFilePaths() async {
@@ -288,7 +311,7 @@ class SentryDartPlugin {
     return await _executeAndLog('Failed to inject debug ids', params);
   }
 
-  Future<void> _uploadSourceMaps(
+  Future<bool> _uploadSourceMaps(
       {required String release, required String? dist}) async {
     List<String> params = [];
 
@@ -333,7 +356,7 @@ class SentryDartPlugin {
 
     params.addAll(_baseCliParams());
 
-    await _executeAndLog('Failed to sources files', params);
+    return await _executeAndLog('Failed to sources files', params);
   }
 
   /// Extracts and returns a list of path prefixes to strip from source maps.
@@ -425,7 +448,7 @@ class SentryDartPlugin {
       }
     }
 
-    const taskName = 'uploading source maps';
+    const taskName = 'uploading source maps (legacy)';
     Log.startingTask(taskName);
 
     final params = <String>[];
@@ -448,7 +471,13 @@ class SentryDartPlugin {
     _addWait(releaseJsFilesParams);
     _addUrlPrefix(releaseJsFilesParams);
 
-    await _executeAndLog('Failed to upload source maps', releaseJsFilesParams);
+    final isSourcemapsUploadSuccessful = await _executeAndLog(
+        'Failed to upload source maps', releaseJsFilesParams);
+    if (!isSourcemapsUploadSuccessful) {
+      Log.taskSkipped(taskName);
+      // no need to continue if it was a failure
+      return;
+    }
 
     if (_configuration.uploadSources) {
       // upload source files (dart)
@@ -465,8 +494,13 @@ class SentryDartPlugin {
 
       _addWait(releaseDartFilesParams);
 
-      await _executeAndLog(
+      final isSourcesUploadSuccessful = await _executeAndLog(
           'Failed to upload source files', releaseDartFilesParams);
+      if (!isSourcesUploadSuccessful) {
+        Log.taskSkipped(taskName);
+        // no need to continue if it was a failure
+        return;
+      }
     }
 
     Log.taskCompleted(taskName);
@@ -479,12 +513,16 @@ class SentryDartPlugin {
 
     final debugIdInjectionSucceeded = await _injectDebugIds();
     if (debugIdInjectionSucceeded) {
-      await _uploadSourceMaps(release: release, dist: dist);
+      final isSuccess = await _uploadSourceMaps(release: release, dist: dist);
+      if (isSuccess) {
+        Log.taskCompleted(taskName);
+      } else {
+        Log.taskSkipped(taskName);
+      }
     } else {
       Log.warn('Skipping source maps upload. Could not inject debug ids.');
+      Log.taskSkipped(taskName);
     }
-
-    Log.taskCompleted(taskName);
   }
 
   void _addUrlPrefix(List<String> releaseDartFilesParams) {
