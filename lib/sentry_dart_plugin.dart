@@ -5,6 +5,7 @@ import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
 import 'src/configuration.dart';
+import 'src/utils/flutter_debug_files.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 
@@ -97,60 +98,27 @@ class SentryDartPlugin {
       await _executeAndLog('Failed to upload symbols', [...params, path]);
     }
 
+    final all = await _findFlutterRelevantDebugFilePaths();
+    for (final path in all) {
+      print('Found path: $path');
+    }
+
     Log.taskCompleted(taskName);
   }
 
-  Stream<String> _enumerateDebugSymbolPaths(FileSystem fs) async* {
-    final buildDir = _configuration.buildFilesFolder;
-    final projectRoot = fs.currentDirectory.path;
-
-    // Android (apk, appbundle)
-    yield '$buildDir/app/outputs';
-    yield '$buildDir/app/intermediates';
-
-    // Windows
-    for (final subdir in ['', '/x64', '/arm64']) {
-      yield '$buildDir/windows$subdir/runner/Release';
-    }
-    // TODO we should delete this once we have windows symbols collected automatically.
-    // Related to https://github.com/getsentry/sentry-dart-plugin/issues/173
-    yield 'windows/flutter/ephemeral/flutter_windows.dll.pdb';
-
-    // Linux
-    for (final subdir in ['/x64', '/arm64']) {
-      yield '$buildDir/linux$subdir/release/bundle';
-    }
-
-    // macOS
-    yield '$buildDir/macos/Build/Products/Release';
-
-    // macOS (macOS-framework)
-    yield '$buildDir/macos/framework/Release';
-
-    // iOS
-    yield '$buildDir/ios/iphoneos/Runner.app';
-    if (await fs.directory('$buildDir/ios').exists()) {
-      final regexp = RegExp(r'^Release(-.*)?-iphoneos$');
-      yield* fs
-          .directory('$buildDir/ios')
-          .list()
-          .where((v) => regexp.hasMatch(v.basename))
-          .map((e) => e.path);
-    }
-
-    // iOS (ipa)
-    yield '$buildDir/ios/archive';
-
-    // iOS (ios-framework)
-    yield '$buildDir/ios/framework/Release';
-
-    // iOS in Fastlane
-    if (projectRoot == '/') {
-      yield 'ios/build';
-    } else {
-      yield '$projectRoot/ios/build';
-    }
+  /// Internal helper to discover Flutter-relevant debug files without altering
+  /// the current upload behavior. Intended for future use.
+  // ignore: unused_element
+  Future<Set<String>> _findFlutterRelevantDebugFilePaths() async {
+    final fs = injector.get<FileSystem>();
+    return await findFlutterRelevantDebugFilePaths(
+      fs: fs,
+      config: _configuration,
+    );
   }
+
+  Stream<String> _enumerateDebugSymbolPaths(FileSystem fs) =>
+      enumerateDebugSearchRoots(fs: fs, config: _configuration);
 
   Future<Set<String>> _enumerateSymbolFiles() async {
     final result = <String>{};
