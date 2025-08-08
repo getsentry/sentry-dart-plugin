@@ -73,6 +73,9 @@ class Configuration {
   /// The directory passed to `--split-debug-info`, defaults to '.'
   late String symbolsFolder;
 
+  /// Explicit path to the Dart obfuscation map file. Optional.
+  late String? dartSymbolMapPath;
+
   /// The URL prefix, defaults to null
   late String? urlPrefix;
 
@@ -154,6 +157,7 @@ class Configuration {
     final webBuildPath = configValues.webBuildPath ?? 'web';
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
     symbolsFolder = configValues.symbolsPath ?? '.';
+    dartSymbolMapPath = configValues.dartSymbolMapPath;
 
     project = configValues.project; // or env. var. SENTRY_PROJECT
     org = configValues.org; // or env. var. SENTRY_ORG
