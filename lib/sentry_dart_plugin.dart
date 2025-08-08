@@ -6,6 +6,7 @@ import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
+import 'src/utils/dart_symbol_map.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 
@@ -100,6 +101,22 @@ class SentryDartPlugin {
 
     final _ = await _findFlutterRelevantDebugFilePaths();
     // TODO(buenaflor): upload these files with the mapping file
+
+    // Attempt to resolve the Dart obfuscation map (explicit path only).
+    try {
+      final fs = injector.get<FileSystem>();
+      final symbolMapPath =
+          await findDartSymbolMapPath(fs: fs, config: _configuration);
+      if (symbolMapPath != null) {
+        Log.info('Found Dart obfuscation map at: $symbolMapPath');
+      } else {
+        Log.warn(
+            "No 'dart_symbol_map_path' provided. Set --sentry-define --dart_symbol_map_path=/abs/path/to/map to enable Dart obfuscation map usage. Continuing without a Dart symbol map.");
+      }
+    } on Exception catch (e) {
+      Log.error(e.toString());
+      throw ExitError(1);
+    }
 
     Log.taskCompleted(taskName);
   }
