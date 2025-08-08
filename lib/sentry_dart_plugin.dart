@@ -98,10 +98,8 @@ class SentryDartPlugin {
       await _executeAndLog('Failed to upload symbols', [...params, path]);
     }
 
-    final all = await _findFlutterRelevantDebugFilePaths();
-    for (final path in all) {
-      print('Found path: $path');
-    }
+    final _ = await _findFlutterRelevantDebugFilePaths();
+    // TODO(buenaflor): upload these files with the mapping file
 
     Log.taskCompleted(taskName);
   }
