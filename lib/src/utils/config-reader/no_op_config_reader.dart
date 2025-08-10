@@ -14,6 +14,11 @@ class NoOpConfigReader implements ConfigReader {
   }
 
   @override
+  List<String>? getList(String key, {String? deprecatedKey}) {
+    return null;
+  }
+
+  @override
   bool contains(String key) {
     return false;
   }

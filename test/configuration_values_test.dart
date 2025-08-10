@@ -35,7 +35,8 @@ void main() {
         "--sentry-define=bin_dir=fixture-bin_dir",
         "--sentry-define=sentry_cli_cdn_url=fixture-sentry_cli_cdn_url",
         "--sentry-define=sentry_cli_version=1.0.0",
-        "--sentry-define=legacy_web_symbolication=true"
+        "--sentry-define=legacy_web_symbolication=true",
+        "--sentry-define=ignore_web_source_paths=some/, **/*.js"
       ];
       final sut = ConfigurationValues.fromArguments(arguments);
       expect(sut.name, 'fixture-sentry-name');
@@ -60,6 +61,7 @@ void main() {
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.sentryCliVersion, '1.0.0');
       expect(sut.legacyWebSymbolication, isTrue);
+      expect(sut.ignoreWebSourcePaths, ['some/', '**/*.js']);
     });
 
     test("fromArguments supports deprecated fields", () {
@@ -103,6 +105,9 @@ void main() {
       sentry_cli_cdn_url: fixture-sentry_cli_cdn_url
       sentry_cli_version: 1.0.0
       legacy_web_symbolication: true
+      ignore_web_source_paths:
+        - some/
+        - '**/*.js'
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
@@ -145,6 +150,7 @@ void main() {
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.legacyWebSymbolication, isTrue);
+      expect(sut.ignoreWebSourcePaths, ['some/', '**/*.js']);
     });
 
     test('from config reader as properties', () {
@@ -167,6 +173,7 @@ void main() {
       bin_dir=fixture-bin_dir
       sentry_cli_cdn_url=fixture-sentry_cli_cdn_url
       sentry_cli_version=1.0.0
+      ignore_web_source_paths=[some/, **/*.js]
       ''';
 
       FileSystem fs = MemoryFileSystem.test();
@@ -209,6 +216,7 @@ void main() {
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.sentryCliVersion, '1.0.0');
+      expect(sut.ignoreWebSourcePaths, ['some/', '**/*.js']);
     });
 
     test('from config reader pubspec & properties', () {
