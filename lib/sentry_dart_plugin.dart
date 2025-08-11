@@ -87,7 +87,8 @@ class SentryDartPlugin {
     _addWait(params);
 
     final fs = injector.get<FileSystem>();
-    final debugSymbolPaths = _enumerateDebugSymbolPaths(fs);
+    final debugSymbolPaths =
+        enumerateDebugSearchRoots(fs: fs, config: _configuration);
     await for (final path in debugSymbolPaths) {
       if (await fs.directory(path).exists() || await fs.file(path).exists()) {
         await _executeAndLog('Failed to upload symbols', [...params, path]);
@@ -98,25 +99,14 @@ class SentryDartPlugin {
       await _executeAndLog('Failed to upload symbols', [...params, path]);
     }
 
-    final _ = await _findFlutterRelevantDebugFilePaths();
-    // TODO(buenaflor): upload these files with the mapping file
-
-    Log.taskCompleted(taskName);
-  }
-
-  /// Internal helper to discover Flutter-relevant debug files without altering
-  /// the current upload behavior. Intended for future use.
-  // ignore: unused_element
-  Future<Set<String>> _findFlutterRelevantDebugFilePaths() async {
-    final fs = injector.get<FileSystem>();
-    return await findFlutterRelevantDebugFilePaths(
+    final _ = await findFlutterRelevantDebugFilePaths(
       fs: fs,
       config: _configuration,
     );
-  }
+    // TODO(buenaflor): in the follow up PR use these files with the dart symbol mapping file
 
-  Stream<String> _enumerateDebugSymbolPaths(FileSystem fs) =>
-      enumerateDebugSearchRoots(fs: fs, config: _configuration);
+    Log.taskCompleted(taskName);
+  }
 
   Future<Set<String>> _enumerateSymbolFiles() async {
     final result = <String>{};
