@@ -3,11 +3,7 @@ import 'package:file/file.dart';
 import '../configuration.dart';
 
 /// Finds Flutter-relevant debug file paths for Android and Apple (iOS/macOS).
-///
-/// Task 1: Provide the public API surface only. Discovery logic will be added
-/// in subsequent tasks to enumerate Android `.symbols` files and Apple Mach-O
-/// files within `.dSYM` bundles. The function is expected to return absolute,
-/// de-duplicated paths.
+/// TODO(buenaflor): in the follow-up PR this should be coupled together with the dart symbol map
 Future<Set<String>> findFlutterRelevantDebugFilePaths({
   required FileSystem fs,
   required Configuration config,
