@@ -161,16 +161,20 @@ class SentryDartPlugin {
     Log.startingTask(taskName);
 
     try {
-      final fs = injector.get<FileSystem>();
-
-      // Check for explicitly provided and valid Dart symbol map (wire to config in a follow-up).
-      final symbolMapPath = await resolveDartSymbolMapPath(
-        fs: fs,
-        configuredPath: null,
-      );
-      if (symbolMapPath == null) {
+      if (_configuration.dartSymbolMapPath == null ||
+          _configuration.dartSymbolMapPath!.isEmpty) {
         Log.warn(
-          "No 'dart_symbol_map_path' provided. Set --sentry-define --dart_symbol_map_path=/abs/path/to/map to enable Dart obfuscation map usage. Skipping Dart symbol map uploads.",
+          "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
+        );
+        Log.taskCompleted(taskName);
+        return;
+      }
+
+      final fs = injector.get<FileSystem>();
+      final symbolMapPath = _configuration.dartSymbolMapPath!;
+      if (!await fs.file(symbolMapPath).exists()) {
+        Log.warn(
+          "Skipping Dart symbol map uploads: Dart symbol map file not found at '$_configuration.dartSymbolMapPath'.",
         );
         Log.taskCompleted(taskName);
         return;
@@ -183,13 +187,12 @@ class SentryDartPlugin {
 
       if (debugFilePaths.isEmpty) {
         Log.info(
-            'No Flutter-relevant debug files found for Dart symbol map upload.');
+            'Skipping Dart symbol map uploads: no Flutter-relevant debug files found.');
         Log.taskCompleted(taskName);
         return;
       }
 
       for (final debugFilePath in debugFilePaths) {
-        // Accept both files and directories, mirroring current symbol search behavior.
         final isFile = await fs.file(debugFilePath).exists();
         final isDir = await fs.directory(debugFilePath).exists();
         if (!isFile && !isDir) {
@@ -210,10 +213,9 @@ class SentryDartPlugin {
           params,
         );
       }
-
-      Log.taskCompleted(taskName);
     } catch (e) {
       Log.error('Dart symbol map upload failed: $e');
+    } finally {
       Log.taskCompleted(taskName);
     }
   }
