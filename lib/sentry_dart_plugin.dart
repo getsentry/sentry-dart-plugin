@@ -133,69 +133,6 @@ class SentryDartPlugin {
     return result;
   }
 
-  // Guarded implementation for uploading Dart symbol map alongside each relevant debug file.
-  // Currently no-ops until `_dartSymbolMapUploadEnabled` is flipped to true. -> Temporary guard.
-  Future<void> _tryUploadDartSymbolMap() async {
-    if (!_dartSymbolMapUploadEnabled) {
-      Log.info('Dart symbol map upload is disabled in this version. Skipping.');
-      return;
-    }
-
-    const taskName = 'uploading Dart symbol map(s)';
-    Log.startingTask(taskName);
-
-    try {
-      final fs = injector.get<FileSystem>();
-
-      final symbolMapPath = await resolveDartSymbolMapPath(
-          fs: fs, configuredPath: _configuration.dartSymbolMapPath);
-      if (symbolMapPath == null) {
-        Log.warn(
-            "No 'dart_symbol_map_path' provided. Set --sentry-define --dart_symbol_map_path=/abs/path/to/map to enable Dart obfuscation map usage. Skipping Dart symbol map uploads.");
-        Log.taskCompleted(taskName);
-        return;
-      }
-
-      final debugFilePaths = await findFlutterRelevantDebugFilePaths(
-        fs: fs,
-        config: _configuration,
-      );
-
-      if (debugFilePaths.isEmpty) {
-        Log.info(
-            'No Flutter-relevant debug files found for Dart symbol map upload.');
-        Log.taskCompleted(taskName);
-        return;
-      }
-
-      for (final debugFilePath in debugFilePaths) {
-        final isFile = await fs.file(debugFilePath).exists();
-        final isDir = await fs.directory(debugFilePath).exists();
-        if (!isFile && !isDir) {
-          continue;
-        }
-
-        final params = <String>[];
-        _setUrlAndTokenAndLog(params);
-        params.add('dart-symbol-map');
-        params.add('upload');
-        _addOrgAndProject(params);
-        _addWait(params);
-        params.add(symbolMapPath);
-        params.add(debugFilePath);
-
-        await _executeAndLog(
-          'Failed to upload Dart symbol map for $debugFilePath',
-          params,
-        );
-      }
-    } catch (e) {
-      Log.error('Dart symbol map upload failed: $e');
-    } finally {
-      Log.taskCompleted(taskName);
-    }
-  }
-
   List<String> _baseCliParams({bool addReleases = false}) {
     final params = <String>[];
     if (addReleases) {
