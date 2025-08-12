@@ -11,12 +11,6 @@ import 'flutter_debug_files.dart';
 /// (pairs of original and obfuscated names).
 Future<bool> isValidDartSymbolMapFile(File file) async {
   try {
-    // Basic size guard: reject extremely large files to avoid excessive memory usage.
-    final stat = await file.stat();
-    // ~20MB upper bound is generous for typical obfuscation maps.
-    const int maxBytes = 20 * 1024 * 1024;
-    if (stat.size > maxBytes) return false;
-
     final content = (await file.readAsString()).trim();
     if (!(content.startsWith('[') && content.endsWith(']'))) return false;
 
