@@ -5,27 +5,6 @@ import 'package:file/file.dart';
 import '../configuration.dart';
 import 'flutter_debug_files.dart';
 
-/// Validates whether a file looks like a Dart obfuscation map.
-///
-/// Expected minimal shape: top-level JSON array of strings with an even length
-/// (pairs of original and obfuscated names).
-Future<bool> isValidDartSymbolMapFile(File file) async {
-  try {
-    final content = (await file.readAsString()).trim();
-    if (!(content.startsWith('[') && content.endsWith(']'))) return false;
-
-    final decoded = jsonDecode(content);
-    if (decoded is! List) return false;
-    if (decoded.isEmpty || decoded.length.isOdd) return false;
-    for (final item in decoded) {
-      if (item is! String) return false;
-    }
-    return true;
-  } catch (_) {
-    return false;
-  }
-}
-
 /// If [configuredPath] is provided, validates and returns the absolute path to the Dart symbol map.
 /// If not provided, returns null.
 ///
@@ -41,12 +20,6 @@ Future<String?> resolveDartSymbolMapPath({
   if (!await file.exists()) {
     throw StateError(
       "Dart symbol map file not found at '$configuredPath'. Ensure the path is correct and the file exists.",
-    );
-  }
-
-  if (!await isValidDartSymbolMapFile(file)) {
-    throw StateError(
-      "Invalid Dart symbol map at '$configuredPath'. It must be a JSON array of strings with an even number of elements.",
     );
   }
 
