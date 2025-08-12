@@ -40,7 +40,7 @@ class DartSymbolMapUploader {
         final List<String> params = CliParams.base(config)
           ..addAll(<String>['dart-symbol-map', 'upload']);
         CliParams.addOrgAndProject(params, config);
-        CliParams.addWaitIfNeeded(params, config);
+        CliParams.addWait(params, config);
         params
           ..add(symbolMapPath)
           ..add(debugFilePath);

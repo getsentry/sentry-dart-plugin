@@ -1,6 +1,6 @@
 import '../configuration.dart';
 
-// TODO(buenaflor): in a future PR this should be reused in sentry_dart_plugin.dart
+// TODO(buenaflor): in a future PR this should be reused in
 class CliParams {
   /// Returns URL/auth-token/log-level flags when present.
   static List<String> base(Configuration config) {
@@ -43,7 +43,7 @@ class CliParams {
   }
 
   /// Appends --wait if configured.
-  static void addWaitIfNeeded(List<String> params, Configuration config) {
+  static void addWait(List<String> params, Configuration config) {
     final bool wait = config.waitForProcessing;
     if (wait) {
       params.add('--wait');
