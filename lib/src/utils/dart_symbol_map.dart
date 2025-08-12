@@ -49,16 +49,6 @@ Future<Set<String>> findFlutterRelevantDebugFilePaths({
       }
       return;
     }
-
-    final file = fs.file(rootPath);
-    if (await file.exists()) {
-      final String basename = fs.path.basename(file.path);
-      if (basename.startsWith('app') &&
-          basename.endsWith('.symbols') &&
-          !basename.contains('darwin')) {
-        foundPaths.add(file.absolute.path);
-      }
-    }
   }
 
   if (config.symbolsFolder.isNotEmpty) {
