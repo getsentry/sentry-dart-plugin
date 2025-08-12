@@ -7,6 +7,8 @@ import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
 import 'src/symbol_maps/dart_map_debug_file_collector.dart';
+import 'src/symbol_maps/dart_map_discovery.dart';
+import 'src/symbol_maps/dart_map_uploader.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 
@@ -161,26 +163,16 @@ class SentryDartPlugin {
     Log.startingTask(taskName);
 
     try {
-      if (_configuration.dartSymbolMapPath == null ||
-          _configuration.dartSymbolMapPath!.isEmpty) {
-        Log.warn(
-          "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
-        );
-        Log.taskCompleted(taskName);
-        return;
-      }
-
       final fs = injector.get<FileSystem>();
-      final symbolMapPath = _configuration.dartSymbolMapPath!;
-      if (!await fs.file(symbolMapPath).exists()) {
-        Log.warn(
-          "Skipping Dart symbol map uploads: Dart symbol map file not found at '$_configuration.dartSymbolMapPath'.",
-        );
+
+      final String? resolvedMapPath =
+          await resolveDartMapPath(fs: fs, config: _configuration);
+      if (resolvedMapPath == null) {
         Log.taskCompleted(taskName);
         return;
       }
 
-      final debugFilePaths = await collectDebugFilesForDartMap(
+      final Set<String> debugFilePaths = await collectDebugFilesForDartMap(
         fs: fs,
         config: _configuration,
       );
@@ -192,27 +184,14 @@ class SentryDartPlugin {
         return;
       }
 
-      for (final debugFilePath in debugFilePaths) {
-        final isFile = await fs.file(debugFilePath).exists();
-        final isDir = await fs.directory(debugFilePath).exists();
-        if (!isFile && !isDir) {
-          continue;
-        }
+      Log.info("Resolved Dart symbol map at '$resolvedMapPath'");
+      Log.info('Found ${debugFilePaths.length} debug file(s) to pair with.');
 
-        final params = <String>[];
-        _setUrlAndTokenAndLog(params);
-        params.add('dart-symbol-map');
-        params.add('upload');
-        _addOrgAndProject(params);
-        _addWait(params);
-        params.add(symbolMapPath);
-        params.add(debugFilePath);
-
-        await _executeAndLog(
-          'Failed to upload Dart symbol map for $debugFilePath',
-          params,
-        );
-      }
+      await DartMapUploader.upload(
+        config: _configuration,
+        symbolMapPath: resolvedMapPath,
+        debugFilePaths: debugFilePaths,
+      );
     } catch (e) {
       Log.error('Dart symbol map upload failed: $e');
     } finally {
