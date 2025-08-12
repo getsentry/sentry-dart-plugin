@@ -51,8 +51,8 @@ Future<Set<String>> collectDebugFilesForDartMap({
       if (basename == 'App.framework.dSYM') {
         final String machOPath = fs.path.join(
           entity.path,
-          'Contents'
-              'Resources',
+          'Contents',
+          'Resources',
           'DWARF',
           'App',
         );

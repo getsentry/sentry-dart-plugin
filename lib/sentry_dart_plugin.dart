@@ -6,7 +6,7 @@ import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
-import 'src/utils/dart_symbol_map.dart';
+import 'src/symbol_maps/dart_map_debug_file_collector.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 
@@ -180,7 +180,7 @@ class SentryDartPlugin {
         return;
       }
 
-      final debugFilePaths = await findFlutterRelevantDebugFilePaths(
+      final debugFilePaths = await collectDebugFilesForDartMap(
         fs: fs,
         config: _configuration,
       );

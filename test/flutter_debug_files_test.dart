@@ -1,11 +1,11 @@
 import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
-import 'package:sentry_dart_plugin/src/utils/dart_symbol_map.dart';
+import 'package:sentry_dart_plugin/src/symbol_maps/dart_map_debug_file_collector.dart';
 import 'package:sentry_dart_plugin/src/configuration.dart';
 
 void main() {
-  group('findFlutterRelevantDebugFilePaths', () {
+  group('collectDebugFilesForDartMap', () {
     test('returns Android .symbols only and Apple App.framework.dSYM Mach-O',
         () async {
       final fs = MemoryFileSystem(style: FileSystemStyle.posix);
@@ -45,7 +45,7 @@ void main() {
         ..buildFilesFolder = buildDir
         ..symbolsFolder = symbolsDir;
 
-      final result = await findFlutterRelevantDebugFilePaths(
+      final result = await collectDebugFilesForDartMap(
         fs: fs,
         config: config,
       );
@@ -89,7 +89,7 @@ void main() {
         ..buildFilesFolder = buildDir
         ..symbolsFolder = symbolsDir;
 
-      final result = await findFlutterRelevantDebugFilePaths(
+      final result = await collectDebugFilesForDartMap(
         fs: fs,
         config: config,
       );
@@ -125,7 +125,7 @@ void main() {
         ..buildFilesFolder = buildDir
         ..symbolsFolder = symbolsDir;
 
-      final result = await findFlutterRelevantDebugFilePaths(
+      final result = await collectDebugFilesForDartMap(
         fs: fs,
         config: config,
       );
@@ -148,7 +148,7 @@ void main() {
         ..buildFilesFolder = buildDir
         ..symbolsFolder = symbolsDir;
 
-      final result = await findFlutterRelevantDebugFilePaths(
+      final result = await collectDebugFilesForDartMap(
         fs: fs,
         config: config,
       );
