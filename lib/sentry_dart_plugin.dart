@@ -102,8 +102,7 @@ class SentryDartPlugin {
       await _executeAndLog('Failed to upload symbols', [...params, path]);
     }
 
-    // Attempt (guarded) to upload Dart symbol map alongside relevant Flutter debug files.
-    await _tryUploadDartSymbolMapForDebugFiles();
+    await _tryUploadDartSymbolMap();
 
     Log.taskCompleted(taskName);
   }
@@ -152,7 +151,7 @@ class SentryDartPlugin {
 
   /// Guarded implementation for uploading Dart symbol map alongside each relevant debug file.
   /// Currently a no-op until `_dartSymbolMapUploadEnabled` is flipped to true.
-  Future<void> _tryUploadDartSymbolMapForDebugFiles() async {
+  Future<void> _tryUploadDartSymbolMap() async {
     if (!_dartSymbolMapUploadEnabled) {
       Log.info('Dart symbol map upload is disabled in this version. Skipping.');
       return;
