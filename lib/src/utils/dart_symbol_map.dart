@@ -3,63 +3,112 @@ import 'dart:convert';
 import 'package:file/file.dart';
 
 import '../configuration.dart';
+import 'flutter_debug_files.dart';
 
-/// Maximum Dart symbol map file size to consider during validation (20 MiB).
-const int kMaxDartSymbolMapSizeBytes = 20 * 1024 * 1024;
-
-/// Validates whether the given [file] contains a Dart obfuscation map.
+/// If [configuredPath] is provided, validates and returns the absolute path to the Dart symbol map.
+/// If not provided, returns null.
 ///
-/// A valid map is a JSON array of strings with even length and at least one
-/// pair (length >= 2), e.g. ["MaterialApp", "ex", "Scaffold", "ey"].
-Future<bool> isValidDartSymbolMapFile(File file) async {
-  try {
-    final stat = await file.stat();
-    if (stat.type != FileSystemEntityType.file) return false;
-    if (stat.size <= 0 || stat.size > kMaxDartSymbolMapSizeBytes) return false;
+/// Note: we do not scan the filesystem for this file because the file does not
+/// have a special extension so worst case we would have to check every file.
+Future<String?> resolveDartSymbolMapPath({
+  required FileSystem fs,
+  String? configuredPath,
+}) async {
+  if (configuredPath == null || configuredPath.isEmpty) return null;
 
-    final content = await file.readAsString();
-    final trimmed = content.trim();
-    if (trimmed.length < 2) return false;
-    if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return false;
-
-    final dynamic decoded = jsonDecode(trimmed);
-    if (decoded is! List) return false;
-    if (decoded.isEmpty) return false;
-    if (decoded.length.isOdd) return false;
-    if (decoded.length < 2) return false;
-    for (final element in decoded) {
-      if (element is! String) return false;
-    }
-    return true;
-  } catch (_) {
-    return false;
+  final file = fs.file(configuredPath);
+  if (!await file.exists()) {
+    throw StateError(
+      "Dart symbol map file not found at '$configuredPath'. Ensure the path is correct and the file exists.",
+    );
   }
+
+  return file.absolute.path;
 }
 
-/// Attempts to resolve the Dart obfuscation map path.
-///
-/// - If [config.dartSymbolMapPath] is provided, it must exist and be valid,
-///   otherwise an [Exception] is thrown. On success, returns the absolute path.
-/// - Otherwise, returns null (no scanning by default due to performance).
-Future<String?> findDartSymbolMapPath({
+/// Finds Flutter-relevant debug file paths for Android and Apple (iOS/macOS)
+/// that should be paired with a Dart symbol map.
+Future<Set<String>> findFlutterRelevantDebugFilePaths({
   required FileSystem fs,
   required Configuration config,
 }) async {
-  final String? explicitPath = config.dartSymbolMapPath;
-  if (explicitPath != null && explicitPath.isNotEmpty) {
-    final file = fs.file(explicitPath);
-    if (!await file.exists()) {
-      throw Exception(
-        "Dart symbol map not found at provided path '$explicitPath'.",
-      );
+  final Set<String> foundPaths = <String>{};
+
+  Future<void> collectAndroidSymbolsUnder(String rootPath) async {
+    if (rootPath.isEmpty) return;
+
+    final directory = fs.directory(rootPath);
+    if (await directory.exists()) {
+      await for (final entity
+          in directory.list(recursive: true, followLinks: false)) {
+        if (entity is! File) continue;
+        final String basename = fs.path.basename(entity.path);
+        if (basename.startsWith('app') &&
+            basename.endsWith('.symbols') &&
+            !basename.contains('darwin')) {
+          foundPaths.add(fs.file(entity.path).absolute.path);
+        }
+      }
+      return;
     }
-    final isValid = await isValidDartSymbolMapFile(file);
-    if (!isValid) {
-      throw Exception(
-        "Provided 'dart_symbol_map_path' is not a valid Dart obfuscation map: '$explicitPath'.",
-      );
+
+    final file = fs.file(rootPath);
+    if (await file.exists()) {
+      final String basename = fs.path.basename(file.path);
+      if (basename.startsWith('app') &&
+          basename.endsWith('.symbols') &&
+          !basename.contains('darwin')) {
+        foundPaths.add(file.absolute.path);
+      }
     }
-    return file.absolute.path;
   }
-  return null;
+
+  // First, scan the configured symbols folder (if any)
+  if (config.symbolsFolder.isNotEmpty) {
+    await collectAndroidSymbolsUnder(config.symbolsFolder);
+  }
+
+  // Backward compatibility: also scan build folder if different
+  if (config.buildFilesFolder != config.symbolsFolder) {
+    await collectAndroidSymbolsUnder(config.buildFilesFolder);
+  }
+
+  // Then, scan all current search roots used by the plugin
+  await for (final root in enumerateDebugSearchRoots(fs: fs, config: config)) {
+    await collectAndroidSymbolsUnder(root);
+  }
+
+  Future<void> collectAppleMachOUnder(String rootPath) async {
+    if (rootPath.isEmpty) return;
+    final dir = fs.directory(rootPath);
+    if (!await dir.exists()) return;
+
+    await for (final entity in dir.list(recursive: true, followLinks: false)) {
+      if (entity is! Directory) continue;
+      final String basename = fs.path.basename(entity.path);
+      if (basename == 'App.framework.dSYM') {
+        final String machOPath = fs.path.join(
+          entity.path,
+          'Contents',
+          'Resources',
+          'DWARF',
+          'App',
+        );
+        final File machOFile = fs.file(machOPath);
+        if (await machOFile.exists()) {
+          foundPaths.add(machOFile.absolute.path);
+        }
+      }
+    }
+  }
+
+  // Search under the build directory directly to catch common iOS layouts
+  await collectAppleMachOUnder(config.buildFilesFolder);
+
+  // Search all known roots (includes Fastlane ios/build)
+  await for (final root in enumerateDebugSearchRoots(fs: fs, config: config)) {
+    await collectAppleMachOUnder(root);
+  }
+
+  return foundPaths;
 }

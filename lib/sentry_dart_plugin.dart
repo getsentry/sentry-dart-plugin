@@ -15,9 +15,8 @@ import 'src/utils/log.dart';
 class SentryDartPlugin {
   late Configuration _configuration;
   final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
-  // Temporary guard while sentry-cli doesn't support the dart-symbol-map command yet.
-  // Flip to 'true' once the command is available in the bundled CLI version.
-  static const bool _dartSymbolMapUploadEnabled = false;
+  // Temporary feature flag: guarded no-op until sentry-cli supports Dart symbol map upload.
+  final bool _dartSymbolMapUploadEnabled = false;
 
   /// SentryDartPlugin ctor. that inits the injectors
   SentryDartPlugin() {
@@ -103,8 +102,7 @@ class SentryDartPlugin {
       await _executeAndLog('Failed to upload symbols', [...params, path]);
     }
 
-    // Attempt to upload the Dart symbol map for each relevant debug file (guarded, no-op for now).
-    await _tryUploadDartSymbolMapForDebugFiles();
+    await _tryUploadDartSymbolMap();
 
     Log.taskCompleted(taskName);
   }
@@ -215,6 +213,75 @@ class SentryDartPlugin {
     _setUrlAndTokenAndLog(params);
     params.addAll(_baseCliParams(addReleases: true));
     return params;
+  }
+
+  /// Guarded implementation for uploading Dart symbol map alongside each relevant debug file.
+  /// Currently a no-op until `_dartSymbolMapUploadEnabled` is flipped to true.
+  Future<void> _tryUploadDartSymbolMap() async {
+    if (!_dartSymbolMapUploadEnabled) {
+      Log.info('Dart symbol map upload is disabled in this version. Skipping.');
+      return;
+    }
+
+    const taskName = 'uploading Dart symbol map(s)';
+    Log.startingTask(taskName);
+
+    try {
+      final fs = injector.get<FileSystem>();
+
+      // Check for explicitly provided and valid Dart symbol map (wire to config in a follow-up).
+      final symbolMapPath = await resolveDartSymbolMapPath(
+        fs: fs,
+        configuredPath: null,
+      );
+      if (symbolMapPath == null) {
+        Log.warn(
+          "No 'dart_symbol_map_path' provided. Set --sentry-define --dart_symbol_map_path=/abs/path/to/map to enable Dart obfuscation map usage. Skipping Dart symbol map uploads.",
+        );
+        Log.taskCompleted(taskName);
+        return;
+      }
+
+      final debugFilePaths = await findFlutterRelevantDebugFilePaths(
+        fs: fs,
+        config: _configuration,
+      );
+
+      if (debugFilePaths.isEmpty) {
+        Log.info(
+            'No Flutter-relevant debug files found for Dart symbol map upload.');
+        Log.taskCompleted(taskName);
+        return;
+      }
+
+      for (final debugFilePath in debugFilePaths) {
+        // Accept both files and directories, mirroring current symbol search behavior.
+        final isFile = await fs.file(debugFilePath).exists();
+        final isDir = await fs.directory(debugFilePath).exists();
+        if (!isFile && !isDir) {
+          continue;
+        }
+
+        final params = <String>[];
+        _setUrlAndTokenAndLog(params);
+        params.add('dart-symbol-map');
+        params.add('upload');
+        _addOrgAndProject(params);
+        _addWait(params);
+        params.add(symbolMapPath);
+        params.add(debugFilePath);
+
+        await _executeAndLog(
+          'Failed to upload Dart symbol map for $debugFilePath',
+          params,
+        );
+      }
+
+      Log.taskCompleted(taskName);
+    } catch (e) {
+      Log.error('Dart symbol map upload failed: $e');
+      Log.taskCompleted(taskName);
+    }
   }
 
   Future<void> _executeNewRelease(String release) async {

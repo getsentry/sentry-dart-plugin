@@ -1,7 +1,7 @@
 import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
-import 'package:sentry_dart_plugin/src/utils/flutter_debug_files.dart';
+import 'package:sentry_dart_plugin/src/utils/dart_symbol_map.dart';
 import 'package:sentry_dart_plugin/src/configuration.dart';
 
 void main() {
