@@ -23,6 +23,7 @@ void main() {
         "--sentry-define=org=fixture-org",
         "--sentry-define=auth_token=fixture-auth_token",
         "--sentry-define=url=fixture-url",
+        "--sentry-define=dart_symbol_map_path=fixture-dart-symbol-map.json",
         "--sentry-define=wait_for_processing=true",
         "--sentry-define=log_level=fixture-log_level",
         "--sentry-define=release=fixture-release",
@@ -47,6 +48,7 @@ void main() {
       expect(sut.org, 'fixture-org');
       expect(sut.authToken, 'fixture-auth_token');
       expect(sut.url, 'fixture-url');
+      expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -90,6 +92,7 @@ void main() {
       upload_source_maps: true
       upload_sources: true
       url: fixture-url
+      dart_symbol_map_path: fixture-dart-symbol-map.json
       wait_for_processing: true
       log_level: fixture-log_level
       release: fixture-release
@@ -133,6 +136,7 @@ void main() {
       expect(sut.org, 'o');
       expect(sut.authToken, 't');
       expect(sut.url, 'fixture-url');
+      expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -155,6 +159,7 @@ void main() {
       upload_source_maps=true
       upload_sources=true
       url=fixture-url
+      dart_symbol_map_path=fixture-dart-symbol-map.json
       wait_for_processing=true
       log_level=fixture-log_level
       release=fixture-release
@@ -197,6 +202,7 @@ void main() {
       expect(sut.org, 'o');
       expect(sut.authToken, 't');
       expect(sut.url, 'fixture-url');
+      expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -275,12 +281,14 @@ void main() {
         'SENTRY_RELEASE': 'fixture-release',
         'SENTRY_DIST': 'fixture-dist',
         'SENTRYCLI_CDNURL': 'fixture-sentry_cli_cdn_url',
+        'SENTRY_DART_SYMBOL_MAP_PATH': 'fixture-env-dart-symbol-map.json',
       };
 
       final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
+      expect(sut.dartSymbolMapPath, 'fixture-env-dart-symbol-map.json');
     });
   });
 }
