@@ -14,7 +14,7 @@ import '../utils/cli_params.dart';
 ///
 ///   sentry-cli dart-symbol-map upload [--url ...] [--auth-token ...]
 ///   [--log-level ...] --org ... --project ... [--wait]
-///   <path-to-map> <path-to-debug-file>
+///   /path-to-map /path-to-debug-file
 class DartSymbolMapUploader {
   /// Uploads [symbolMapPath] for each entry in [debugFilePaths].
   ///
