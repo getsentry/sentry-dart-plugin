@@ -135,7 +135,7 @@ class SentryDartPlugin {
 
   // Guarded implementation for uploading Dart symbol map alongside each relevant debug file.
   // Currently no-ops until `_dartSymbolMapUploadEnabled` is flipped to true. -> Temporary guard.
-  Future<void> _tryUploadDartSymbolMapForDebugFiles() async {
+  Future<void> _tryUploadDartSymbolMap() async {
     if (!_dartSymbolMapUploadEnabled) {
       Log.info('Dart symbol map upload is disabled in this version. Skipping.');
       return;
@@ -147,9 +147,8 @@ class SentryDartPlugin {
     try {
       final fs = injector.get<FileSystem>();
 
-      // Check for explicitly provided and valid Dart symbol map.
-      final symbolMapPath =
-          await findDartSymbolMapPath(fs: fs, config: _configuration);
+      final symbolMapPath = await resolveDartSymbolMapPath(
+          fs: fs, configuredPath: _configuration.dartSymbolMapPath);
       if (symbolMapPath == null) {
         Log.warn(
             "No 'dart_symbol_map_path' provided. Set --sentry-define --dart_symbol_map_path=/abs/path/to/map to enable Dart obfuscation map usage. Skipping Dart symbol map uploads.");
@@ -170,7 +169,6 @@ class SentryDartPlugin {
       }
 
       for (final debugFilePath in debugFilePaths) {
-        // Accept both files and directories, mirroring current symbol search behavior.
         final isFile = await fs.file(debugFilePath).exists();
         final isDir = await fs.directory(debugFilePath).exists();
         if (!isFile && !isDir) {
@@ -191,11 +189,10 @@ class SentryDartPlugin {
           params,
         );
       }
-
-      Log.taskCompleted(taskName);
-    } on Exception catch (e) {
+    } catch (e) {
       Log.error('Dart symbol map upload failed: $e');
-      throw ExitError(1);
+    } finally {
+      Log.taskCompleted(taskName);
     }
   }
 
