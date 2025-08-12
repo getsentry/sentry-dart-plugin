@@ -15,9 +15,6 @@ import '../utils/cli_params.dart';
 ///   sentry-cli dart-symbol-map upload [--url ...] [--auth-token ...]
 ///   [--log-level ...] --org ... --project ... [--wait]
 ///   <path-to-map> <path-to-debug-file>
-///
-/// Stdout/stderr from the underlying process are forwarded to [Log]. A
-/// non-zero exit code triggers [ExitError] (via [Log.processExitCode]).
 class DartMapUploader {
   /// Uploads [symbolMapPath] for each entry in [debugFilePaths].
   ///
@@ -70,9 +67,8 @@ class DartMapUploader {
     }
   }
 
-  // NOTE: param helpers moved to CliParams to avoid duplication across features.
-
   /// Starts the process and forwards stdout/stderr to [Log]. Returns exit code.
+  /// TODO(buenaflor): eventually this should be deduplicated with the one in sentry_dart_plugin.dart
   static Future<int> _startAndForward({
     required ProcessManager processManager,
     required String cliPath,
@@ -81,8 +77,7 @@ class DartMapUploader {
   }) async {
     int exitCode;
     try {
-      final Process process =
-          await processManager.start(<Object>[cliPath, ...params]);
+      final Process process = await processManager.start([cliPath, ...params]);
 
       process.stdout.transform(utf8.decoder).listen((String data) {
         final String trimmed = data.trim();
@@ -100,7 +95,6 @@ class DartMapUploader {
       exitCode = await process.exitCode;
     } on Exception catch (exception) {
       Log.error('$errorContext: \n$exception');
-      // Mirror existing behavior in the plugin: treat exceptions as failures.
       return 1;
     }
     return exitCode;

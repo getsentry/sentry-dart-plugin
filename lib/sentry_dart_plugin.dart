@@ -6,9 +6,9 @@ import 'package:process/process.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
-import 'src/symbol_maps/dart_map_debug_file_collector.dart';
-import 'src/symbol_maps/dart_map_discovery.dart';
-import 'src/symbol_maps/dart_map_uploader.dart';
+import 'src/symbol_maps/dart_symbol_map_debug_file_collector.dart';
+import 'src/symbol_maps/dart_symbol_map_discovery.dart';
+import 'src/symbol_maps/dart_symbol_map_uploader.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 import 'src/utils/extensions.dart';
