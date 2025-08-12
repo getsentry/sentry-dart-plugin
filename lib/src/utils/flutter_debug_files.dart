@@ -19,6 +19,13 @@ Stream<String> enumerateDebugSearchRoots({
   final String buildDir = config.buildFilesFolder;
   final String projectRoot = fs.currentDirectory.path;
 
+  // If a custom symbols folder is configured, include it so that
+  // sentry-cli can discover files within. Avoid default '.' to prevent
+  // uploading the entire repository root.
+  if (config.symbolsFolder.isNotEmpty && config.symbolsFolder != '.') {
+    yield config.symbolsFolder;
+  }
+
   // Android (apk, appbundle)
   yield '$buildDir/app/outputs';
   yield '$buildDir/app/intermediates';

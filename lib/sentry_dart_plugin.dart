@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/utils/extensions.dart';
+// import removed: no longer using directory find extension for symbol discovery
 
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
@@ -16,7 +16,7 @@ import 'src/utils/log.dart';
 /// debug symbols and source maps
 class SentryDartPlugin {
   late Configuration _configuration;
-  final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
+  // Removed: previous regex-based symbol discovery; use unified search roots instead.
   // Temporary feature flag: guarded no-op until sentry-cli supports Dart symbol map upload.
   final bool _dartSymbolMapUploadEnabled = false;
 
@@ -100,40 +100,13 @@ class SentryDartPlugin {
       }
     }
 
-    for (final path in await _enumerateSymbolFiles()) {
-      await _executeAndLog('Failed to upload symbols', [...params, path]);
-    }
-
     await _tryUploadDartSymbolMap();
 
     Log.taskCompleted(taskName);
   }
 
-  Future<Set<String>> _enumerateSymbolFiles() async {
-    final result = <String>{};
-    final fs = injector.get<FileSystem>();
-
-    if (_configuration.symbolsFolder.isNotEmpty) {
-      final symbolsRootDir = fs.directory(_configuration.symbolsFolder);
-      if (await symbolsRootDir.exists()) {
-        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
-          result.add(entry.path);
-        }
-      }
-    }
-
-    // for backward compatibility, also check the build dir if it has been
-    // configured with a different path.
-    if (_configuration.buildFilesFolder != _configuration.symbolsFolder) {
-      final symbolsRootDir = fs.directory(_configuration.buildFilesFolder);
-      if (await symbolsRootDir.exists()) {
-        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
-          result.add(entry.path);
-        }
-      }
-    }
-    return result;
-  }
+  // Removed duplicate symbol discovery. All debug file roots are enumerated
+  // through enumerateDebugSearchRoots().
 
   List<String> _baseCliParams({bool addReleases = false}) {
     final params = <String>[];
