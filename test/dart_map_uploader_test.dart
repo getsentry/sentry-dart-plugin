@@ -62,7 +62,12 @@ void main() {
     test('omits optional flags when not configured', () async {
       final config = Configuration()
         ..cliPath = 'mock-cli'
-        ..waitForProcessing = false;
+        ..waitForProcessing = false
+        ..url = null
+        ..authToken = null
+        ..logLevel = null
+        ..org = null
+        ..project = null;
 
       final map = '/m/map.json';
       final debugFiles = <String>['/d/file.symbols'];
@@ -86,7 +91,11 @@ void main() {
       final config = Configuration()
         ..cliPath = 'mock-cli'
         ..org = 'o'
-        ..project = 'p';
+        ..project = 'p'
+        ..url = null
+        ..authToken = null
+        ..logLevel = null
+        ..waitForProcessing = false;
 
       final call = DartSymbolMapUploader.upload(
         config: config,
