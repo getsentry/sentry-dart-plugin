@@ -15,7 +15,7 @@ import '../utils/cli_params.dart';
 ///   sentry-cli dart-symbol-map upload [--url ...] [--auth-token ...]
 ///   [--log-level ...] --org ... --project ... [--wait]
 ///   <path-to-map> <path-to-debug-file>
-class DartMapUploader {
+class DartSymbolMapUploader {
   /// Uploads [symbolMapPath] for each entry in [debugFilePaths].
   ///
   /// Throws [ExitError] on the first non-zero CLI exit code.

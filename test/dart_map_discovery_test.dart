@@ -2,7 +2,7 @@ import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
 import 'package:sentry_dart_plugin/src/configuration.dart';
-import 'package:sentry_dart_plugin/src/symbol_maps/dart_map_discovery.dart';
+import 'package:sentry_dart_plugin/src/symbol_maps/dart_symbol_map_discovery.dart';
 
 void main() {
   group('resolveDartMapPath', () {

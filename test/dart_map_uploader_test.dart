@@ -5,7 +5,7 @@ import 'package:process/process.dart';
 import 'package:test/test.dart';
 
 import 'package:sentry_dart_plugin/src/configuration.dart';
-import 'package:sentry_dart_plugin/src/symbol_maps/dart_map_uploader.dart';
+import 'package:sentry_dart_plugin/src/symbol_maps/dart_symbol_map_uploader.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 import 'package:sentry_dart_plugin/src/utils/log.dart';
 
@@ -34,7 +34,7 @@ void main() {
         '/b/App.framework.dSYM/Contents/Resources/DWARF/App',
       ];
 
-      await DartMapUploader.upload(
+      await DartSymbolMapUploader.upload(
         config: config,
         symbolMapPath: map,
         debugFilePaths: debugFiles,
@@ -67,7 +67,7 @@ void main() {
       final map = '/m/map.json';
       final debugFiles = <String>['/d/file.symbols'];
 
-      await DartMapUploader.upload(
+      await DartSymbolMapUploader.upload(
         config: config,
         symbolMapPath: map,
         debugFilePaths: debugFiles,
@@ -88,7 +88,7 @@ void main() {
         ..org = 'o'
         ..project = 'p';
 
-      final call = DartMapUploader.upload(
+      final call = DartSymbolMapUploader.upload(
         config: config,
         symbolMapPath: '/map.json',
         debugFilePaths: <String>['/debug.symbols', '/ignored.second'],
