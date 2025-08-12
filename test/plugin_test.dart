@@ -222,8 +222,9 @@ void main() {
           // Create Android symbols and a fake Dart symbol map
           final androidSymbolsDir = fs.directory('$buildDir/app/outputs')
             ..createSync(recursive: true);
-          fs.file('${androidSymbolsDir.path}/app-release.symbols')
-            ..writeAsStringSync('fake');
+          fs
+              .file('${androidSymbolsDir.path}/app-release.symbols')
+              .writeAsStringSync('fake');
           final mapFile = fs.file('obfuscation.map.json')
             ..writeAsStringSync('[]');
 
