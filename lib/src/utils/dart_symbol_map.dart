@@ -61,17 +61,14 @@ Future<Set<String>> findFlutterRelevantDebugFilePaths({
     }
   }
 
-  // First, scan the configured symbols folder (if any)
   if (config.symbolsFolder.isNotEmpty) {
     await collectAndroidSymbolsUnder(config.symbolsFolder);
   }
 
-  // Backward compatibility: also scan build folder if different
   if (config.buildFilesFolder != config.symbolsFolder) {
     await collectAndroidSymbolsUnder(config.buildFilesFolder);
   }
 
-  // Then, scan all current search roots used by the plugin
   await for (final root in enumerateDebugSearchRoots(fs: fs, config: config)) {
     await collectAndroidSymbolsUnder(root);
   }
@@ -100,10 +97,8 @@ Future<Set<String>> findFlutterRelevantDebugFilePaths({
     }
   }
 
-  // Search under the build directory directly to catch common iOS layouts
   await collectAppleMachOUnder(config.buildFilesFolder);
 
-  // Search all known roots (includes Fastlane ios/build)
   await for (final root in enumerateDebugSearchRoots(fs: fs, config: config)) {
     await collectAppleMachOUnder(root);
   }
