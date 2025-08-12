@@ -11,12 +11,13 @@ import 'src/symbol_maps/dart_map_discovery.dart';
 import 'src/symbol_maps/dart_map_uploader.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
+import 'src/utils/extensions.dart';
 
 /// Class responsible to load the configurations and upload the
 /// debug symbols and source maps
 class SentryDartPlugin {
   late Configuration _configuration;
-  // Removed: previous regex-based symbol discovery; use unified search roots instead.
+  final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
   // Temporary feature flag: guarded no-op until sentry-cli supports Dart symbol map upload.
   final bool _dartSymbolMapUploadEnabled = false;
 
@@ -100,13 +101,40 @@ class SentryDartPlugin {
       }
     }
 
+    for (final path in await _enumerateSymbolFiles()) {
+      await _executeAndLog('Failed to upload symbols', [...params, path]);
+    }
+
     await _tryUploadDartSymbolMap();
 
     Log.taskCompleted(taskName);
   }
 
-  // Removed duplicate symbol discovery. All debug file roots are enumerated
-  // through enumerateDebugSearchRoots().
+  Future<Set<String>> _enumerateSymbolFiles() async {
+    final result = <String>{};
+    final fs = injector.get<FileSystem>();
+
+    if (_configuration.symbolsFolder.isNotEmpty) {
+      final symbolsRootDir = fs.directory(_configuration.symbolsFolder);
+      if (await symbolsRootDir.exists()) {
+        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+          result.add(entry.path);
+        }
+      }
+    }
+
+    // for backward compatibility, also check the build dir if it has been
+    // configured with a different path.
+    if (_configuration.buildFilesFolder != _configuration.symbolsFolder) {
+      final symbolsRootDir = fs.directory(_configuration.buildFilesFolder);
+      if (await symbolsRootDir.exists()) {
+        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+          result.add(entry.path);
+        }
+      }
+    }
+    return result;
+  }
 
   List<String> _baseCliParams({bool addReleases = false}) {
     final params = <String>[];
