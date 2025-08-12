@@ -32,8 +32,11 @@ Future<bool> isValidDartSymbolMapFile(File file) async {
   }
 }
 
-/// If provided, validates and returns the absolute path to the Dart symbol map.
-/// If not provided, returns null without scanning the filesystem.
+/// If [configuredPath] is provided, validates and returns the absolute path to the Dart symbol map.
+/// If not provided, returns null.
+///
+/// Note: we do not scan the filesystem for this file because the file does not
+/// have a special extension so worst case we would have to check every file.
 Future<String?> resolveDartSymbolMapPath({
   required FileSystem fs,
   String? configuredPath,
