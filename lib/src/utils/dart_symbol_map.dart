@@ -69,10 +69,6 @@ Future<Set<String>> findFlutterRelevantDebugFilePaths({
     await collectAndroidSymbolsUnder(config.buildFilesFolder);
   }
 
-  await for (final root in enumerateDebugSearchRoots(fs: fs, config: config)) {
-    await collectAndroidSymbolsUnder(root);
-  }
-
   Future<void> collectAppleMachOUnder(String rootPath) async {
     if (rootPath.isEmpty) return;
     final dir = fs.directory(rootPath);
@@ -101,6 +97,7 @@ Future<Set<String>> findFlutterRelevantDebugFilePaths({
 
   await for (final root in enumerateDebugSearchRoots(fs: fs, config: config)) {
     await collectAppleMachOUnder(root);
+    await collectAndroidSymbolsUnder(root);
   }
 
   return foundPaths;
