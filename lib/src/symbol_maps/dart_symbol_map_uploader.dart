@@ -114,7 +114,7 @@ class DartSymbolMapUploader {
   }
 
   /// Returns the debug id for the given [debugFilePath] by invoking:
-  ///   sentry-cli debug-files check --json <debugFilePath>
+  ///   sentry-cli debug-files check --json /debug_file_path
   /// Returns null on failure.
   static Future<String?> _fetchDebugId({
     required ProcessManager processManager,
