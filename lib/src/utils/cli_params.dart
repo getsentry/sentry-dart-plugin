@@ -1,6 +1,6 @@
 import '../configuration.dart';
 
-// TODO(buenaflor): in a future PR this should be reused in
+// TODO(buenaflor): in a future PR this should be reused in other parts of the code
 class CliParams {
   /// Returns URL/auth-token/log-level flags when present.
   static List<String> base(Configuration config) {
