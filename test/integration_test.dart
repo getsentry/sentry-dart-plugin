@@ -81,7 +81,12 @@ void main() async {
   for (var platform in testPlatforms) {
     test(platform, () async {
       final appDir = await _prepareTestApp(tempDir, platform);
-      final pluginOutput = await _runPlugin(appDir);
+      final pluginOutput = await _runPlugin(appDir, env: {
+        // Enable dart symbol map upload in integration runs when map path is set.
+        'SENTRY_ENABLE_DART_SYMBOL_MAP_UPLOAD': 'true',
+        // Provide the map path via env to avoid mutating pubspec across cached runs.
+        'SENTRY_DART_SYMBOL_MAP_PATH': 'obfuscation.map.json',
+      });
       final serverOutput = await stopServer();
       final debugSymbols = uploadedDebugSymbols(serverOutput).keys;
 
@@ -142,6 +147,16 @@ void main() async {
         default:
           fail('Platform "$platform" missing from tests');
       }
+
+      // Also ensure that when a map is present we exercise the dart-symbol-map path (non-web).
+      // Accept either successful summary or a graceful error if the CLI doesn't yet support the command.
+      if (platform != 'web' && platform != 'web-legacy') {
+        final hasSummary = pluginOutput.any(
+            (e) => e.contains('Dart symbol map upload summary: attempted='));
+        final cliUnsupported = pluginOutput.any((e) =>
+            e.contains("error: unrecognized subcommand 'dart-symbol-map'"));
+        expect(cliUnsupported || hasSummary, isTrue);
+      }
     }, timeout: Timeout(const Duration(minutes: 5)));
   }
 }
@@ -151,7 +166,7 @@ void main() async {
 ///
 /// Returns [_CommandResult] with exitCode and stdout as a single sting
 Future<Iterable<String>> _exec(String executable, List<String> arguments,
-    {String? cwd}) async {
+    {String? cwd, Map<String, String>? environment}) async {
   print(
       'executing "$executable ${arguments.join(' ')}"${cwd != null ? ' in $cwd' : ''}');
   final process = await Process.start(
@@ -159,6 +174,13 @@ Future<Iterable<String>> _exec(String executable, List<String> arguments,
     arguments,
     workingDirectory: cwd,
     runInShell: true,
+    // Merge parent env with overrides to allow injecting feature flags in tests.
+    environment: environment == null
+        ? null
+        : {
+            ...Platform.environment,
+            ...environment,
+          },
   );
 
   final collector = _ProcessStreamCollector(process);
@@ -176,9 +198,14 @@ Future<Iterable<String>> _exec(String executable, List<String> arguments,
 Future<Iterable<String>> _flutter(List<String> arguments, {String? cwd}) =>
     _exec('flutter', arguments, cwd: cwd);
 
-Future<Iterable<String>> _runPlugin(Directory cwd) => _exec(
-    'dart', ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
-    cwd: cwd.path);
+Future<Iterable<String>> _runPlugin(Directory cwd,
+        {Map<String, String>? env}) =>
+    _exec(
+      'dart',
+      ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
+      cwd: cwd.path,
+      environment: env,
+    );
 
 // e.g. Flutter 3.24.4 • channel stable • https://github.com/flutter/flutter.git
 final _flutterVersionInfo =
@@ -255,6 +282,15 @@ sentry:
 
     // Store the hash so that we don't need to rebuild the app.
     await hashFile.writeAsString(hash);
+  }
+
+  // Ensure a Dart obfuscation map exists for non-web builds so the plugin can
+  // exercise the dart-symbol-map upload path during integration runs.
+  if (platform != 'web' && platform != 'web-legacy') {
+    final mapFile = File('${appDir.path}/obfuscation.map.json');
+    if (!await mapFile.exists()) {
+      await mapFile.writeAsString('[]');
+    }
   }
 
   if (isWebLegacy) {
