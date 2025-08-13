@@ -2,7 +2,6 @@ import 'package:file/file.dart';
 
 import '../configuration.dart';
 import '../utils/log.dart';
-import 'dart_symbol_map_debug_file_collector.dart';
 import 'dart_symbol_map_discovery.dart';
 import 'dart_symbol_map_uploader.dart';
 
