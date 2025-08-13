@@ -6,7 +6,7 @@ import 'dart_symbol_map_debug_file_collector.dart';
 import 'dart_symbol_map_discovery.dart';
 import 'dart_symbol_map_uploader.dart';
 
-/// Single, KISS-style entrypoint to upload Dart obfuscation map(s) paired with
+/// Single entrypoint to upload Dart obfuscation map(s) paired with
 /// Flutter-relevant native debug files.
 ///
 /// - Resolves the Dart symbol map path from config
