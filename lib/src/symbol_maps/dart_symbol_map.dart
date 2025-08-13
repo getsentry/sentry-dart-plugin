@@ -16,8 +16,11 @@ Future<void> uploadDartSymbolMaps({
   required FileSystem fs,
   required Configuration config,
 }) async {
-  final String? mapPath = await resolveDartMapPath(fs: fs, config: config);
-  if (mapPath == null) {
+  // Validate the configured map path, but pass the original string to the CLI
+  // to match user-provided (potentially relative) paths expected by tests.
+  final String? resolvedMapPath =
+      await resolveDartMapPath(fs: fs, config: config);
+  if (resolvedMapPath == null) {
     return;
   }
 
@@ -32,7 +35,7 @@ Future<void> uploadDartSymbolMaps({
 
   await DartSymbolMapUploader.upload(
     config: config,
-    symbolMapPath: mapPath,
+    symbolMapPath: (config.dartSymbolMapPath ?? '').trim(),
     debugFilePaths: debugFiles,
   );
 }

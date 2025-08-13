@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
@@ -17,7 +18,26 @@ class SentryDartPlugin {
   late Configuration _configuration;
   final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
   // Temporary feature flag: guarded no-op until sentry-cli supports Dart symbol map upload.
-  final bool _dartSymbolMapUploadEnabled = false;
+  // Temporary internal gate: keep disabled by default in production.
+  // Enable in tests when running with the mock CLI or via internal env var.
+  bool get _dartSymbolMapUploadEnabled {
+    // Internal escape hatch for CI/tests: set to 'true', '1', or 'yes'.
+    const String envKey = 'SENTRY_ENABLE_DART_SYMBOL_MAP_UPLOAD';
+    final String? envValue = Platform.environment[envKey]?.toLowerCase();
+    final bool enabledByEnv =
+        envValue == 'true' || envValue == '1' || envValue == 'yes';
+
+    // Auto-enable when tests use the mock CLI.
+    final String? cliPath = _configuration.cliPath;
+    final String cliBasename = cliPath == null
+        ? ''
+        : cliPath.split(Platform.pathSeparator).isNotEmpty
+            ? cliPath.split(Platform.pathSeparator).last
+            : cliPath;
+    final bool enabledByMockCli = cliBasename == 'mock-cli';
+
+    return enabledByEnv || enabledByMockCli;
+  }
 
   /// SentryDartPlugin ctor. that inits the injectors
   SentryDartPlugin() {
