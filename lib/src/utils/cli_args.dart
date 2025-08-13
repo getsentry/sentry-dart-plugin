@@ -12,6 +12,4 @@ extension SentryCliArgs on Configuration {
         if (org != null) ...['--org', org!],
         if (project != null) ...['--project', project!],
       ];
-
-  List<String> waitArgs() => [if (waitForProcessing) '--wait'];
 }

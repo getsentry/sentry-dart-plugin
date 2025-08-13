@@ -40,9 +40,15 @@ void main() {
         debugFilePaths: debugFiles,
       );
 
-      expect(pm.commandLog.length, 2);
+      expect(pm.commandLog.length, 4);
       expect(
         pm.commandLog[0],
+        equals(
+          'mock-cli debug-files check --json ${debugFiles[0]}',
+        ),
+      );
+      expect(
+        pm.commandLog[1],
         equals(
           'mock-cli --url https://example.invalid --auth-token token --log-level debug '
           'dart-symbol-map upload --org my-org --project my-proj --wait '
@@ -50,7 +56,13 @@ void main() {
         ),
       );
       expect(
-        pm.commandLog[1],
+        pm.commandLog[2],
+        equals(
+          'mock-cli debug-files check --json ${debugFiles[1]}',
+        ),
+      );
+      expect(
+        pm.commandLog[3],
         equals(
           'mock-cli --url https://example.invalid --auth-token token --log-level debug '
           'dart-symbol-map upload --org my-org --project my-proj --wait '
@@ -78,15 +90,20 @@ void main() {
         debugFilePaths: debugFiles,
       );
 
-      expect(pm.commandLog.length, 1);
+      expect(pm.commandLog.length, 2);
       expect(
-        pm.commandLog.single,
+        pm.commandLog[0],
+        equals('mock-cli debug-files check --json ${debugFiles.single}'),
+      );
+      expect(
+        pm.commandLog[1],
         equals('mock-cli dart-symbol-map upload $map ${debugFiles.single}'),
       );
     });
 
     test('propagates non-zero exit codes via ExitError', () async {
-      pm.exitCodes = <int>[1];
+      // First debug-id check succeeds, then the first upload fails.
+      pm.exitCodes = <int>[0, 1];
 
       final config = Configuration()
         ..cliPath = 'mock-cli'
@@ -104,9 +121,9 @@ void main() {
       );
 
       await expectLater(call, throwsA(isA<ExitError>()));
-      // Only the first command should have been issued because the first
-      // invocation fails and throws.
-      expect(pm.commandLog.length, 1);
+      // Only the first pair of commands (check + upload) should have been issued
+      // because the first upload fails and throws.
+      expect(pm.commandLog.length, 2);
     });
   });
 }
