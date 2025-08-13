@@ -148,14 +148,11 @@ void main() async {
           fail('Platform "$platform" missing from tests');
       }
 
-      // Also ensure that when a map is present we exercise the dart-symbol-map path (non-web).
-      // Accept either successful summary or a graceful error if the CLI doesn't yet support the command.
+      // Ensure that when a map is present we exercise the dart-symbol-map path (non-web).
       if (platform != 'web' && platform != 'web-legacy') {
         final hasSummary = pluginOutput.any(
             (e) => e.contains('Dart symbol map upload summary: attempted='));
-        final cliUnsupported = pluginOutput.any((e) =>
-            e.contains("error: unrecognized subcommand 'dart-symbol-map'"));
-        expect(cliUnsupported || hasSummary, isTrue);
+        expect(hasSummary, isTrue);
       }
     }, timeout: Timeout(const Duration(minutes: 5)));
   }
