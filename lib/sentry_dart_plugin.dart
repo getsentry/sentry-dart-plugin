@@ -6,9 +6,7 @@ import 'package:process/process.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
-import 'src/symbol_maps/dart_symbol_map_debug_file_collector.dart';
-import 'src/symbol_maps/dart_symbol_map_discovery.dart';
-import 'src/symbol_maps/dart_symbol_map_uploader.dart';
+import 'src/symbol_maps/dart_symbol_map.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 import 'src/utils/extensions.dart';
@@ -165,34 +163,7 @@ class SentryDartPlugin {
 
     try {
       final fs = injector.get<FileSystem>();
-
-      final String? resolvedMapPath =
-          await resolveDartMapPath(fs: fs, config: _configuration);
-      if (resolvedMapPath == null) {
-        Log.taskCompleted(taskName);
-        return;
-      }
-
-      final Set<String> debugFilePaths = await collectDebugFilesForDartMap(
-        fs: fs,
-        config: _configuration,
-      );
-
-      if (debugFilePaths.isEmpty) {
-        Log.info(
-            'Skipping Dart symbol map uploads: no Flutter-relevant debug files found.');
-        Log.taskCompleted(taskName);
-        return;
-      }
-
-      Log.info("Resolved Dart symbol map at '$resolvedMapPath'");
-      Log.info('Found ${debugFilePaths.length} debug file(s) to pair with.');
-
-      await DartSymbolMapUploader.upload(
-        config: _configuration,
-        symbolMapPath: resolvedMapPath,
-        debugFilePaths: debugFilePaths,
-      );
+      await uploadDartSymbols(fs: fs, config: _configuration);
     } catch (e) {
       Log.error('Dart symbol map upload failed: $e');
     } finally {

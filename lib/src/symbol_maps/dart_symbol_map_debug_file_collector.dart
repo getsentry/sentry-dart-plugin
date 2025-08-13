@@ -64,7 +64,6 @@ Future<Set<String>> collectDebugFilesForDartMap({
     }
   }
 
-  // Prefer explicit folders first.
   if (config.symbolsFolder.isNotEmpty) {
     await collectAndroidSymbolsUnder(config.symbolsFolder);
   }
@@ -73,7 +72,6 @@ Future<Set<String>> collectDebugFilesForDartMap({
     await collectAndroidSymbolsUnder(config.buildFilesFolder);
   }
 
-  // Collect Apple Mach-O directly under the configured build files folder.
   await collectAppleMachOUnder(config.buildFilesFolder);
 
   // Enumerate additional Flutter-related roots.
