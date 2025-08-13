@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/utils/cli_params.dart';
+import 'package:sentry_dart_plugin/src/utils/cli_args.dart';
 
 import '../configuration.dart';
 import '../utils/injector.dart';
@@ -37,7 +37,7 @@ class DartSymbolMapUploader {
         Log.info(
             "Uploading Dart symbol map '$symbolMapPath' paired with '$debugFilePath'");
 
-        final params = [
+        final args = [
           ...config.baseArgs(),
           'dart-symbol-map',
           'upload',
@@ -50,7 +50,7 @@ class DartSymbolMapUploader {
         final int exitCode = await _startAndForward(
           processManager: processManager,
           cliPath: config.cliPath!,
-          params: params,
+          args: args,
           errorContext: 'Failed to upload Dart symbol map for $debugFilePath',
         );
 
@@ -74,12 +74,12 @@ class DartSymbolMapUploader {
   static Future<int> _startAndForward({
     required ProcessManager processManager,
     required String cliPath,
-    required List<String> params,
+    required List<String> args,
     required String errorContext,
   }) async {
     int exitCode;
     try {
-      final Process process = await processManager.start([cliPath, ...params]);
+      final Process process = await processManager.start([cliPath, ...args]);
 
       process.stdout.transform(utf8.decoder).listen((String data) {
         final String trimmed = data.trim();
