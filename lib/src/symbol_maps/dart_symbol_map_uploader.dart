@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:process/process.dart';
+import 'package:sentry_dart_plugin/src/utils/cli_params.dart';
 
 import '../configuration.dart';
 import '../utils/injector.dart';
 import '../utils/log.dart';
-import '../utils/cli_params.dart';
 
 /// Uploads a Dart obfuscation map paired with each provided native debug file.
 ///
@@ -37,13 +37,15 @@ class DartSymbolMapUploader {
         Log.info(
             "Uploading Dart symbol map '$symbolMapPath' paired with '$debugFilePath'");
 
-        final List<String> params = CliParams.base(config)
-          ..addAll(<String>['dart-symbol-map', 'upload']);
-        CliParams.addOrgAndProject(params, config);
-        CliParams.addWait(params, config);
-        params
-          ..add(symbolMapPath)
-          ..add(debugFilePath);
+        final params = [
+          ...config.baseArgs(),
+          'dart-symbol-map',
+          'upload',
+          ...config.orgProjectArgs(),
+          ...config.waitArgs(),
+          symbolMapPath,
+          debugFilePath,
+        ];
 
         final int exitCode = await _startAndForward(
           processManager: processManager,
