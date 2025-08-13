@@ -163,7 +163,7 @@ class SentryDartPlugin {
 
     try {
       final fs = injector.get<FileSystem>();
-      await uploadDartSymbols(fs: fs, config: _configuration);
+      await uploadDartSymbolMaps(fs: fs, config: _configuration);
     } catch (e) {
       Log.error('Dart symbol map upload failed: $e');
     } finally {
