@@ -21,7 +21,7 @@ void main() {
         rawPath: config.dartSymbolMapPath,
         missingPathWarning:
             "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
-        notFoundWarningBuilder: (raw) =>
+        fileNotFoundWarning:
             "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
       );
       expect(result, equals(absolutePath));
@@ -46,7 +46,7 @@ void main() {
         rawPath: config.dartSymbolMapPath,
         missingPathWarning:
             "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
-        notFoundWarningBuilder: (raw) =>
+        fileNotFoundWarning:
             "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
       );
       expect(result, equals(abs));
@@ -64,7 +64,7 @@ void main() {
         rawPath: config.dartSymbolMapPath,
         missingPathWarning:
             "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
-        notFoundWarningBuilder: (raw) =>
+        fileNotFoundWarning:
             "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
       );
       expect(result, isNull);
@@ -82,7 +82,7 @@ void main() {
         rawPath: config.dartSymbolMapPath,
         missingPathWarning:
             "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
-        notFoundWarningBuilder: (raw) =>
+        fileNotFoundWarning:
             "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
       );
       expect(result, isNull);
