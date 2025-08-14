@@ -21,9 +21,9 @@ Future<void> uploadDartSymbolMaps({
   final String? resolvedMapPath = await resolveFilePath(
     fs: fs,
     rawPath: config.dartSymbolMapPath,
-    missingWarning:
+    missingPathWarning:
         "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
-    notFoundWarningBuilder: (raw) =>
+    fileNotFoundWarning:
         "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
   );
   if (resolvedMapPath == null) {
