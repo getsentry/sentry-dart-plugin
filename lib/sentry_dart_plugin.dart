@@ -147,8 +147,8 @@ class SentryDartPlugin {
     return params;
   }
 
-  /// Guarded implementation for uploading Dart symbol map alongside each relevant debug file.
-  /// Currently a no-op until `_dartSymbolMapUploadEnabled` is flipped to true.
+  /// Upload Dart symbol map(s) if configured.
+  /// This is needed to symbolicate Flutter issue titles for obfuscated builds.
   Future<void> _tryUploadDartSymbolMap() async {
     const taskName = 'uploading Dart symbol map(s)';
     Log.startingTask(taskName);
