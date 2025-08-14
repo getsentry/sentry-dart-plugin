@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
-// import removed: no longer using directory find extension for symbol discovery
 
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
