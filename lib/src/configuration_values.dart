@@ -165,10 +165,15 @@ class ConfigurationValues {
     if (envSentryCliCdnUrl?.isEmpty ?? false) {
       envSentryCliCdnUrl = null;
     }
+    String? envDartSymbolMapPath = environment['SENTRY_DART_SYMBOL_MAP_PATH'];
+    if (envDartSymbolMapPath?.isEmpty ?? false) {
+      envDartSymbolMapPath = null;
+    }
     return ConfigurationValues(
       release: envRelease,
       dist: envDist,
       sentryCliCdnUrl: envSentryCliCdnUrl,
+      dartSymbolMapPath: envDartSymbolMapPath,
     );
   }
 

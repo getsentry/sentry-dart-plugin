@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/utils/sentry_cli_args.dart';
+import 'package:sentry_dart_plugin/src/utils/cli_args.dart';
 
 import '../configuration.dart';
 import '../utils/injector.dart';

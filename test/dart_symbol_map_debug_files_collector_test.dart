@@ -2,7 +2,7 @@ import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
 import 'package:sentry_dart_plugin/src/configuration.dart';
-import 'package:sentry_dart_plugin/src/symbol_maps/dart_symbol_map_collect_debug_files.dart';
+import 'package:sentry_dart_plugin/src/symbol_maps/dart_symbol_map_debug_files_collector.dart';
 
 void main() {
   group('collectDebugFilesForDartMap', () {
