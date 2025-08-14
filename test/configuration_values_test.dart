@@ -281,14 +281,12 @@ void main() {
         'SENTRY_RELEASE': 'fixture-release',
         'SENTRY_DIST': 'fixture-dist',
         'SENTRYCLI_CDNURL': 'fixture-sentry_cli_cdn_url',
-        'SENTRY_DART_SYMBOL_MAP_PATH': 'fixture-env-dart-symbol-map.json',
       };
 
       final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
-      expect(sut.dartSymbolMapPath, 'fixture-env-dart-symbol-map.json');
     });
   });
 }
