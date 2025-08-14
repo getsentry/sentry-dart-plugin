@@ -10,7 +10,7 @@ import 'dart_symbol_map_uploader.dart';
 /// Flutter-relevant native debug files. This obfuscation map is used to
 /// symbolicate Flutter issue titles.
 ///
-/// Currently only supported for Android, iOS and macOS.
+/// Currently only supported for Android (apk/appbundle) and iOS (ios/ipa).
 ///
 /// Steps:
 /// - Resolves the Dart symbol map path from config

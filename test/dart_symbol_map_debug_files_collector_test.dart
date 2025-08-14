@@ -97,29 +97,21 @@ void main() {
       expect(result, contains(fs.path.normalize(machO)));
     });
 
-    test('finds App.framework.dSYM in macOS build products', () async {
+    // macOS is not supported for Dart symbol map pairing.
+
+    test('finds App.framework.dSYM inside iOS Xcode archive dSYMs', () async {
       final fs = MemoryFileSystem(style: FileSystemStyle.posix);
-      final projectRootDir = fs.directory('/macosproj')
+      final projectRootDir = fs.directory('/iosproj')
         ..createSync(recursive: true);
       fs.currentDirectory = projectRootDir;
 
-      final buildDir = '/macosproj/build';
-      final symbolsDir = '/macosproj/symbols';
+      final buildDir = '/iosproj/build';
+      final symbolsDir = '/iosproj/symbols';
 
-      // macOS Products Release path
-      final macMachO =
-          '$buildDir/macos/Build/Products/Release/App.framework.dSYM/Contents/Resources/DWARF/App';
-      fs.file(macMachO).createSync(recursive: true);
-
-      // Noise: other dSYMs should be ignored
-      fs
-          .file(
-              '$buildDir/macos/Build/Products/Release/Runner.app.dSYM/Contents/Resources/DWARF/Runner')
-          .createSync(recursive: true);
-      fs
-          .file(
-              '$buildDir/macos/framework/Release/FlutterMacOS.framework.dSYM/Contents/Resources/DWARF/FlutterMacOS')
-          .createSync(recursive: true);
+      // iOS archive path
+      final iosArchiveMachO =
+          '$buildDir/ios/archive/Runner.xcarchive/dSYMs/App.framework.dSYM/Contents/Resources/DWARF/App';
+      fs.file(iosArchiveMachO).createSync(recursive: true);
 
       final config = Configuration()
         ..buildFilesFolder = buildDir
@@ -130,10 +122,10 @@ void main() {
         config: config,
       );
 
-      expect(result, contains(fs.path.normalize(macMachO)));
-      expect(result.any((p) => p.endsWith('/Runner')), isFalse);
-      expect(result.any((p) => p.endsWith('/FlutterMacOS')), isFalse);
+      expect(result, contains(fs.path.normalize(iosArchiveMachO)));
     });
+
+    // macOS archive is not supported for Dart symbol map pairing.
 
     test('returns empty set when no roots or symbols exist', () async {
       final fs = MemoryFileSystem(style: FileSystemStyle.posix);

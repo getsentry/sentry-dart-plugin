@@ -1,5 +1,6 @@
 import 'package:file/file.dart';
-import 'package:sentry_dart_plugin/src/utils/flutter_debug_files.dart';
+import 'package:sentry_dart_plugin/src/utils/log.dart';
+// import 'package:sentry_dart_plugin/src/utils/flutter_debug_files.dart';
 
 import '../configuration.dart';
 
@@ -19,7 +20,8 @@ Future<Set<String>> collectDebugFilesForDartMap({
   required FileSystem fs,
   required Configuration config,
 }) async {
-  final Set<String> foundPaths = <String>{};
+  final Set<String> foundAndroidPaths = <String>{};
+  final Set<String> foundIosPaths = <String>{};
   final path = fs.path;
 
   Future<void> collectAndroidSymbolsUnder(String rootPath) async {
@@ -36,7 +38,7 @@ Future<Set<String>> collectDebugFilesForDartMap({
           basename.endsWith('.symbols') &&
           !basename.contains('darwin') &&
           !basename.contains('ios')) {
-        foundPaths.add(fs.file(entity.path).absolute.path);
+        foundAndroidPaths.add(fs.file(entity.path).absolute.path);
       }
     }
   }
@@ -54,34 +56,47 @@ Future<Set<String>> collectDebugFilesForDartMap({
     await collectAndroidSymbolsUnder(root);
   }
 
-  // Enumerate Flutter-related roots and only consider those that contain
-  // 'ios' or 'macos'. Compute the expected Mach-O path directly for each.
-  await for (final String root
-      in enumerateDebugSearchRoots(fs: fs, config: config)) {
-    final String normalized = path.normalize(root);
-    final String lower = normalized.toLowerCase();
-    if (!(lower.contains('ios') || lower.contains('macos'))) {
-      continue;
-    }
+  if (foundAndroidPaths.isEmpty) {
+    Log.warn(
+        'No Android symbols found in the configured symbols folder or build folder.');
+  }
 
-    for (final String candidateBase in <String>{
-      normalized,
-      path.dirname(normalized),
-    }) {
-      final String machOPath = path.join(
-        candidateBase,
-        'App.framework.dSYM',
-        'Contents',
-        'Resources',
-        'DWARF',
-        'App',
-      );
-      final File machOFile = fs.file(machOPath);
-      if (await machOFile.exists()) {
-        foundPaths.add(machOFile.absolute.path);
+  // iOS: only search under two roots to simplify discovery:
+  // - build/ios
+  // - <projectRoot>/ios/build (Fastlane)
+  final String buildDir = config.buildFilesFolder;
+  final String projectRoot = fs.currentDirectory.path;
+
+  Future<void> collectIosAppDsymsUnderRoot(String rootPath) async {
+    if (rootPath.isEmpty) return;
+    final Directory directory = fs.directory(rootPath);
+    if (!await directory.exists()) return;
+
+    final String dsymSuffix = path.join(
+      'App.framework.dSYM',
+      'Contents',
+      'Resources',
+      'DWARF',
+      'App',
+    );
+
+    await for (final FileSystemEntity entity
+        in directory.list(recursive: true, followLinks: false)) {
+      if (entity is! File) continue;
+      final String normalized = path.normalize(entity.path);
+      if (normalized.endsWith(dsymSuffix)) {
+        foundIosPaths.add(fs.file(normalized).absolute.path);
       }
     }
   }
 
-  return foundPaths;
+  await collectIosAppDsymsUnderRoot(path.join(path.normalize(buildDir), 'ios'));
+  await collectIosAppDsymsUnderRoot(path.join(projectRoot, 'ios', 'build'));
+
+  if (foundIosPaths.isEmpty) {
+    Log.warn(
+        'No iOS symbols found in the configured build folder or project root.');
+  }
+
+  return foundAndroidPaths.union(foundIosPaths).toSet();
 }
