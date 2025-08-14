@@ -18,6 +18,13 @@ import '../utils/log.dart';
 class DartSymbolMapUploader {
   /// Uploads [symbolMapPath] for each entry in [debugFilePaths].
   ///
+  /// Before uploading the map, we additionally fetch the debug id for the
+  /// debug file and prepend it to the map. This is necessary because Sentry
+  /// will reject maps with equivalent content. We artificially add a marker
+  /// to the map to avoid this. See [_prependDebugIdMarkerToMapFile] for more
+  /// details. When this is improved in Sentry we can remove the marker and
+  /// just upload the map.
+  ///
   /// Throws [ExitError] on the first non-zero CLI exit code.
   static Future<void> upload({
     required Configuration config,
@@ -81,7 +88,7 @@ class DartSymbolMapUploader {
   }
 
   /// Starts the process and forwards stdout/stderr to [Log]. Returns exit code.
-  /// TODO(buenaflor): eventually this should be deduplicated with the one in sentry_dart_plugin.dart
+  /// TODO(buenaflor): write a utility function for reuse in other parts of the code.
   static Future<int> _startAndForward({
     required ProcessManager processManager,
     required String cliPath,
@@ -173,7 +180,7 @@ class DartSymbolMapUploader {
 
   /// Reads the Dart symbol map at [mapPath] and ensures the array starts with
   /// ["SENTRY_DEBUG_ID_MARKER", debugId]. If a previous marker is present, it
-  /// will be replaced. Fails silently (with logs) on IO/JSON errors.
+  /// will be replaced.
   static Future<void> _prependDebugIdMarkerToMapFile(
       String mapPath, String debugId) async {
     try {
