@@ -17,27 +17,6 @@ import 'src/utils/extensions.dart';
 class SentryDartPlugin {
   late Configuration _configuration;
   final symbolFileRegexp = RegExp(r'[/\\]app[^/\\]+.*\.(dSYM|symbols)$');
-  // Temporary feature flag: guarded no-op until sentry-cli supports Dart symbol map upload.
-  // Temporary internal gate: keep disabled by default in production.
-  // Enable in tests when running with the mock CLI or via internal env var.
-  bool get _dartSymbolMapUploadEnabled {
-    // Internal escape hatch for CI/tests: set to 'true', '1', or 'yes'.
-    const String envKey = 'SENTRY_ENABLE_DART_SYMBOL_MAP_UPLOAD';
-    final String? envValue = Platform.environment[envKey]?.toLowerCase();
-    final bool enabledByEnv =
-        envValue == 'true' || envValue == '1' || envValue == 'yes';
-
-    // Auto-enable when tests use the mock CLI.
-    final String? cliPath = _configuration.cliPath;
-    final String cliBasename = cliPath == null
-        ? ''
-        : cliPath.split(Platform.pathSeparator).isNotEmpty
-            ? cliPath.split(Platform.pathSeparator).last
-            : cliPath;
-    final bool enabledByMockCli = cliBasename == 'mock-cli';
-
-    return enabledByEnv || enabledByMockCli;
-  }
 
   /// SentryDartPlugin ctor. that inits the injectors
   SentryDartPlugin() {
@@ -173,11 +152,6 @@ class SentryDartPlugin {
   /// Guarded implementation for uploading Dart symbol map alongside each relevant debug file.
   /// Currently a no-op until `_dartSymbolMapUploadEnabled` is flipped to true.
   Future<void> _tryUploadDartSymbolMap() async {
-    if (!_dartSymbolMapUploadEnabled) {
-      Log.info('Dart symbol map upload is disabled in this version. Skipping.');
-      return;
-    }
-
     const taskName = 'uploading Dart symbol map(s)';
     Log.startingTask(taskName);
 

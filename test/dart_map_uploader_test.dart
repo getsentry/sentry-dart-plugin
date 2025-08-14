@@ -50,7 +50,7 @@ void main() {
         pm.commandLog[1],
         equals(
           'mock-cli --url https://example.invalid --auth-token token --log-level debug '
-          'dart-symbol-map upload --org my-org --project my-proj'
+          'dart-symbol-map upload --org my-org --project my-proj '
           '$map ${debugFiles[0]}',
         ),
       );
@@ -64,7 +64,7 @@ void main() {
         pm.commandLog[3],
         equals(
           'mock-cli --url https://example.invalid --auth-token token --log-level debug '
-          'dart-symbol-map upload --org my-org --project my-proj'
+          'dart-symbol-map upload --org my-org --project my-proj '
           '$map ${debugFiles[1]}',
         ),
       );
