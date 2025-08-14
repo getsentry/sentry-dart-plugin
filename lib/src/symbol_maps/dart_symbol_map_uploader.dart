@@ -179,6 +179,8 @@ class DartSymbolMapUploader {
     }
   }
 
+  static const _debugIdMarker = 'SENTRY_DEBUG_ID_MARKER';
+
   /// Reads the Dart symbol map at [mapPath] and ensures the array starts with
   /// ["SENTRY_DEBUG_ID_MARKER", debugId]. If a previous marker is present, it
   /// will be replaced.
@@ -201,15 +203,23 @@ class DartSymbolMapUploader {
       }
 
       final List<dynamic> original = List<dynamic>.from(decoded);
+
+      // If the file already has the same marker, do nothing to keep it untouched.
+      if (original.length >= 2 &&
+          original[0] == _debugIdMarker &&
+          original[1] == debugId) {
+        return;
+      }
+
       List<dynamic> tail;
-      if (original.isNotEmpty && original.first == 'SENTRY_DEBUG_ID_MARKER') {
+      if (original.isNotEmpty && original.first == _debugIdMarker) {
         tail = original.length > 2 ? original.sublist(2) : <dynamic>[];
       } else {
         tail = original;
       }
 
       final List<dynamic> updated = <dynamic>[
-        'SENTRY_DEBUG_ID_MARKER',
+        _debugIdMarker,
         debugId,
         ...tail,
       ];
