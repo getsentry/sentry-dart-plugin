@@ -158,7 +158,7 @@ void main() async {
 ///
 /// Returns [_CommandResult] with exitCode and stdout as a single sting
 Future<Iterable<String>> _exec(String executable, List<String> arguments,
-    {String? cwd, Map<String, String>? environment}) async {
+    {String? cwd}) async {
   print(
       'executing "$executable ${arguments.join(' ')}"${cwd != null ? ' in $cwd' : ''}');
   final process = await Process.start(
@@ -166,13 +166,6 @@ Future<Iterable<String>> _exec(String executable, List<String> arguments,
     arguments,
     workingDirectory: cwd,
     runInShell: true,
-    // Merge parent env with overrides to allow injecting feature flags in tests.
-    environment: environment == null
-        ? null
-        : {
-            ...Platform.environment,
-            ...environment,
-          },
   );
 
   final collector = _ProcessStreamCollector(process);
@@ -190,13 +183,10 @@ Future<Iterable<String>> _exec(String executable, List<String> arguments,
 Future<Iterable<String>> _flutter(List<String> arguments, {String? cwd}) =>
     _exec('flutter', arguments, cwd: cwd);
 
-Future<Iterable<String>> _runPlugin(Directory cwd,
-        {Map<String, String>? env}) =>
-    _exec(
+Future<Iterable<String>> _runPlugin(Directory cwd) => _exec(
       'dart',
       ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
       cwd: cwd.path,
-      environment: env,
     );
 
 // e.g. Flutter 3.24.4 • channel stable • https://github.com/flutter/flutter.git
