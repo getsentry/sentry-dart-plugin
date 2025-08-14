@@ -58,6 +58,9 @@ jobs:
           path: temp/testapp-${{ matrix.target }}
           key: integration-test-${{ matrix.host }}-${{ matrix.target }}-${{ hashFiles('flutter.version') }}
 
+      - run: sudo xcode-select --switch /Applications/Xcode_16.4.app
+        if: ${{ matrix.target == 'ios' || matrix.target == 'ios-framework' || matrix.target == 'ipa' }}
+
       - run: dart test --tags integration
 
       - uses: actions/upload-artifact@v4
