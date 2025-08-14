@@ -143,8 +143,11 @@ void main() async {
           fail('Platform "$platform" missing from tests');
       }
 
-      // Ensure that when a map is present we exercise the dart-symbol-map path (non-web).
-      if (platform != 'web' && platform != 'web-legacy') {
+      // Ensure that when a map is present we exercise the dart-symbol-map path for supported platforms.
+      if (platform == 'ios' ||
+          platform == 'ios-framework' ||
+          platform == 'macos' ||
+          platform == 'macos-framework') {
         final hasSummary = pluginOutput.any(
             (e) => e.contains('Dart symbol map upload summary: attempted='));
         expect(hasSummary, isTrue);
