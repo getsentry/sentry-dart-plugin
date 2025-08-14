@@ -147,7 +147,9 @@ void main() async {
       if (platform == 'ios' ||
           platform == 'ios-framework' ||
           platform == 'macos' ||
-          platform == 'macos-framework') {
+          platform == 'macos-framework' ||
+          platform == 'apk' ||
+          platform == 'appbundle') {
         final hasSummary = pluginOutput.any(
             (e) => e.contains('Dart symbol map upload summary: attempted='));
         expect(hasSummary, isTrue);
