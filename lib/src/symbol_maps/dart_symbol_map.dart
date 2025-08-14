@@ -14,7 +14,7 @@ import 'dart_symbol_map_uploader.dart';
 /// - Resolves the Dart symbol map path from config
 /// - Collects relevant debug files
 /// - Uploads the map once per debug file via the CLI
-Future<void> uploadDartSymbolMaps({
+Future<void> uploadDartSymbolMap({
   required FileSystem fs,
   required Configuration config,
 }) async {
