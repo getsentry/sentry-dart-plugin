@@ -81,12 +81,7 @@ void main() async {
   for (var platform in testPlatforms) {
     test(platform, () async {
       final appDir = await _prepareTestApp(tempDir, platform);
-      final pluginOutput = await _runPlugin(appDir, env: {
-        // Enable dart symbol map upload in integration runs when map path is set.
-        'SENTRY_ENABLE_DART_SYMBOL_MAP_UPLOAD': 'true',
-        // Provide the map path via env to avoid mutating pubspec across cached runs.
-        'SENTRY_DART_SYMBOL_MAP_PATH': 'obfuscation.map.json',
-      });
+      final pluginOutput = await _runPlugin(appDir);
       final serverOutput = await stopServer();
       final debugSymbols = uploadedDebugSymbols(serverOutput).keys;
 
@@ -274,6 +269,7 @@ sentry:
   log_level: debug
   commits: false
   legacy_web_symbolication: ${isWebLegacy ? true : false}
+  dart_symbol_map_path: obfuscation.map.json
 ''';
     await pubspecFile.writeAsString(pubspec);
 
