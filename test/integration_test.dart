@@ -19,15 +19,15 @@ final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
     : [
         'apk',
         'appbundle',
-        // if (Platform.isMacOS) 'macos',
-        // if (Platform.isMacOS) 'macos-framework',
-        // if (Platform.isMacOS) 'ios',
-        // if (Platform.isMacOS) 'ios-framework',
-        // if (Platform.isMacOS) 'ipa',
-        // if (Platform.isWindows) 'windows',
-        // if (Platform.isLinux) 'linux',
-        // 'web',
-        // 'web-legacy'
+        if (Platform.isMacOS) 'macos',
+        if (Platform.isMacOS) 'macos-framework',
+        if (Platform.isMacOS) 'ios',
+        if (Platform.isMacOS) 'ios-framework',
+        if (Platform.isMacOS) 'ipa',
+        if (Platform.isWindows) 'windows',
+        if (Platform.isLinux) 'linux',
+        'web',
+        'web-legacy'
       ];
 
 // NOTE: Don't run/debug this main(), it likely won't work.
