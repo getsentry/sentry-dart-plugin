@@ -60,30 +60,10 @@ Future<Set<String>> collectDebugFilesForDartMap({
     return false;
   }
 
-  Future<void> collectAppleMachOUnder(String rootPath) async {
-    if (rootPath.isEmpty) return;
-    final Directory dir = fs.directory(rootPath);
-    if (!await dir.exists()) return;
-
-    await for (final FileSystemEntity entity
-        in dir.list(recursive: true, followLinks: false)) {
-      if (entity is! Directory) continue;
-      final String basename = fs.path.basename(entity.path);
-      if (basename == 'App.framework.dSYM') {
-        final String machOPath = fs.path.join(
-          entity.path,
-          'Contents',
-          'Resources',
-          'DWARF',
-          'App',
-        );
-        final File machOFile = fs.file(machOPath);
-        if (await machOFile.exists()) {
-          foundPaths.add(machOFile.absolute.path);
-        }
-      }
-    }
-  }
+  // No recursive Apple scan needed. We only care about the Mach-O at
+  // <base>/App.framework.dSYM/Contents/Resources/DWARF/App. For roots that
+  // end with 'Runner.app', the dSYM lives next to it, so we probe the parent
+  // directory as the base.
 
   // Prefer scanning Android symbols only under the configured symbols folder.
   final List<String> androidRoots = <String>[];
@@ -99,26 +79,33 @@ Future<Set<String>> collectDebugFilesForDartMap({
     await collectAndroidSymbolsUnder(root);
   }
 
-  // Always scan the build folder for Apple Mach-O, if present.
-  await collectAppleMachOUnder(config.buildFilesFolder);
-
-  // Enumerate additional Flutter-related roots and only consider those
-  // that are OUTSIDE the build folder to avoid re-traversal.
-  final List<String> extraRoots = <String>[];
+  // Enumerate Flutter-related roots and only consider those that contain
+  // 'ios' or 'macos'. Compute the expected Mach-O path directly for each.
   await for (final String root
       in enumerateDebugSearchRoots(fs: fs, config: config)) {
     final String normalized = path.normalize(root);
-    final String buildDir = path.normalize(config.buildFilesFolder);
-    final bool isInsideBuild =
-        normalized == buildDir || path.isWithin(buildDir, normalized);
-    if (!isInsideBuild) {
-      extraRoots.add(normalized);
+    final String lower = normalized.toLowerCase();
+    if (!(lower.contains('ios') || lower.contains('macos'))) {
+      continue;
     }
-  }
 
-  // Only Apple Mach-O discovery is relevant for these extra roots.
-  for (final String root in extraRoots) {
-    await collectAppleMachOUnder(root);
+    for (final String candidateBase in <String>{
+      normalized,
+      path.dirname(normalized),
+    }) {
+      final String machOPath = path.join(
+        candidateBase,
+        'App.framework.dSYM',
+        'Contents',
+        'Resources',
+        'DWARF',
+        'App',
+      );
+      final File machOFile = fs.file(machOPath);
+      if (await machOFile.exists()) {
+        foundPaths.add(machOFile.absolute.path);
+      }
+    }
   }
 
   return foundPaths;
