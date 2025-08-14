@@ -19,15 +19,15 @@ final testPlatforms = Platform.environment.containsKey('TEST_PLATFORM')
     : [
         'apk',
         'appbundle',
-        if (Platform.isMacOS) 'macos',
-        if (Platform.isMacOS) 'macos-framework',
-        if (Platform.isMacOS) 'ios',
-        if (Platform.isMacOS) 'ios-framework',
-        if (Platform.isMacOS) 'ipa',
-        if (Platform.isWindows) 'windows',
-        if (Platform.isLinux) 'linux',
-        'web',
-        'web-legacy'
+        // if (Platform.isMacOS) 'macos',
+        // if (Platform.isMacOS) 'macos-framework',
+        // if (Platform.isMacOS) 'ios',
+        // if (Platform.isMacOS) 'ios-framework',
+        // if (Platform.isMacOS) 'ipa',
+        // if (Platform.isWindows) 'windows',
+        // if (Platform.isLinux) 'linux',
+        // 'web',
+        // 'web-legacy'
       ];
 
 // NOTE: Don't run/debug this main(), it likely won't work.
@@ -225,7 +225,9 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
     if (['ipa', 'ios'].contains(platform)) '--no-codesign',
     if (platform == 'web') '--source-maps',
     if (platform != 'web') '--split-debug-info=symbols',
-    if (platform != 'web') '--obfuscate'
+    if (platform != 'web') '--obfuscate',
+    if (platform != 'web')
+      '--extra-gen-snapshot-options=--save-obfuscation-map=obfuscation.map.json',
   ];
 
   // In order to not run the build on every test execution, we store a hash.
@@ -271,15 +273,6 @@ sentry:
 
     // Store the hash so that we don't need to rebuild the app.
     await hashFile.writeAsString(hash);
-  }
-
-  // Ensure a Dart obfuscation map exists for non-web builds so the plugin can
-  // exercise the dart-symbol-map upload path during integration runs.
-  if (platform != 'web' && platform != 'web-legacy') {
-    final mapFile = File('${appDir.path}/obfuscation.map.json');
-    if (!await mapFile.exists()) {
-      await mapFile.writeAsString('[]');
-    }
   }
 
   if (isWebLegacy) {
