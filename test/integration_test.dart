@@ -145,9 +145,8 @@ void main() async {
 
       // Ensure that when a map is present we exercise the dart-symbol-map path for supported platforms.
       if (platform == 'ios' ||
-          platform == 'ios-framework' ||
           platform == 'macos' ||
-          platform == 'macos-framework' ||
+          platform == 'ipa' ||
           platform == 'apk' ||
           platform == 'appbundle') {
         final hasSummary = pluginOutput.any(
