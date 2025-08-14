@@ -24,7 +24,7 @@ class DartSymbolMapUploader {
   /// will reject maps with equivalent content. We artificially add a marker
   /// to the map to avoid this. See [_prependDebugIdMarkerToMapFile] for more
   /// details. When this is improved in Sentry we can remove the marker and
-  /// just upload the map.
+  /// just upload the map without modifications.
   ///
   /// Throws [ExitError] on the first non-zero CLI exit code.
   static Future<void> upload({
