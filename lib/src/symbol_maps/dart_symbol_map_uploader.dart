@@ -32,6 +32,12 @@ class DartSymbolMapUploader {
     required String symbolMapPath,
     required Iterable<String> debugFilePaths,
   }) async {
+    final cliPath = config.cliPath;
+    if (cliPath == null) {
+      Log.warn('Skipping Dart symbol map uploads: no CLI path provided.');
+      return;
+    }
+
     final ProcessManager processManager = injector.get<ProcessManager>();
 
     int attempted = 0;
@@ -44,7 +50,7 @@ class DartSymbolMapUploader {
 
         final String? debugId = await _fetchDebugId(
           processManager: processManager,
-          cliPath: config.cliPath!,
+          cliPath: cliPath,
           debugFilePath: debugFilePath,
         );
         if (debugId != null && debugId.isNotEmpty) {
@@ -68,7 +74,7 @@ class DartSymbolMapUploader {
 
         final int exitCode = await _startAndForward(
           processManager: processManager,
-          cliPath: config.cliPath!,
+          cliPath: cliPath,
           args: args,
           errorContext: 'Failed to upload Dart symbol map for $debugFilePath',
         );
@@ -89,7 +95,6 @@ class DartSymbolMapUploader {
   }
 
   /// Starts the process and forwards stdout/stderr to [Log]. Returns exit code.
-  /// TODO(buenaflor): write a utility function for reuse in other parts of the code.
   static Future<int> _startAndForward({
     required ProcessManager processManager,
     required String cliPath,

@@ -1,6 +1,5 @@
 import '../configuration.dart';
 
-// TODO(buenaflor): in a future PR this should be reused in other parts of the code
 extension SentryCliArgs on Configuration {
   List<String> baseArgs() => [
         if (url != null) ...['--url', url!],

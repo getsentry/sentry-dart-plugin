@@ -41,37 +41,12 @@ Future<Set<String>> collectDebugFilesForDartMap({
     }
   }
 
-  Future<bool> containsAndroidSymbols(String rootPath) async {
-    if (rootPath.isEmpty) return false;
-    final Directory directory = fs.directory(rootPath);
-    if (!await directory.exists()) return false;
-
-    await for (final FileSystemEntity entity
-        in directory.list(recursive: true, followLinks: false)) {
-      if (entity is! File) continue;
-      final String basename = fs.path.basename(entity.path);
-      if (basename.startsWith('app') &&
-          basename.endsWith('.symbols') &&
-          !basename.contains('darwin') &&
-          !basename.contains('ios')) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // No recursive Apple scan needed. We only care about the Mach-O at
-  // <base>/App.framework.dSYM/Contents/Resources/DWARF/App. For roots that
-  // end with 'Runner.app', the dSYM lives next to it, so we probe the parent
-  // directory as the base.
-
-  // Prefer scanning Android symbols only under the configured symbols folder.
+  // Prefer scanning Android symbols under the configured symbols folder; if not
+  // set, fall back to the build folder.
   final List<String> androidRoots = <String>[];
-  if (config.symbolsFolder.isNotEmpty &&
-      await containsAndroidSymbols(config.symbolsFolder)) {
+  if (config.symbolsFolder.isNotEmpty) {
     androidRoots.add(path.normalize(config.symbolsFolder));
   } else if (config.buildFilesFolder.isNotEmpty) {
-    // Fallback if symbolsFolder is not provided or does not contain any symbols.
     androidRoots.add(path.normalize(config.buildFilesFolder));
   }
 
