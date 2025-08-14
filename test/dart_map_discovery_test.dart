@@ -2,10 +2,10 @@ import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
 import 'package:sentry_dart_plugin/src/configuration.dart';
-import 'package:sentry_dart_plugin/src/symbol_maps/dart_symbol_map_discovery.dart';
+import 'package:sentry_dart_plugin/src/utils/path_utils.dart';
 
 void main() {
-  group('resolveDartMapPath', () {
+  group('resolveFilePath for dartSymbolMapPath', () {
     test('returns absolute path for absolute input', () async {
       final fs = MemoryFileSystem(style: FileSystemStyle.posix);
       final projectRoot = fs.directory('/proj')..createSync(recursive: true);
@@ -16,7 +16,14 @@ void main() {
 
       final config = Configuration()..dartSymbolMapPath = absolutePath;
 
-      final result = await resolveDartMapPath(fs: fs, config: config);
+      final result = await resolveFilePath(
+        fs: fs,
+        rawPath: config.dartSymbolMapPath,
+        missingWarning:
+            "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
+        notFoundWarningBuilder: (raw) =>
+            "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
+      );
       expect(result, equals(absolutePath));
     });
 
@@ -34,7 +41,14 @@ void main() {
         ..symbolsFolder = '/root/symbols'
         ..dartSymbolMapPath = rel;
 
-      final result = await resolveDartMapPath(fs: fs, config: config);
+      final result = await resolveFilePath(
+        fs: fs,
+        rawPath: config.dartSymbolMapPath,
+        missingWarning:
+            "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
+        notFoundWarningBuilder: (raw) =>
+            "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
+      );
       expect(result, equals(abs));
     });
 
@@ -45,7 +59,14 @@ void main() {
 
       final config = Configuration()..dartSymbolMapPath = null;
 
-      final result = await resolveDartMapPath(fs: fs, config: config);
+      final result = await resolveFilePath(
+        fs: fs,
+        rawPath: config.dartSymbolMapPath,
+        missingWarning:
+            "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
+        notFoundWarningBuilder: (raw) =>
+            "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
+      );
       expect(result, isNull);
     });
 
@@ -56,7 +77,14 @@ void main() {
 
       final config = Configuration()..dartSymbolMapPath = 'missing.map';
 
-      final result = await resolveDartMapPath(fs: fs, config: config);
+      final result = await resolveFilePath(
+        fs: fs,
+        rawPath: config.dartSymbolMapPath,
+        missingWarning:
+            "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
+        notFoundWarningBuilder: (raw) =>
+            "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
+      );
       expect(result, isNull);
     });
   });

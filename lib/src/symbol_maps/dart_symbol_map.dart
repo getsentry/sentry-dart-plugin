@@ -2,12 +2,15 @@ import 'package:file/file.dart';
 
 import '../configuration.dart';
 import '../utils/log.dart';
+import '../utils/path_utils.dart';
 import 'dart_symbol_map_discovery.dart';
 import 'dart_symbol_map_uploader.dart';
 
 /// Single entrypoint to upload Dart obfuscation map(s) paired with
-/// Flutter-relevant native debug files.
+/// Flutter-relevant native debug files. This obfuscation map is used to
+/// symbolicate Flutter issue titles for non-web platforms.
 ///
+/// Steps:
 /// - Resolves the Dart symbol map path from config
 /// - Collects relevant debug files
 /// - Uploads the map once per debug file via the CLI
@@ -15,10 +18,14 @@ Future<void> uploadDartSymbolMaps({
   required FileSystem fs,
   required Configuration config,
 }) async {
-  // Validate the configured map path, but pass the original string to the CLI
-  // to match user-provided (potentially relative) paths expected by tests.
-  final String? resolvedMapPath =
-      await resolveDartMapPath(fs: fs, config: config);
+  final String? resolvedMapPath = await resolveFilePath(
+    fs: fs,
+    rawPath: config.dartSymbolMapPath,
+    missingWarning:
+        "Skipping Dart symbol map uploads: no 'dart_symbol_map_path' provided.",
+    notFoundWarningBuilder: (raw) =>
+        "Skipping Dart symbol map uploads: Dart symbol map file not found at '${config.dartSymbolMapPath}'.",
+  );
   if (resolvedMapPath == null) {
     return;
   }
@@ -34,7 +41,7 @@ Future<void> uploadDartSymbolMaps({
 
   await DartSymbolMapUploader.upload(
     config: config,
-    symbolMapPath: (config.dartSymbolMapPath ?? '').trim(),
+    symbolMapPath: resolvedMapPath,
     debugFilePaths: debugFiles,
   );
 }
