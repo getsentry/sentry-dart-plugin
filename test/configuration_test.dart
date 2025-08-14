@@ -25,19 +25,16 @@ void main() {
         release: 'release-platformEnv-config',
         dist: 'dist-platformEnv-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-platformEnv-config',
-        dartSymbolMapPath: 'dart-symbol-map-platformEnv-config',
       );
       final argsConfig = ConfigurationValues(
         release: 'release-args-config',
         dist: 'dist-args-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
-        dartSymbolMapPath: 'dart-symbol-map-args-config',
       );
       final fileConfig = ConfigurationValues(
         release: 'release-file-config',
         dist: 'dist-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
-        dartSymbolMapPath: 'dart-symbol-map-file-config',
       );
 
       final sut = fixture.getSut(
@@ -49,7 +46,6 @@ void main() {
       expect(sut.release, 'release-platformEnv-config');
       expect(sut.dist, 'dist-platformEnv-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-platformEnv-config');
-      expect(sut.dartSymbolMapPath, 'dart-symbol-map-platformEnv-config');
     });
 
     // env config
