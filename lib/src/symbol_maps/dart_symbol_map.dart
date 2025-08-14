@@ -39,7 +39,7 @@ Future<void> uploadDartSymbolMap({
     return;
   }
 
-  await DartSymbolMapUploader.upload(
+  await DartSymbolMapUploader.addDebugIdMarkerAndUpload(
     config: config,
     symbolMapPath: resolvedMapPath,
     debugFilePaths: debugFiles,

@@ -237,6 +237,8 @@ void main() {
           final commandLog = await runWith(version, config);
           const release = '$name@$version';
 
+          print(commandLog);
+
           final args = '$commonArgs --log-level debug';
           expect(
             commandLog,

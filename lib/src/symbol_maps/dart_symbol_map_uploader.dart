@@ -27,7 +27,7 @@ class DartSymbolMapUploader {
   /// just upload the map without modifications.
   ///
   /// Throws [ExitError] on the first non-zero CLI exit code.
-  static Future<void> upload({
+  static Future<void> addDebugIdMarkerAndUpload({
     required Configuration config,
     required String symbolMapPath,
     required Iterable<String> debugFilePaths,

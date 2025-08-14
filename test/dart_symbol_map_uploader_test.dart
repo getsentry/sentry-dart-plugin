@@ -33,7 +33,7 @@ void main() {
         '/b/App.framework.dSYM/Contents/Resources/DWARF/App',
       ];
 
-      await DartSymbolMapUploader.upload(
+      await DartSymbolMapUploader.addDebugIdMarkerAndUpload(
         config: config,
         symbolMapPath: map,
         debugFilePaths: debugFiles,
@@ -82,7 +82,7 @@ void main() {
       final map = '/m/map.json';
       final debugFiles = <String>['/d/file.symbols'];
 
-      await DartSymbolMapUploader.upload(
+      await DartSymbolMapUploader.addDebugIdMarkerAndUpload(
         config: config,
         symbolMapPath: map,
         debugFilePaths: debugFiles,
@@ -111,7 +111,7 @@ void main() {
         ..authToken = null
         ..logLevel = null;
 
-      final call = DartSymbolMapUploader.upload(
+      final call = DartSymbolMapUploader.addDebugIdMarkerAndUpload(
         config: config,
         symbolMapPath: '/map.json',
         debugFilePaths: <String>['/debug.symbols', '/ignored.second'],

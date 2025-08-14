@@ -152,7 +152,8 @@ void main() async {
           platform == 'appbundle') {
         final hasSummary = pluginOutput.any(
             (e) => e.contains('Dart symbol map upload summary: attempted='));
-        expect(hasSummary, isTrue);
+        expect(hasSummary, isTrue,
+            reason: 'Dart symbol map upload summary not found');
       }
     }, timeout: Timeout(const Duration(minutes: 5)));
   }
