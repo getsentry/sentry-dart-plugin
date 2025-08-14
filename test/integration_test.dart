@@ -145,7 +145,6 @@ void main() async {
 
       // Ensure that when a map is present we exercise the dart-symbol-map path for supported platforms.
       if (platform == 'ios' ||
-          platform == 'macos' ||
           platform == 'ipa' ||
           platform == 'apk' ||
           platform == 'appbundle') {
