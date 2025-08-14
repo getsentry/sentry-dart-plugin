@@ -4,14 +4,11 @@
 
 ### Features
 
-- Upload dart symbol mapping file ([#347](https://github.com/getsentry/sentry-dart-plugin/pull/347))
-  - Allows Flutter issue title symbolication
-
-### Dependencies
-
-- Bump CLI from v2.41.1 to v2.52.0 ([#327](https://github.com/getsentry/sentry-dart-plugin/pull/327))
-  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2520)
-  - [diff](https://github.com/getsentry/sentry-cli/compare/2.41.1...2.52.0)
+- Upload Dart symbol mapping file ([#347](https://github.com/getsentry/sentry-dart-plugin/pull/347))
+  - What it does: Enables symbolication of Flutter issue titles for obfuscated Android, iOS, and macOS builds. Linux and Windows are not supported yet.
+  - Generate the mapping file: Add `--extra-gen-snapshot-options=--save-obfuscation-map=<path>` when building. Example: `flutter build apk --obfuscate --split-debug-info=build/symbols --extra-gen-snapshot-options=--save-obfuscation-map=build/mapping.json`
+  - Configure the plugin: Set `dart_symbol_map_path: build/mapping.json`
+  - Important: `dart_symbol_map_path` must point directly to the mapping file (absolute or relative path), not a directory.
 
 ## 3.1.1
 
