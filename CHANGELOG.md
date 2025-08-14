@@ -12,6 +12,12 @@
     - Configure the plugin: Set `dart_symbol_map_path: build/mapping.json`
     - Important: `dart_symbol_map_path` must point directly to the mapping file (absolute or relative path), not a directory.
 
+### Dependencies
+
+- Bump CLI from v2.41.1 to v2.52.0 ([#327](https://github.com/getsentry/sentry-dart-plugin/pull/327))
+  - [changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#2520)
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.41.1...2.52.0)
+
 ## 3.1.1
 
 ### Fixes
