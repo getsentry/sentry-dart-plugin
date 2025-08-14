@@ -57,6 +57,12 @@ sentry:
   build_path: ...
   web_build_path: ...
   symbols_path: ...
+  # Path to the Dart obfuscation map (opt-in)
+  # Example generation flags:
+  #   flutter build apk --obfuscate --split-debug-info=symbols \\
+  #     --extra-gen-snapshot-options=--save-obfuscation-map=build/app/obfuscation.map.json
+  # Then set the path below to the generated obfuscation map file
+  dart_symbol_map_path: build/app/obfuscation.map.json
   commits: auto
   ignore_missing: true
 ```
@@ -95,30 +101,31 @@ ignore_missing=true
 
 ### Available Configuration Fields
 
-| Configuration Name | Description | Default Value And Type | Required | Alternative Environment variable |
-| - | - | - | - | - |
-| upload_debug_symbols | Enables or disables the automatic upload of debug symbols | true (boolean) | no | - |
-| upload_source_maps | Enables or disables the automatic upload of source maps | false (boolean) | no | - |
-| upload_sources | Does or doesn't include the source code of native code | false (boolean) | no | - |
-| legacy_web_symbolication | Uses legacy symbolication method for Flutter Web instead of Debug IDs | false (boolean) | no | - |
-| project | Project's name | e.g. sentry-flutter (string) | yes | SENTRY_PROJECT |
-| org | Organization's slug | e.g. sentry-sdks (string) | yes | SENTRY_ORG |
-| auth_token | Auth Token | e.g. 64 random characteres (string)  | yes | SENTRY_AUTH_TOKEN |
-| url | URL | e.g. https<area>://mysentry.invalid/ (string)  | no | SENTRY_URL |
-| url_prefix | URL prefix for JS source maps | e.g. ~/app/ (string) | no | - |
-| wait_for_processing | Wait for server-side processing of uploaded files | false (boolean)  | no | - |
-| log_level | Configures the log level for sentry-cli | warn (string)  | no | SENTRY_LOG_LEVEL |
-| release | The release version for source maps, it should match the release set by the SDK | name@version from pubspec (string)  | no | SENTRY_RELEASE |
-| dist | The dist/build number for source maps, it should match the dist set by the SDK | the number after the '+' char from 'version' pubspec (string)  | no | SENTRY_DIST |
-| build_path | The build folder of debug files for upload | `build` (string)  | no | - |
-| web_build_path | The web build folder of debug files for upload relative to build_path | `web` (string) | no | - |
-| symbols_path | The directory containing debug symbols (i.e. the `--split-debug-info=` parameter value you pass to `flutter build`) | `.` (string) | no | - |
-| commits | Release commits integration | auto (string) | no | - |
-| ignore_missing | Ignore missing commits previously used in the release | false (boolean) | no | - |
-| bin_dir | The folder where the plugin downloads the sentry-cli binary | .dart_tool/pub/bin/sentry_dart_plugin (string) | no | - |
-| bin_path | Path to the sentry-cli binary to use instead of downloading. Make sure to use the correct version. | null (string) | no | - |
-| sentry_cli_cdn_url | Alternative place to download sentry-cli | https://downloads.sentry-cdn.com/sentry-cli (string) | no | SENTRYCLI_CDNURL |
-| sentry_cli_version | Override the sentry-cli version that should be downloaded. | (string) | no | - |
+| Configuration Name       | Description                                                                                                                                                                                                                                                                                         | Default Value And Type                                        | Required | Alternative Environment variable |
+| ------------------------ |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------- | -------- | -------------------------------- |
+| upload_debug_symbols     | Enables or disables the automatic upload of debug symbols                                                                                                                                                                                                                                           | true (boolean)                                                | no       | -                                |
+| upload_source_maps       | Enables or disables the automatic upload of source maps                                                                                                                                                                                                                                             | false (boolean)                                               | no       | -                                |
+| upload_sources           | Does or doesn't include the source code of native code                                                                                                                                                                                                                                              | false (boolean)                                               | no       | -                                |
+| legacy_web_symbolication | Uses legacy symbolication method for Flutter Web instead of Debug IDs                                                                                                                                                                                                                               | false (boolean)                                               | no       | -                                |
+| project                  | Project's name                                                                                                                                                                                                                                                                                      | e.g. sentry-flutter (string)                                  | yes      | SENTRY_PROJECT                   |
+| org                      | Organization's slug                                                                                                                                                                                                                                                                                 | e.g. sentry-sdks (string)                                     | yes      | SENTRY_ORG                       |
+| auth_token               | Auth Token                                                                                                                                                                                                                                                                                          | e.g. 64 random characteres (string)                           | yes      | SENTRY_AUTH_TOKEN                |
+| url                      | URL                                                                                                                                                                                                                                                                                                 | e.g. https<area>://mysentry.invalid/ (string)                 | no       | SENTRY_URL                       |
+| url_prefix               | URL prefix for JS source maps                                                                                                                                                                                                                                                                       | e.g. ~/app/ (string)                                          | no       | -                                |
+| wait_for_processing      | Wait for server-side processing of uploaded files                                                                                                                                                                                                                                                   | false (boolean)                                               | no       | -                                |
+| log_level                | Configures the log level for sentry-cli                                                                                                                                                                                                                                                             | warn (string)                                                 | no       | SENTRY_LOG_LEVEL                 |
+| release                  | The release version for source maps, it should match the release set by the SDK                                                                                                                                                                                                                     | name@version from pubspec (string)                            | no       | SENTRY_RELEASE                   |
+| dist                     | The dist/build number for source maps, it should match the dist set by the SDK                                                                                                                                                                                                                      | the number after the '+' char from 'version' pubspec (string) | no       | SENTRY_DIST                      |
+| build_path               | The build folder of debug files for upload                                                                                                                                                                                                                                                          | `build` (string)                                              | no       | -                                |
+| web_build_path           | The web build folder of debug files for upload relative to build_path                                                                                                                                                                                                                               | `web` (string)                                                | no       | -                                |
+| symbols_path             | The directory containing debug symbols (i.e. the `--split-debug-info=` parameter value you pass to `flutter build`)                                                                                                                                                                                 | `.` (string)                                                  | no       | -                                |
+| dart_symbol_map_path     | Absolute or relative path to a Dart obfuscation map file to upload. This allows symbolication of Flutter issue titles for Android and iOS. The map file is generated by adding the following arguments to your Flutter build command: `--extra-gen-snapshot-options=--save-obfuscation-map=<path>`. | null (string)                                                 | no       | -                                |
+| commits                  | Release commits integration                                                                                                                                                                                                                                                                         | auto (string)                                                 | no       | -                                |
+| ignore_missing           | Ignore missing commits previously used in the release                                                                                                                                                                                                                                               | false (boolean)                                               | no       | -                                |
+| bin_dir                  | The folder where the plugin downloads the sentry-cli binary                                                                                                                                                                                                                                         | .dart_tool/pub/bin/sentry_dart_plugin (string)                | no       | -                                |
+| bin_path                 | Path to the sentry-cli binary to use instead of downloading. Make sure to use the correct version.                                                                                                                                                                                                  | null (string)                                                 | no       | -                                |
+| sentry_cli_cdn_url       | Alternative place to download sentry-cli                                                                                                                                                                                                                                                            | https://downloads.sentry-cdn.com/sentry-cli (string)          | no       | SENTRYCLI_CDNURL                 |
+| sentry_cli_version       | Override the sentry-cli version that should be downloaded.                                                                                                                                                                                                                                          | (string)                                                      | no       | -                                |
 
 ## Breaking Changes in v3.0.0
 
@@ -199,5 +206,7 @@ Dart's `--obfuscate` option is required to be paired with `--split-debug-info` t
 The `--split-debug-info` option requires setting a output directory, the directory must be an inner folder of the project's folder, See [docs](https://flutter.dev/docs/deployment/obfuscate#obfuscating-your-app).
 
 Flutter's `build web` command requires setting the `--source-maps` parameter to generate source maps, See [Issue](https://github.com/flutter/flutter/issues/72150#issuecomment-755541599)
+
+If you opt into uploading a Dart obfuscation map (`dart_symbol_map_path`), ensure you build with both `--obfuscate` and `--extra-gen-snapshot-options=--save-obfuscation-map=<path>`. The map path you configure must point to the generated file.
 
 If a previous release could not be found in the git history, please make sure you set `ignore_missing: true` in the configuration if you want to ignore such errors, See [Issue](https://github.com/getsentry/sentry-dart-plugin/issues/153)

@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
-import 'package:sentry_dart_plugin/src/utils/extensions.dart';
 
 import 'src/configuration.dart';
+import 'src/utils/flutter_debug_files.dart';
+import 'src/symbol_maps/dart_symbol_map.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
+import 'src/utils/extensions.dart';
 
 /// Class responsible to load the configurations and upload the
 /// debug symbols and source maps
@@ -86,7 +88,8 @@ class SentryDartPlugin {
     _addWait(params);
 
     final fs = injector.get<FileSystem>();
-    final debugSymbolPaths = _enumerateDebugSymbolPaths(fs);
+    final debugSymbolPaths =
+        enumerateDebugSearchRoots(fs: fs, config: _configuration);
     await for (final path in debugSymbolPaths) {
       if (await fs.directory(path).exists() || await fs.file(path).exists()) {
         await _executeAndLog('Failed to upload symbols', [...params, path]);
@@ -97,59 +100,9 @@ class SentryDartPlugin {
       await _executeAndLog('Failed to upload symbols', [...params, path]);
     }
 
+    await _tryUploadDartSymbolMap();
+
     Log.taskCompleted(taskName);
-  }
-
-  Stream<String> _enumerateDebugSymbolPaths(FileSystem fs) async* {
-    final buildDir = _configuration.buildFilesFolder;
-    final projectRoot = fs.currentDirectory.path;
-
-    // Android (apk, appbundle)
-    yield '$buildDir/app/outputs';
-    yield '$buildDir/app/intermediates';
-
-    // Windows
-    for (final subdir in ['', '/x64', '/arm64']) {
-      yield '$buildDir/windows$subdir/runner/Release';
-    }
-    // TODO we should delete this once we have windows symbols collected automatically.
-    // Related to https://github.com/getsentry/sentry-dart-plugin/issues/173
-    yield 'windows/flutter/ephemeral/flutter_windows.dll.pdb';
-
-    // Linux
-    for (final subdir in ['/x64', '/arm64']) {
-      yield '$buildDir/linux$subdir/release/bundle';
-    }
-
-    // macOS
-    yield '$buildDir/macos/Build/Products/Release';
-
-    // macOS (macOS-framework)
-    yield '$buildDir/macos/framework/Release';
-
-    // iOS
-    yield '$buildDir/ios/iphoneos/Runner.app';
-    if (await fs.directory('$buildDir/ios').exists()) {
-      final regexp = RegExp(r'^Release(-.*)?-iphoneos$');
-      yield* fs
-          .directory('$buildDir/ios')
-          .list()
-          .where((v) => regexp.hasMatch(v.basename))
-          .map((e) => e.path);
-    }
-
-    // iOS (ipa)
-    yield '$buildDir/ios/archive';
-
-    // iOS (ios-framework)
-    yield '$buildDir/ios/framework/Release';
-
-    // iOS in Fastlane
-    if (projectRoot == '/') {
-      yield 'ios/build';
-    } else {
-      yield '$projectRoot/ios/build';
-    }
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {
@@ -192,6 +145,22 @@ class SentryDartPlugin {
     _setUrlAndTokenAndLog(params);
     params.addAll(_baseCliParams(addReleases: true));
     return params;
+  }
+
+  /// Upload Dart symbol map(s) if configured.
+  /// This is needed to symbolicate Flutter issue titles for obfuscated builds.
+  Future<void> _tryUploadDartSymbolMap() async {
+    const taskName = 'uploading Dart symbol map(s)';
+    Log.startingTask(taskName);
+
+    try {
+      final fs = injector.get<FileSystem>();
+      await uploadDartSymbolMap(fs: fs, config: _configuration);
+    } catch (e) {
+      Log.error('Dart symbol map upload failed: $e');
+    } finally {
+      Log.taskCompleted(taskName);
+    }
   }
 
   Future<void> _executeNewRelease(String release) async {

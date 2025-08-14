@@ -142,6 +142,17 @@ void main() async {
         default:
           fail('Platform "$platform" missing from tests');
       }
+
+      // Ensure that when a map is present we exercise the dart-symbol-map path for supported platforms.
+      if (platform == 'ios' ||
+          platform == 'ipa' ||
+          platform == 'apk' ||
+          platform == 'appbundle') {
+        final hasSummary = pluginOutput.any(
+            (e) => e.contains('Dart symbol map upload summary: attempted='));
+        expect(hasSummary, isTrue,
+            reason: 'Dart symbol map upload summary not found');
+      }
     }, timeout: Timeout(const Duration(minutes: 5)));
   }
 }
@@ -177,8 +188,10 @@ Future<Iterable<String>> _flutter(List<String> arguments, {String? cwd}) =>
     _exec('flutter', arguments, cwd: cwd);
 
 Future<Iterable<String>> _runPlugin(Directory cwd) => _exec(
-    'dart', ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
-    cwd: cwd.path);
+      'dart',
+      ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
+      cwd: cwd.path,
+    );
 
 // e.g. Flutter 3.24.4 • channel stable • https://github.com/flutter/flutter.git
 final _flutterVersionInfo =
@@ -210,7 +223,9 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
     if (['ipa', 'ios'].contains(platform)) '--no-codesign',
     if (platform == 'web') '--source-maps',
     if (platform != 'web') '--split-debug-info=symbols',
-    if (platform != 'web') '--obfuscate'
+    if (platform != 'web') '--obfuscate',
+    if (platform != 'web')
+      '--extra-gen-snapshot-options=--save-obfuscation-map=obfuscation.map.json',
   ];
 
   // In order to not run the build on every test execution, we store a hash.
@@ -250,6 +265,7 @@ sentry:
   log_level: debug
   commits: false
   legacy_web_symbolication: ${isWebLegacy ? true : false}
+  dart_symbol_map_path: obfuscation.map.json
 ''';
     await pubspecFile.writeAsString(pubspec);
 

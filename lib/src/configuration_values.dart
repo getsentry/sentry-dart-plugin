@@ -20,6 +20,7 @@ class ConfigurationValues {
   final String? buildPath;
   final String? webBuildPath;
   final String? symbolsPath;
+  final String? dartSymbolMapPath;
   final String? commits;
   final bool? ignoreMissing;
   final String? binDir;
@@ -46,6 +47,7 @@ class ConfigurationValues {
     this.buildPath,
     this.webBuildPath,
     this.symbolsPath,
+    this.dartSymbolMapPath,
     this.commits,
     this.ignoreMissing,
     this.binDir,
@@ -99,6 +101,7 @@ class ConfigurationValues {
       buildPath: sentryArguments['build_path'],
       webBuildPath: sentryArguments['web_build_path'],
       symbolsPath: sentryArguments['symbols_path'],
+      dartSymbolMapPath: sentryArguments['dart_symbol_map_path'],
       commits: sentryArguments['commits'],
       ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
       binDir: sentryArguments['bin_dir'],
@@ -136,6 +139,7 @@ class ConfigurationValues {
       buildPath: configReader.getString('build_path'),
       webBuildPath: configReader.getString('web_build_path'),
       symbolsPath: configReader.getString('symbols_path'),
+      dartSymbolMapPath: configReader.getString('dart_symbol_map_path'),
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
       binDir: configReader.getString('bin_dir'),
@@ -191,6 +195,9 @@ class ConfigurationValues {
       buildPath: args.buildPath ?? file.buildPath,
       webBuildPath: args.webBuildPath ?? file.webBuildPath,
       symbolsPath: args.symbolsPath ?? file.symbolsPath,
+      dartSymbolMapPath: platformEnv.dartSymbolMapPath ??
+          args.dartSymbolMapPath ??
+          file.dartSymbolMapPath,
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
       binDir: args.binDir ?? file.binDir,

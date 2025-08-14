@@ -217,6 +217,54 @@ void main() {
           });
         });
 
+        test('emits dart-symbol-map upload command', () async {
+          const version = '1.0.0';
+          // Create Android symbols and a fake Dart symbol map
+          final androidSymbolsDir = fs.directory('$buildDir/app/outputs')
+            ..createSync(recursive: true);
+          fs
+              .file('${androidSymbolsDir.path}/app-release.symbols')
+              .writeAsStringSync('fake');
+          final mapFile = fs.file('obfuscation.map.json')
+            ..writeAsStringSync('[]');
+
+          final config = '''
+            upload_debug_symbols: true
+            log_level: debug
+            dart_symbol_map_path: ${mapFile.path}
+          ''';
+
+          final commandLog = await runWith(version, config);
+          const release = '$name@$version';
+
+          final args = '$commonArgs --log-level debug';
+          expect(
+            commandLog,
+            anyElement((e) {
+              final relStart =
+                  '$cli $args dart-symbol-map upload $orgAndProject ${mapFile.path} ';
+              final absStart =
+                  '$cli $args dart-symbol-map upload $orgAndProject ${fs.file(mapFile.path).absolute.path} ';
+              return (e.startsWith(relStart) || e.startsWith(absStart)) &&
+                  e.endsWith('$buildDir/app/outputs/app-release.symbols');
+            }),
+          );
+
+          // Ensure other expected commands still present
+          expect(
+              commandLog,
+              contains(
+                  '$cli $args debug-files upload $orgAndProject $buildDir/app/outputs'));
+          expect(commandLog,
+              contains('$cli $args releases $orgAndProject new $release'));
+          expect(
+              commandLog,
+              contains(
+                  '$cli $args releases $orgAndProject set-commits $release --auto'));
+          expect(commandLog,
+              contains('$cli $args releases $orgAndProject finalize $release'));
+        });
+
         group('release', () {
           test('default from name and version', () async {
             const version = '1.0.0';
