@@ -4,8 +4,6 @@
 
 ### Features
 
-### Features
-
 - Upload Dart symbol mapping file ([#347](https://github.com/getsentry/sentry-dart-plugin/pull/347))
     - What it does: Enables symbolication of Flutter issue titles for obfuscated Android, iOS, and macOS builds. Linux and Windows are not supported yet.
     - Generate the mapping file: Add `--extra-gen-snapshot-options=--save-obfuscation-map=<path>` when building. Example: `flutter build apk --obfuscate --split-debug-info=build/symbols --extra-gen-snapshot-options=--save-obfuscation-map=build/mapping.json`
