@@ -3,7 +3,7 @@ import 'package:file/file.dart';
 import '../configuration.dart';
 import '../utils/log.dart';
 import '../utils/path.dart';
-import 'dart_symbol_map_discovery.dart';
+import 'dart_symbol_map_collect_debug_files.dart';
 import 'dart_symbol_map_uploader.dart';
 
 /// Single entrypoint to upload Dart obfuscation map(s) paired with
