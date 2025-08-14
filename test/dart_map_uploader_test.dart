@@ -25,8 +25,7 @@ void main() {
         ..authToken = 'token'
         ..logLevel = 'debug'
         ..org = 'my-org'
-        ..project = 'my-proj'
-        ..waitForProcessing = true;
+        ..project = 'my-proj';
 
       final map = '/abs/path/obfuscation.map';
       final debugFiles = <String>[
@@ -51,7 +50,7 @@ void main() {
         pm.commandLog[1],
         equals(
           'mock-cli --url https://example.invalid --auth-token token --log-level debug '
-          'dart-symbol-map upload --org my-org --project my-proj --wait '
+          'dart-symbol-map upload --org my-org --project my-proj'
           '$map ${debugFiles[0]}',
         ),
       );
@@ -65,7 +64,7 @@ void main() {
         pm.commandLog[3],
         equals(
           'mock-cli --url https://example.invalid --auth-token token --log-level debug '
-          'dart-symbol-map upload --org my-org --project my-proj --wait '
+          'dart-symbol-map upload --org my-org --project my-proj'
           '$map ${debugFiles[1]}',
         ),
       );
@@ -74,7 +73,6 @@ void main() {
     test('omits optional flags when not configured', () async {
       final config = Configuration()
         ..cliPath = 'mock-cli'
-        ..waitForProcessing = false
         ..url = null
         ..authToken = null
         ..logLevel = null
@@ -111,8 +109,7 @@ void main() {
         ..project = 'p'
         ..url = null
         ..authToken = null
-        ..logLevel = null
-        ..waitForProcessing = false;
+        ..logLevel = null;
 
       final call = DartSymbolMapUploader.upload(
         config: config,
