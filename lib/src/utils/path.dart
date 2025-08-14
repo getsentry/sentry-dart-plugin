@@ -2,7 +2,7 @@ import 'package:file/file.dart';
 
 import 'log.dart';
 
-/// Resolves a config-provided file path to an absolute path if the file exists.
+/// Resolves a provided file path to an absolute path if the file exists.
 Future<String?> resolveFilePath({
   required FileSystem fs,
   required String? rawPath,

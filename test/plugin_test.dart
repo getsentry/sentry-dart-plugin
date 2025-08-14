@@ -217,7 +217,7 @@ void main() {
           });
         });
 
-        test('emits dart-symbol-map upload command when enabled', () async {
+        test('emits dart-symbol-map upload command', () async {
           const version = '1.0.0';
           // Create Android symbols and a fake Dart symbol map
           final androidSymbolsDir = fs.directory('$buildDir/app/outputs')
@@ -238,13 +238,16 @@ void main() {
           const release = '$name@$version';
 
           final args = '$commonArgs --log-level debug';
-          // Accept either relative or absolute path and potential '/./' normalization in the debug file path
           expect(
             commandLog,
-            anyElement((e) =>
-                e.startsWith(
-                    '$cli $args dart-symbol-map upload $orgAndProject ${mapFile.path} ') &&
-                e.endsWith('$buildDir/app/outputs/app-release.symbols')),
+            anyElement((e) {
+              final relStart =
+                  '$cli $args dart-symbol-map upload $orgAndProject ${mapFile.path} ';
+              final absStart =
+                  '$cli $args dart-symbol-map upload $orgAndProject ${fs.file(mapFile.path).absolute.path} ';
+              return (e.startsWith(relStart) || e.startsWith(absStart)) &&
+                  e.endsWith('$buildDir/app/outputs/app-release.symbols');
+            }),
           );
 
           // Ensure other expected commands still present
