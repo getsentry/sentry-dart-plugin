@@ -21,12 +21,7 @@ Stream<String> enumerateDebugSearchRoots({
 
   // Android (apk, appbundle)
   yield '$buildDir/app/outputs';
-  // Only yield release-specific intermediates to avoid debug/release checksum
-  // conflicts. The intermediates directory contains both debug and release
-  // variants of native libraries (e.g., libflutter.so) with the same debug ID
-  // but different checksums, causing "checksum mismatch" errors on upload.
-  yield '$buildDir/app/intermediates/stripped_native_libs/release';
-  yield '$buildDir/app/intermediates/native_symbol_tables/release';
+  yield '$buildDir/app/intermediates';
 
   // Windows
   for (final subdir in ['', '/x64', '/arm64']) {
