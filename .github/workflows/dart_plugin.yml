@@ -5,6 +5,10 @@ on:
       - main
       - release/**
   pull_request:
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build:
     name: 'Format, Fix, Analyze and Build'
