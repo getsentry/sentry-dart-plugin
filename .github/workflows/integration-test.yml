@@ -7,10 +7,6 @@ on:
       - release/**
   pull_request:
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   integration-test:
     name: ${{ matrix.target }}
@@ -42,7 +38,7 @@ jobs:
     env:
       TEST_PLATFORM: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@f2c4f6686ca8e8d6e6d0f28410eeef506ed66aff #2.18.0
 
