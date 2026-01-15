@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.1
+
+### Fixes
+
+- Log level not respected when configured via env variables ([#370](https://github.com/getsentry/sentry-dart-plugin/pull/370))
+
 ## 3.2.0
 
 ### Features
