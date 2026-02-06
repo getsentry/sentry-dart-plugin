@@ -8,4 +8,4 @@ A Dart Build Plugin that uploads debug symbols for Android, iOS/macOS and source
 
 ## Installation and Usage
 
-Please refer to [Sentry CLI's documentation page](https://docs.sentry.io/cli/).
+Please refer to [Sentry Dart Plugin's documentation page](https://docs.sentry.io/platforms/dart/guides/flutter/debug-symbols/).
