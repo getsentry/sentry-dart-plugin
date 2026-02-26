@@ -564,9 +564,9 @@ class SentryDartPlugin {
 
   Future<bool> _executeAndLog(
       String commandName, String errorMessage, List<String> params) async {
-    return Sentry.startSpan('Execute Sentry CLI', (span) async {
+    return Sentry.startSpan('Execute Sentry CLI $commandName', (span) async {
       span.setAttributes({
-        'cli_command': SentryAttribute.string(commandName),
+        'cli.command': SentryAttribute.string(commandName),
       });
       int? exitCode;
 
@@ -585,6 +585,7 @@ class SentryDartPlugin {
 
         exitCode = await process.exitCode;
       } on Exception catch (exception, stackTrace) {
+        span.status = SentrySpanStatusV2.error;
         Log.error('$errorMessage: \n$exception');
         await Sentry.captureException(exception, stackTrace: stackTrace);
         return false;
@@ -593,6 +594,10 @@ class SentryDartPlugin {
       span.setAttributes({
         'exit_code': SentryAttribute.int(exitCode),
       });
+
+      if (exitCode != 0) {
+        span.status = SentrySpanStatusV2.error;
+      }
 
       Log.processExitCode(exitCode);
       return exitCode == 0;

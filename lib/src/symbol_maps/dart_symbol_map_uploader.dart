@@ -111,9 +111,9 @@ class DartSymbolMapUploader {
     required String errorContext,
     required String commandName,
   }) async =>
-      Sentry.startSpan('Execute Sentry CLI', (span) async {
+      Sentry.startSpan('Execute Sentry CLI $commandName', (span) async {
         span.setAttributes({
-          'cli_command': SentryAttribute.string(commandName),
+          'cli.command': SentryAttribute.string(commandName),
         });
         int exitCode;
         try {
@@ -135,6 +135,7 @@ class DartSymbolMapUploader {
 
           exitCode = await process.exitCode;
         } on Exception catch (exception) {
+          span.status = SentrySpanStatusV2.error;
           Log.error('$errorContext: \n$exception');
           return 1;
         }
@@ -142,6 +143,11 @@ class DartSymbolMapUploader {
         span.setAttributes({
           'exit_code': SentryAttribute.int(exitCode),
         });
+
+        if (exitCode != 0) {
+          span.status = SentrySpanStatusV2.error;
+        }
+
         return exitCode;
       });
 
@@ -153,9 +159,9 @@ class DartSymbolMapUploader {
     required String cliPath,
     required String debugFilePath,
   }) async =>
-      Sentry.startSpan('Execute Sentry CLI', (span) async {
+      Sentry.startSpan('Execute Sentry CLI debug-files check', (span) async {
         span.setAttributes({
-          'cli_command': SentryAttribute.string('debug-files check'),
+          'cli.command': SentryAttribute.string('debug-files check'),
         });
         try {
           final Process process = await processManager.start([
@@ -177,6 +183,7 @@ class DartSymbolMapUploader {
             'exit_code': SentryAttribute.int(code),
           });
           if (code != 0) {
+            span.status = SentrySpanStatusV2.error;
             Log.warn(
                 'Failed to fetch debug id for "$debugFilePath" (exit=$code): ${stderrBuffer.toString().trim()}');
             return null;
@@ -207,6 +214,7 @@ class DartSymbolMapUploader {
           Log.warn('No debug id found in variants for "$debugFilePath"');
           return null;
         } catch (e) {
+          span.status = SentrySpanStatusV2.error;
           Log.warn(
               'Exception while fetching debug id for "$debugFilePath": $e');
           return null;
