@@ -257,10 +257,6 @@ class Configuration {
             Log.info('Trying to fallback to Sentry CLI at path: $cliPath');
           }
         }
-
-        span.setAttributes({
-          'cli_path': SentryAttribute.string(cliPath ?? ''),
-        });
       });
 
   String _getPreInstalledCli() {

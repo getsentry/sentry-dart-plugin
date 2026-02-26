@@ -34,15 +34,23 @@ class SentryDartPlugin {
           return 1;
         }
 
+        // Not setting other attributes due to possible PII
         span.setAttributes({
-          'release': SentryAttribute.string(_release),
-          'dist': SentryAttribute.string(_dist ?? ''),
-          'org': SentryAttribute.string(_configuration.org ?? ''),
-          'project': SentryAttribute.string(_configuration.project ?? ''),
-          'upload_debug_symbols':
+          'config.upload_debug_symbols':
               SentryAttribute.bool(_configuration.uploadDebugSymbols),
-          'upload_source_maps':
+          'config.upload_source_maps':
               SentryAttribute.bool(_configuration.uploadSourceMaps),
+          'config.upload_sources':
+              SentryAttribute.bool(_configuration.uploadSources),
+          'config.wait_for_processing':
+              SentryAttribute.bool(_configuration.waitForProcessing),
+          'config.commits': SentryAttribute.string(_configuration.commits),
+          'config.ignore_missing':
+              SentryAttribute.bool(_configuration.ignoreMissing),
+          'config.legacy_web_symbolication':
+              SentryAttribute.bool(_configuration.legacyWebSymbolication),
+          'config.sentry_cli_version':
+              SentryAttribute.string(_configuration.sentryCliVersion ?? ''),
         });
 
         if (_configuration.uploadDebugSymbols) {
@@ -101,10 +109,6 @@ class SentryDartPlugin {
           Log.info('includeSources is disabled, not uploading sources.');
         }
 
-        span.setAttributes({
-          'include_sources': SentryAttribute.bool(_configuration.uploadSources),
-        });
-
         _addWait(params);
 
         final fs = injector.get<FileSystem>();
@@ -113,12 +117,14 @@ class SentryDartPlugin {
         await for (final path in debugSymbolPaths) {
           if (await fs.directory(path).exists() ||
               await fs.file(path).exists()) {
-            await _executeAndLog('Failed to upload symbols', [...params, path]);
+            await _executeAndLog('debug-files upload',
+                'Failed to upload symbols', [...params, path]);
           }
         }
 
         for (final path in await _enumerateSymbolFiles()) {
-          await _executeAndLog('Failed to upload symbols', [...params, path]);
+          await _executeAndLog('debug-files upload', 'Failed to upload symbols',
+              [...params, path]);
         }
 
         await _tryUploadDartSymbolMap();
@@ -143,8 +149,7 @@ class SentryDartPlugin {
         // for backward compatibility, also check the build dir if it has been
         // configured with a different path.
         if (_configuration.buildFilesFolder != _configuration.symbolsFolder) {
-          final symbolsRootDir =
-              fs.directory(_configuration.buildFilesFolder);
+          final symbolsRootDir = fs.directory(_configuration.buildFilesFolder);
           if (await symbolsRootDir.exists()) {
             await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
               result.add(entry.path);
@@ -195,19 +200,15 @@ class SentryDartPlugin {
 
   Future<void> _executeNewRelease(String release) async =>
       Sentry.startSpan('Create Release', (span) async {
-        span.setAttributes({
-          'release': SentryAttribute.string(release),
-        });
-        await _executeAndLog('Failed to create a new release',
+        await _executeAndLog('releases new', 'Failed to create a new release',
             [..._releasesCliParams(), 'new', release]);
       });
 
   Future<void> _executeFinalizeRelease(String release) async =>
       Sentry.startSpan('Finalize Release', (span) async {
-        span.setAttributes({
-          'release': SentryAttribute.string(release),
-        });
-        await _executeAndLog('Failed to finalize the new release',
+        await _executeAndLog(
+            'releases finalize',
+            'Failed to finalize the new release',
             [..._releasesCliParams(), 'finalize', release]);
       });
 
@@ -228,7 +229,6 @@ class SentryDartPlugin {
         }
 
         span.setAttributes({
-          'release': SentryAttribute.string(release),
           'commits_mode': SentryAttribute.string(commitsMode),
         });
 
@@ -236,7 +236,8 @@ class SentryDartPlugin {
           params.add('--ignore-missing');
         }
 
-        await _executeAndLog('Failed to set commits', params);
+        await _executeAndLog(
+            'releases set-commits', 'Failed to set commits', params);
       });
 
   Future<List<String>> _findAllJsFilePaths() async {
@@ -307,7 +308,8 @@ class SentryDartPlugin {
 
         params.addAll(_baseCliParams());
 
-        return await _executeAndLog('Failed to inject debug ids', params);
+        return _executeAndLog(
+            'sourcemaps inject', 'Failed to inject debug ids', params);
       });
 
   Future<void> _uploadSourceMaps(
@@ -356,7 +358,8 @@ class SentryDartPlugin {
 
         params.addAll(_baseCliParams());
 
-        await _executeAndLog('Failed to sources files', params);
+        await _executeAndLog(
+            'sourcemaps upload', 'Failed to sources files', params);
       });
 
   /// Extracts and returns a list of path prefixes to strip from source maps.
@@ -430,7 +433,6 @@ class SentryDartPlugin {
           {required String release, required String? dist}) async =>
       Sentry.startSpan('Upload Source Maps', (span) async {
         span.setAttributes({
-          'release': SentryAttribute.string(release),
           'legacy': SentryAttribute.bool(true),
         });
 
@@ -486,7 +488,7 @@ class SentryDartPlugin {
         _addWait(releaseJsFilesParams);
         _addUrlPrefix(releaseJsFilesParams);
 
-        await _executeAndLog(
+        await _executeAndLog('releases files upload-sourcemaps',
             'Failed to upload source maps', releaseJsFilesParams);
 
         if (_configuration.uploadSources) {
@@ -504,7 +506,7 @@ class SentryDartPlugin {
 
           _addWait(releaseDartFilesParams);
 
-          await _executeAndLog(
+          await _executeAndLog('releases files upload-sourcemaps',
               'Failed to upload source files', releaseDartFilesParams);
         }
 
@@ -515,7 +517,6 @@ class SentryDartPlugin {
           {required String release, required String? dist}) async =>
       Sentry.startSpan('Upload Source Maps', (span) async {
         span.setAttributes({
-          'release': SentryAttribute.string(release),
           'legacy': SentryAttribute.bool(false),
         });
 
@@ -561,12 +562,12 @@ class SentryDartPlugin {
     }
   }
 
-  Future<bool> _executeAndLog(String errorMessage, List<String> params) async {
-    final cliCommand =
-        params.where((p) => !p.startsWith('-')).take(2).join(' ');
-
-    return await Sentry.startSpan('Execute Sentry CLI: $cliCommand', (span) async {
-
+  Future<bool> _executeAndLog(
+      String commandName, String errorMessage, List<String> params) async {
+    return Sentry.startSpan('Execute Sentry CLI', (span) async {
+      span.setAttributes({
+        'cli_command': SentryAttribute.string(commandName),
+      });
       int? exitCode;
 
       try {
