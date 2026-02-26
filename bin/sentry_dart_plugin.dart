@@ -8,7 +8,11 @@ import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 Future<void> main(List<String> arguments) async {
   await Sentry.init(
     (options) {
-      options.dsn = 'TODO: add DSN';
+      options.dsn =
+          'https://e85b375ffb9f43cf8bdf9787768149e0@o447951.ingest.sentry.io/5428562';
+      options.traceLifecycle = SentryTraceLifecycle.streaming;
+      options.sendDefaultPii = true;
+      options.tracesSampleRate = 1.0;
     },
     appRunner: () async {
       exitCode = await SentryDartPlugin().run(arguments);
