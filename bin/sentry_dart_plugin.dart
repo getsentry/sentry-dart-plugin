@@ -25,7 +25,8 @@ Future<void> main(List<String> arguments) async {
     rethrow;
   } finally {
     // Wait for the spans to be sent, close should actually flush them but it seems to be a bug.
-    await Future.delayed(const Duration(seconds: 3));
+    // https://github.com/getsentry/sentry-dart-plugin/issues/383
+    await Future.delayed(const Duration(seconds: 5));
     await Sentry.close();
   }
 }
