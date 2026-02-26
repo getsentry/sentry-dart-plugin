@@ -1,4 +1,5 @@
 import 'package:file/file.dart';
+import 'package:sentry/sentry.dart';
 
 import '../configuration.dart';
 import '../utils/log.dart';
@@ -32,8 +33,14 @@ Future<void> uploadDartSymbolMap({
     return;
   }
 
-  final Set<String> debugFiles =
-      await collectDebugFilesForDartMap(fs: fs, config: config);
+  final Set<String> debugFiles = await Sentry.startSpan(
+      'Collect Debug Files For Dart Map', (span) async {
+    final files = await collectDebugFilesForDartMap(fs: fs, config: config);
+    span.setAttributes({
+      'debug_files_found': SentryAttribute.int(files.length),
+    });
+    return files;
+  });
 
   if (debugFiles.isEmpty) {
     Log.warn(

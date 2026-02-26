@@ -17,4 +17,5 @@ Future<void> main(List<String> arguments) async {
       exitCode = await SentryDartPlugin().run(arguments);
     },
   );
+  await Sentry.close();
 }
