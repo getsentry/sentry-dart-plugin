@@ -19,14 +19,18 @@ Future<void> main(List<String> arguments) async {
   try {
     exitCode = await SentryDartPlugin().run(arguments);
   } catch (error, stackTrace) {
-    // Workaround until the following issue is fixed: https://github.com/getsentry/sentry-dart/issues/3541
-    // Sentry currently swallows errors
-    await Sentry.captureException(error, stackTrace: stackTrace);
+    if (telemetryEnabled) {
+      // Workaround until the following issue is fixed: https://github.com/getsentry/sentry-dart/issues/3541
+      // Sentry currently swallows errors
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
     rethrow;
   } finally {
-    // Wait for the spans to be sent, close should actually flush them but it seems to be a bug.
-    // https://github.com/getsentry/sentry-dart-plugin/issues/383
-    await Future.delayed(const Duration(seconds: 5));
-    await Sentry.close();
+    if (telemetryEnabled) {
+      // Wait for the spans to be sent, close should actually flush them but it seems to be a bug.
+      // https://github.com/getsentry/sentry-dart-plugin/issues/383
+      await Future.delayed(const Duration(seconds: 5));
+      await Sentry.close();
+    }
   }
 }
