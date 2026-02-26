@@ -9,7 +9,7 @@ Future<void> main(List<String> arguments) async {
   await Sentry.init(
     (options) {
       options.dsn =
-          'https://e85b375ffb9f43cf8bdf9787768149e0@o447951.ingest.sentry.io/5428562';
+          'https://deee7b2ab8f85d13be8afd3f93952660@o1.ingest.us.sentry.io/4510952342814720';
       options.traceLifecycle = SentryTraceLifecycle.streaming;
       options.tracesSampleRate = 1.0;
     },
