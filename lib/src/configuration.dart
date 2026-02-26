@@ -147,17 +147,13 @@ class Configuration {
     required ConfigurationValues platformEnvConfig,
   }) =>
       Sentry.startSpan('Load Config', (span) {
-        final pubspec = Sentry.startSpan('Get Pubspec', (span) {
-          return ConfigReader.getPubspec();
-        }) as dynamic;
+        final pubspec = ConfigReader.getPubspec();
 
-        final configValues = Sentry.startSpan('Merge Config Values', (span) {
-          return ConfigurationValues.merged(
-            args: argsConfig,
-            file: fileConfig,
-            platformEnv: platformEnvConfig,
-          );
-        }) as ConfigurationValues;
+        final configValues = ConfigurationValues.merged(
+          args: argsConfig,
+          file: fileConfig,
+          platformEnv: platformEnvConfig,
+        );
 
         release = configValues.release;
         dist = configValues.dist;

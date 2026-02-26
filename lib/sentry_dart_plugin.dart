@@ -588,7 +588,12 @@ class SentryDartPlugin {
       } on Exception catch (exception, stackTrace) {
         span.status = SentrySpanStatusV2.error;
         Log.error('$errorMessage: \n$exception');
-        await Sentry.captureException(exception, stackTrace: stackTrace);
+        // Don't send the raw exception to Sentry — ProcessException includes
+        // the full command arguments which may contain auth tokens.
+        await Sentry.captureException(
+          Exception('$errorMessage: ${exception.runtimeType}'),
+          stackTrace: stackTrace,
+        );
         return false;
       }
 
