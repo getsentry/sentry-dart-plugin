@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Add Sentry tracing instrumentation to plugin execution ([#381](https://github.com/getsentry/sentry-dart-plugin/pull/381))
+
 ## 3.2.1
 
 ### Fixes
