@@ -18,9 +18,8 @@ Future<void> main(List<String> arguments) async {
     // Workaround until the following issue is fixed: https://github.com/getsentry/sentry-dart/issues/3541
     // Sentry currently swallows errors
     await Sentry.captureException(error, stackTrace: stackTrace);
-    await Sentry.close();
     rethrow;
+  } finally {
+    await Sentry.close();
   }
-
-  await Sentry.close();
 }
