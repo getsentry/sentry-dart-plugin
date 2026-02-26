@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
+import 'package:sentry/sentry.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
@@ -60,7 +61,8 @@ class SentryDartPlugin {
       }
 
       await _executeFinalizeRelease(release);
-    } on ExitError catch (e) {
+    } on ExitError catch (e, stackTrace) {
+      await Sentry.captureException(e, stackTrace: stackTrace);
       return e.code;
     }
     return 0;
@@ -156,8 +158,9 @@ class SentryDartPlugin {
     try {
       final fs = injector.get<FileSystem>();
       await uploadDartSymbolMap(fs: fs, config: _configuration);
-    } catch (e) {
+    } catch (e, stackTrace) {
       Log.error('Dart symbol map upload failed: $e');
+      await Sentry.captureException(e, stackTrace: stackTrace);
     } finally {
       Log.taskCompleted(taskName);
     }
@@ -502,8 +505,9 @@ class SentryDartPlugin {
       });
 
       exitCode = await process.exitCode;
-    } on Exception catch (exception) {
+    } on Exception catch (exception, stackTrace) {
       Log.error('$errorMessage: \n$exception');
+      await Sentry.captureException(exception, stackTrace: stackTrace);
       return false;
     }
 

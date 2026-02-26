@@ -8,6 +8,11 @@ environment:
   sdk: '>=2.17.0 <4.0.0'
 
 dependencies:
+  sentry:
+    git:
+      url: git@github.com:getsentry/sentry-dart.git
+      ref: feat/span-first
+      path: packages/dart
   yaml: ^3.1.0
   injector: ^3.0.0
   ansicolor: ^2.0.1
