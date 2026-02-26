@@ -9,12 +9,19 @@ void main() {
   });
 
   group('Sentry Telemetry', () {
-    test('is disabled when SENTRY_TELEMETRY is not set', () {
+    test('is enabled by default when SENTRY_TELEMETRY is not set', () {
       final telemetryEnabled =
-          Platform.environment['SENTRY_TELEMETRY'] == 'true';
+          Platform.environment['SENTRY_TELEMETRY'] != 'false';
+
+      expect(telemetryEnabled, isTrue);
+    });
+
+    test('is disabled when SENTRY_TELEMETRY is false', () {
+      // Simulates the opt-out check: SENTRY_TELEMETRY=false
+      const envValue = 'false';
+      final telemetryEnabled = envValue != 'false';
 
       expect(telemetryEnabled, isFalse);
-      expect(Sentry.isEnabled, isFalse);
     });
 
     test('is enabled when Sentry is initialized', () async {

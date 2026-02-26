@@ -5,7 +5,8 @@ import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 
 /// Main class that executes the SentryDartPlugin
 Future<void> main(List<String> arguments) async {
-  final telemetryEnabled = Platform.environment['SENTRY_TELEMETRY'] == 'true';
+  final telemetryEnabled =
+      Platform.environment['SENTRY_TELEMETRY'] != 'false';
 
   if (telemetryEnabled) {
     await Sentry.init((options) {
