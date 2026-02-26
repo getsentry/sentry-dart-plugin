@@ -5,8 +5,7 @@ import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 
 /// Main class that executes the SentryDartPlugin
 Future<void> main(List<String> arguments) async {
-  final telemetryEnabled =
-      Platform.environment['SENTRY_TELEMETRY'] != 'false';
+  final telemetryEnabled = isTelemetryEnabled(Platform.environment);
 
   if (telemetryEnabled) {
     await Sentry.init((options) {
@@ -25,6 +24,8 @@ Future<void> main(List<String> arguments) async {
     await Sentry.captureException(error, stackTrace: stackTrace);
     rethrow;
   } finally {
+    // Wait for the spans to be sent, close should actually flush them but it seems to be a bug.
+    await Future.delayed(const Duration(seconds: 3));
     await Sentry.close();
   }
 }

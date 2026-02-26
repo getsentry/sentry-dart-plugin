@@ -11,6 +11,14 @@ import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 import 'src/utils/extensions.dart';
 
+/// Whether telemetry is enabled based on the given environment variables.
+///
+/// Telemetry is opt-out: it is enabled by default and can be disabled by
+/// setting `SENTRY_TELEMETRY=false`.
+bool isTelemetryEnabled(Map<String, String> environment) {
+  return environment['SENTRY_TELEMETRY'] != 'false';
+}
+
 /// Class responsible to load the configurations and upload the
 /// debug symbols and source maps
 class SentryDartPlugin {
