@@ -82,6 +82,7 @@ class SentryDartPlugin {
 
         await _executeFinalizeRelease(release);
       } on ExitError catch (e, stackTrace) {
+        span.status = SentrySpanStatusV2.error;
         await Sentry.captureException(e, stackTrace: stackTrace);
         return e.code;
       }

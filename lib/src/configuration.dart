@@ -229,6 +229,8 @@ class Configuration {
 
         if (successful) {
           Log.taskCompleted(taskName);
+        } else {
+          span.status = SentrySpanStatusV2.error;
         }
         return successful;
       });
