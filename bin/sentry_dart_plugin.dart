@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:sentry/sentry.dart';
 import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
+import 'package:sentry_dart_plugin/src/utils/log.dart';
 
 /// Main class that executes the SentryDartPlugin
 Future<void> main(List<String> arguments) async {
@@ -25,6 +26,7 @@ Future<void> main(List<String> arguments) async {
     } finally {
       // Wait for the spans to be sent, close should actually flush them but it seems to be a bug.
       // https://github.com/getsentry/sentry-dart-plugin/issues/383
+      Log.info('Flushing telemetry before shutdown...');
       await Future.delayed(const Duration(seconds: 5));
       await Sentry.close();
     }
