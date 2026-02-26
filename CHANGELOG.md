@@ -5,6 +5,9 @@
 ### Internal
 
 - Add Sentry tracing instrumentation to plugin execution ([#381](https://github.com/getsentry/sentry-dart-plugin/pull/381))
+  - The plugin now sends anonymous telemetry data to Sentry to help us diagnose issues and improve reliability.
+  - No sensitive data (auth tokens, project names, organization slugs, or file paths) is collected.
+  - To opt out, set the environment variable `SENTRY_TELEMETRY=false` before running the plugin.
 
 ## 3.2.1
 
