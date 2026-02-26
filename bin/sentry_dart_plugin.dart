@@ -5,12 +5,16 @@ import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 
 /// Main class that executes the SentryDartPlugin
 Future<void> main(List<String> arguments) async {
-  await Sentry.init((options) {
-    options.dsn =
-        'https://deee7b2ab8f85d13be8afd3f93952660@o1.ingest.us.sentry.io/4510952342814720';
-    options.traceLifecycle = SentryTraceLifecycle.streaming;
-    options.tracesSampleRate = 1.0;
-  });
+  final telemetryEnabled = Platform.environment['SENTRY_TELEMETRY'] == 'true';
+
+  if (telemetryEnabled) {
+    await Sentry.init((options) {
+      options.dsn =
+          'https://deee7b2ab8f85d13be8afd3f93952660@o1.ingest.us.sentry.io/4510952342814720';
+      options.traceLifecycle = SentryTraceLifecycle.streaming;
+      options.tracesSampleRate = 1.0;
+    });
+  }
 
   try {
     exitCode = await SentryDartPlugin().run(arguments);
