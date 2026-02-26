@@ -116,20 +116,20 @@ class Configuration {
         const taskName = 'reading config values';
         Log.startingTask(taskName);
 
-        final argsConfig = Sentry.startSpan('Get Args Config', (span) {
+        final argsConfig = await Sentry.startSpan('Get Args Config', (span) {
           return ConfigurationValues.fromArguments(cliArguments);
-        }) as ConfigurationValues;
+        });
 
-        final fileConfig = Sentry.startSpan('Get File Config', (span) {
+        final fileConfig = await Sentry.startSpan('Get File Config', (span) {
           return ConfigurationValues.fromReader(ConfigReader());
-        }) as ConfigurationValues;
+        });
 
         final platformEnvConfig =
-            Sentry.startSpan('Get Platform Env Config', (span) {
+            await Sentry.startSpan('Get Platform Env Config', (span) {
           return ConfigurationValues.fromPlatformEnvironment(
             Platform.environment,
           );
-        }) as ConfigurationValues;
+        });
 
         loadConfig(
             argsConfig: argsConfig,
