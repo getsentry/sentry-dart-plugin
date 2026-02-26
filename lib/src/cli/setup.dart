@@ -20,13 +20,8 @@ class CLISetup {
     String downloadUrlPrefix,
     String? versionOverride,
   ) async =>
-      Sentry.startSpan('Download CLI', (span) async {
+      Sentry.startSpan('Download Sentry CLI', (span) async {
         final source = _sources[platform]!;
-        span.setAttributes({
-          'platform': SentryAttribute.string(platform.name),
-          'version': SentryAttribute.string(versionOverride ?? source.version),
-        });
-
         final dir = injector.get<FileSystem>().directory(directory);
         await dir.create(recursive: true);
         final file = dir.childFile('sentry-cli${platform.executableExtension}');
