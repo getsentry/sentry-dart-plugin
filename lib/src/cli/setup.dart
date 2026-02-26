@@ -26,6 +26,11 @@ class CLISetup {
         await dir.create(recursive: true);
         final file = dir.childFile('sentry-cli${platform.executableExtension}');
 
+        span.setAttributes({
+          'platform': SentryAttribute.string(platform.name),
+          'version': SentryAttribute.string(versionOverride ?? source.version),
+        });
+
         if (!await _check(source, file, versionOverride)) {
           await _download(source, file, downloadUrlPrefix, versionOverride);
         }

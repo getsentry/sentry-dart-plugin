@@ -249,8 +249,8 @@ class Configuration {
           try {
             cliPath = await _downloadSentryCli(platform);
           } catch (e) {
+            span.status = SentrySpanStatusV2.error;
             Log.error("Failed to download Sentry CLI: $e");
-
             cliPath = _getPreInstalledCli();
             Log.info('Trying to fallback to Sentry CLI at path: $cliPath');
           }

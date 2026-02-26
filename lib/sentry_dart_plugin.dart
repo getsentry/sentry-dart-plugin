@@ -192,6 +192,7 @@ class SentryDartPlugin {
           final fs = injector.get<FileSystem>();
           await uploadDartSymbolMap(fs: fs, config: _configuration);
         } catch (e, stackTrace) {
+          span.status = SentrySpanStatusV2.error;
           Log.error('Dart symbol map upload failed: $e');
           await Sentry.captureException(
             Exception('Dart symbol map upload failed: ${e.runtimeType}'),
