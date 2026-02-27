@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
-import 'package:sentry/sentry.dart';
 import 'package:system_info2/system_info2.dart';
 
 import 'cli/host_platform.dart';
@@ -111,151 +110,133 @@ class Configuration {
   late bool legacyWebSymbolication;
 
   /// Loads the configuration values
-  Future<void> getConfigValues(List<String> cliArguments) async =>
-      Sentry.startSpan('Read Config', (span) async {
-        const taskName = 'reading config values';
-        Log.startingTask(taskName);
+  Future<void> getConfigValues(List<String> cliArguments) async {
+    const taskName = 'reading config values';
+    Log.startingTask(taskName);
 
-        final argsConfig = await Sentry.startSpan('Get Args Config', (span) {
-          return ConfigurationValues.fromArguments(cliArguments);
-        });
+    loadConfig(
+      argsConfig: ConfigurationValues.fromArguments(cliArguments),
+      fileConfig: ConfigurationValues.fromReader(ConfigReader()),
+      platformEnvConfig: ConfigurationValues.fromPlatformEnvironment(
+        Platform.environment,
+      ),
+    );
 
-        final fileConfig = await Sentry.startSpan('Get File Config', (span) {
-          return ConfigurationValues.fromReader(ConfigReader());
-        });
+    await _findAndSetCliPath();
 
-        final platformEnvConfig =
-            await Sentry.startSpan('Get Platform Env Config', (span) {
-          return ConfigurationValues.fromPlatformEnvironment(
-            Platform.environment,
-          );
-        });
-
-        loadConfig(
-            argsConfig: argsConfig,
-            fileConfig: fileConfig,
-            platformEnvConfig: platformEnvConfig);
-
-        await _findAndSetCliPath();
-
-        Log.taskCompleted(taskName);
-      });
+    Log.taskCompleted(taskName);
+  }
 
   void loadConfig({
     required ConfigurationValues argsConfig,
     required ConfigurationValues fileConfig,
     required ConfigurationValues platformEnvConfig,
-  }) =>
-      Sentry.startSpan('Load Config', (span) {
-        final pubspec = ConfigReader.getPubspec();
+  }) {
+    final pubspec = ConfigReader.getPubspec();
 
-        final configValues = ConfigurationValues.merged(
-          args: argsConfig,
-          file: fileConfig,
-          platformEnv: platformEnvConfig,
-        );
+    final configValues = ConfigurationValues.merged(
+      args: argsConfig,
+      file: fileConfig,
+      platformEnv: platformEnvConfig,
+    );
 
-        release = configValues.release;
-        dist = configValues.dist;
-        version = configValues.version ?? pubspec['version'].toString();
-        name = configValues.name ?? pubspec['name'].toString();
-        uploadDebugSymbols = configValues.uploadDebugSymbols ?? true;
-        uploadSourceMaps = configValues.uploadSourceMaps ?? false;
-        uploadSources = configValues.uploadSources ?? false;
-        commits = configValues.commits ?? 'auto';
-        ignoreMissing = configValues.ignoreMissing ?? false;
+    release = configValues.release;
+    dist = configValues.dist;
+    version = configValues.version ?? pubspec['version'].toString();
+    name = configValues.name ?? pubspec['name'].toString();
+    uploadDebugSymbols = configValues.uploadDebugSymbols ?? true;
+    uploadSourceMaps = configValues.uploadSourceMaps ?? false;
+    uploadSources = configValues.uploadSources ?? false;
+    commits = configValues.commits ?? 'auto';
+    ignoreMissing = configValues.ignoreMissing ?? false;
 
-        buildFilesFolder = configValues.buildPath ?? 'build';
-        // uploading JS and Map files need to have the correct folder structure
-        // otherwise symbolication fails, the default path for the web build folder is web
-        // but can be customized so making it flexible.
-        final webBuildPath = configValues.webBuildPath ?? 'web';
-        webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
-        symbolsFolder = configValues.symbolsPath ?? '.';
-        dartSymbolMapPath = configValues.dartSymbolMapPath;
+    buildFilesFolder = configValues.buildPath ?? 'build';
+    // uploading JS and Map files need to have the correct folder structure
+    // otherwise symbolication fails, the default path for the web build folder is web
+    // but can be customized so making it flexible.
+    final webBuildPath = configValues.webBuildPath ?? 'web';
+    webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
+    symbolsFolder = configValues.symbolsPath ?? '.';
+    dartSymbolMapPath = configValues.dartSymbolMapPath;
 
-        project = configValues.project; // or env. var. SENTRY_PROJECT
-        org = configValues.org; // or env. var. SENTRY_ORG
-        waitForProcessing = configValues.waitForProcessing ?? false;
-        authToken = configValues.authToken; // or env. var. SENTRY_AUTH_TOKEN
-        url = configValues.url; // or env. var. SENTRY_URL
-        urlPrefix = configValues.urlPrefix;
-        logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
-        binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
-        binPath = configValues.binPath;
-        sentryCliCdnUrl = configValues.sentryCliCdnUrl ??
-            'https://downloads.sentry-cdn.com/sentry-cli';
-        sentryCliVersion = configValues.sentryCliVersion;
-        legacyWebSymbolication = configValues.legacyWebSymbolication ?? false;
-      });
+    project = configValues.project; // or env. var. SENTRY_PROJECT
+    org = configValues.org; // or env. var. SENTRY_ORG
+    waitForProcessing = configValues.waitForProcessing ?? false;
+    authToken = configValues.authToken; // or env. var. SENTRY_AUTH_TOKEN
+    url = configValues.url; // or env. var. SENTRY_URL
+    urlPrefix = configValues.urlPrefix;
+    logLevel = configValues.logLevel; // or env. var. SENTRY_LOG_LEVEL
+    binDir = configValues.binDir ?? '.dart_tool/pub/bin/sentry_dart_plugin';
+    binPath = configValues.binPath;
+    sentryCliCdnUrl = configValues.sentryCliCdnUrl ??
+        'https://downloads.sentry-cdn.com/sentry-cli';
+    sentryCliVersion = configValues.sentryCliVersion;
+    legacyWebSymbolication = configValues.legacyWebSymbolication ?? false;
+  }
 
   /// Validates the configuration values and log an error if required fields
   /// are missing
-  Future<bool> validateConfigValues() async =>
-      Sentry.startSpan('Validate Config', (span) {
-        const taskName = 'validating config values';
-        Log.startingTask(taskName);
+  bool validateConfigValues() {
+    const taskName = 'validating config values';
+    Log.startingTask(taskName);
 
-        final environments = Platform.environment;
+    final environments = Platform.environment;
 
-        var successful = true;
-        if (project.isNull && environments['SENTRY_PROJECT'].isNull) {
-          Log.error(
-              'Project is empty, check \'project\' at pubspec.yaml or SENTRY_PROJECT env. var.');
-          successful = false;
-        }
-        if (org.isNull && environments['SENTRY_ORG'].isNull) {
-          Log.error(
-              'Organization is empty, check \'org\' at pubspec.yaml or SENTRY_ORG env. var.');
-          successful = false;
-        }
-        if (authToken.isNull && environments['SENTRY_AUTH_TOKEN'].isNull) {
-          Log.error(
-              'Auth Token is empty, check \'auth_token\' at pubspec.yaml or SENTRY_AUTH_TOKEN env. var.');
-          successful = false;
-        }
+    var successful = true;
+    if (project.isNull && environments['SENTRY_PROJECT'].isNull) {
+      Log.error(
+          'Project is empty, check \'project\' at pubspec.yaml or SENTRY_PROJECT env. var.');
+      successful = false;
+    }
+    if (org.isNull && environments['SENTRY_ORG'].isNull) {
+      Log.error(
+          'Organization is empty, check \'org\' at pubspec.yaml or SENTRY_ORG env. var.');
+      successful = false;
+    }
+    if (authToken.isNull && environments['SENTRY_AUTH_TOKEN'].isNull) {
+      Log.error(
+          'Auth Token is empty, check \'auth_token\' at pubspec.yaml or SENTRY_AUTH_TOKEN env. var.');
+      successful = false;
+    }
 
-        try {
-          injector.get<ProcessManager>().runSync([cliPath!, 'help']);
-        } on Exception catch (exception) {
-          Log.error(
-              'sentry-cli is not available, please follow https://docs.sentry.io/product/cli/installation/ \n$exception');
-          successful = false;
-        }
+    try {
+      injector.get<ProcessManager>().runSync([cliPath!, 'help']);
+    } on Exception catch (exception) {
+      Log.error(
+          'sentry-cli is not available, please follow https://docs.sentry.io/product/cli/installation/ \n$exception');
+      successful = false;
+    }
 
-        if (successful) {
-          Log.taskCompleted(taskName);
-        } else {
-          span.status = SentrySpanStatusV2.error;
-        }
-        return successful;
-      });
+    if (successful) {
+      Log.taskCompleted(taskName);
+    }
+    return successful;
+  }
 
-  Future<void> _findAndSetCliPath() async =>
-      Sentry.startSpan('Find CLI', (span) async {
-        final platform = _getHostPlatform();
-        final binPath = this.binPath;
-        if (binPath != null && binPath.isNotEmpty) {
-          if (platform != null) {
-            await injector
-                .get<CLISetup>()
-                .check(platform, binPath, sentryCliCdnUrl, sentryCliVersion);
-          } else {
-            Log.warn('Host platform not supported. Cannot verify Sentry CLI.');
-          }
-          cliPath = binPath;
-          Log.info("Using Sentry CLI at path '$cliPath'");
-        } else {
-          try {
-            cliPath = await _downloadSentryCli(platform);
-          } catch (e) {
-            span.status = SentrySpanStatusV2.error;
-            Log.error("Failed to download Sentry CLI: $e");
-            cliPath = _getPreInstalledCli();
-            Log.info('Trying to fallback to Sentry CLI at path: $cliPath');
-          }
-        }
-      });
+  Future<void> _findAndSetCliPath() async {
+    final platform = _getHostPlatform();
+    final binPath = this.binPath;
+    if (binPath != null && binPath.isNotEmpty) {
+      if (platform != null) {
+        await injector
+            .get<CLISetup>()
+            .check(platform, binPath, sentryCliCdnUrl, sentryCliVersion);
+      } else {
+        Log.warn('Host platform not supported. Cannot verify Sentry CLI.');
+      }
+      cliPath = binPath;
+      Log.info("Using Sentry CLI at path '$cliPath'");
+    } else {
+      try {
+        cliPath = await _downloadSentryCli(platform);
+      } catch (e) {
+        Log.error("Failed to download Sentry CLI: $e");
+
+        cliPath = _getPreInstalledCli();
+        Log.info('Trying to fallback to Sentry CLI at path: $cliPath');
+      }
+    }
+  }
 
   String _getPreInstalledCli() {
     return Platform.isWindows ? 'sentry-cli.exe' : 'sentry-cli';

@@ -2,7 +2,6 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:file/file.dart';
 import 'package:http/http.dart' as http;
-import 'package:sentry/sentry.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 
 import '../utils/log.dart';
@@ -19,24 +18,19 @@ class CLISetup {
     String directory,
     String downloadUrlPrefix,
     String? versionOverride,
-  ) async =>
-      Sentry.startSpan('Download Sentry CLI', (span) async {
-        final source = _sources[platform]!;
-        final dir = injector.get<FileSystem>().directory(directory);
-        await dir.create(recursive: true);
-        final file = dir.childFile('sentry-cli${platform.executableExtension}');
+  ) async {
+    final dir = injector.get<FileSystem>().directory(directory);
+    await dir.create(recursive: true);
+    final file = dir.childFile('sentry-cli${platform.executableExtension}');
 
-        span.setAttributes({
-          'platform': SentryAttribute.string(platform.name),
-          'version': SentryAttribute.string(versionOverride ?? source.version),
-        });
+    final source = _sources[platform]!;
 
-        if (!await _check(source, file, versionOverride)) {
-          await _download(source, file, downloadUrlPrefix, versionOverride);
-        }
+    if (!await _check(source, file, versionOverride)) {
+      await _download(source, file, downloadUrlPrefix, versionOverride);
+    }
 
-        return file.path;
-      });
+    return file.path;
+  }
 
   Future<void> check(
     HostPlatform platform,
