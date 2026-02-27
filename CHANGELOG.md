@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Add Sentry tracing instrumentation to plugin execution ([#381](https://github.com/getsentry/sentry-dart-plugin/pull/381))
+  - The plugin now sends anonymous telemetry data to Sentry to help us diagnose issues and improve reliability.
+  - No sensitive data (auth tokens, project names, organization slugs, or file paths) is collected.
+  - To opt out, set the environment variable `SENTRY_TELEMETRY=false` before running the plugin.
+
+## 3.2.1
+
+### Fixes
+
+- Log level not respected when configured via env variables ([#370](https://github.com/getsentry/sentry-dart-plugin/pull/370))
+
+## 3.2.0
+
+### Features
+
+- Upload Dart symbol mapping file ([#347](https://github.com/getsentry/sentry-dart-plugin/pull/347))
+    - Enables symbolication of Flutter issue titles for obfuscated builds.
+    - Supported: Android and iOS
+    - Not supported (yet): macOS, Linux and Windows.
+    - Generate the mapping file: Add `--extra-gen-snapshot-options=--save-obfuscation-map=<path>` when building. Example: `flutter build apk --obfuscate --split-debug-info=build/symbols --extra-gen-snapshot-options=--save-obfuscation-map=build/mapping.json`
+    - Configure the plugin: Set `dart_symbol_map_path: build/mapping.json`
+    - Important: `dart_symbol_map_path` must point directly to the mapping file (absolute or relative path), not a directory.
+
 ## 3.2.0-beta.1
 
 ### Features

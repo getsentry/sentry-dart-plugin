@@ -281,12 +281,69 @@ void main() {
         'SENTRY_RELEASE': 'fixture-release',
         'SENTRY_DIST': 'fixture-dist',
         'SENTRYCLI_CDNURL': 'fixture-sentry_cli_cdn_url',
+        'SENTRY_LOG_LEVEL': 'debug',
       };
 
       final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
+      expect(sut.logLevel, 'debug');
+    });
+
+    test("fromPlatformEnvironment handles empty SENTRY_LOG_LEVEL", () {
+      final arguments = {
+        'SENTRY_LOG_LEVEL': '',
+      };
+
+      final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
+      expect(sut.logLevel, isNull);
+    });
+
+    test("merged gives priority to platformEnv.logLevel over args and file",
+        () {
+      final platformEnv = ConfigurationValues(logLevel: 'env-log-level');
+      final args = ConfigurationValues(logLevel: 'args-log-level');
+      final file = ConfigurationValues(logLevel: 'file-log-level');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.logLevel, 'env-log-level');
+    });
+
+    test("merged falls back to args.logLevel when platformEnv.logLevel is null",
+        () {
+      final platformEnv = ConfigurationValues();
+      final args = ConfigurationValues(logLevel: 'args-log-level');
+      final file = ConfigurationValues(logLevel: 'file-log-level');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.logLevel, 'args-log-level');
+    });
+
+    test(
+        "merged falls back to file.logLevel when platformEnv and args logLevel are null",
+        () {
+      final platformEnv = ConfigurationValues();
+      final args = ConfigurationValues();
+      final file = ConfigurationValues(logLevel: 'file-log-level');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.logLevel, 'file-log-level');
     });
   });
 }

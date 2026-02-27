@@ -165,10 +165,15 @@ class ConfigurationValues {
     if (envSentryCliCdnUrl?.isEmpty ?? false) {
       envSentryCliCdnUrl = null;
     }
+    String? envLogLevel = environment['SENTRY_LOG_LEVEL'];
+    if (envLogLevel?.isEmpty ?? false) {
+      envLogLevel = null;
+    }
     return ConfigurationValues(
       release: envRelease,
       dist: envDist,
       sentryCliCdnUrl: envSentryCliCdnUrl,
+      logLevel: envLogLevel,
     );
   }
 
@@ -189,7 +194,7 @@ class ConfigurationValues {
       url: args.url ?? file.url,
       urlPrefix: args.urlPrefix ?? file.urlPrefix,
       waitForProcessing: args.waitForProcessing ?? file.waitForProcessing,
-      logLevel: args.logLevel ?? file.logLevel,
+      logLevel: platformEnv.logLevel ?? args.logLevel ?? file.logLevel,
       release: platformEnv.release ?? args.release ?? file.release,
       dist: platformEnv.dist ?? args.dist ?? file.dist,
       buildPath: args.buildPath ?? file.buildPath,

@@ -1,5 +1,5 @@
 name: sentry_dart_plugin
-version: 3.2.0-beta.1
+version: 3.2.1
 description: Uploads debug symbols to Sentry for server-side symbolication.
 homepage: https://docs.sentry.io/platforms/dart/
 repository: https://github.com/getsentry/sentry-dart-plugin
@@ -8,6 +8,9 @@ environment:
   sdk: '>=2.17.0 <4.0.0'
 
 dependencies:
+  # TODO: Update to the stable span-first version once it's released
+  # https://github.com/getsentry/sentry-dart-plugin/issues/382
+  sentry: 9.15.0-dev.1
   yaml: ^3.1.0
   injector: ^3.0.0
   ansicolor: ^2.0.1
