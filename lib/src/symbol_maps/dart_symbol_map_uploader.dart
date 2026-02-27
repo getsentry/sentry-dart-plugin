@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:process/process.dart';
-import 'package:sentry/sentry.dart';
 import 'package:sentry_dart_plugin/src/utils/sentry_cli_args.dart';
 
 import '../configuration.dart';
@@ -32,76 +31,68 @@ class DartSymbolMapUploader {
     required Configuration config,
     required String symbolMapPath,
     required Iterable<String> debugFilePaths,
-  }) async =>
-      Sentry.startSpan('Upload Dart Symbol Maps', (span) async {
-        final cliPath = config.cliPath;
-        if (cliPath == null) {
-          Log.warn('Skipping Dart symbol map uploads: no CLI path provided.');
-          return;
+  }) async {
+    final cliPath = config.cliPath;
+    if (cliPath == null) {
+      Log.warn('Skipping Dart symbol map uploads: no CLI path provided.');
+      return;
+    }
+
+    final ProcessManager processManager = injector.get<ProcessManager>();
+
+    int attempted = 0;
+    int succeeded = 0;
+    int failed = 0;
+
+    try {
+      for (final String debugFilePath in debugFilePaths) {
+        attempted++;
+
+        final String? debugId = await _fetchDebugId(
+          processManager: processManager,
+          cliPath: cliPath,
+          debugFilePath: debugFilePath,
+        );
+        if (debugId != null && debugId.isNotEmpty) {
+          await _prependDebugIdMarkerToMapFile(symbolMapPath, debugId);
+        } else {
+          Log.warn(
+              'Could not resolve debug id for "$debugFilePath". Proceeding without map modification.');
         }
 
-        final ProcessManager processManager = injector.get<ProcessManager>();
+        Log.info(
+            "Uploading Dart symbol map '$symbolMapPath' paired with '$debugFilePath'");
 
-        int attempted = 0;
-        int succeeded = 0;
-        int failed = 0;
+        final args = [
+          ...config.baseArgs(),
+          'dart-symbol-map',
+          'upload',
+          ...config.orgProjectArgs(),
+          symbolMapPath,
+          debugFilePath,
+        ];
 
-        try {
-          for (final String debugFilePath in debugFilePaths) {
-            attempted++;
+        final int exitCode = await _startAndForward(
+          processManager: processManager,
+          cliPath: cliPath,
+          args: args,
+          errorContext: 'Failed to upload Dart symbol map for $debugFilePath',
+        );
 
-            final String? debugId = await _fetchDebugId(
-              processManager: processManager,
-              cliPath: cliPath,
-              debugFilePath: debugFilePath,
-            );
-            if (debugId != null && debugId.isNotEmpty) {
-              await _prependDebugIdMarkerToMapFile(symbolMapPath, debugId);
-            } else {
-              Log.warn(
-                  'Could not resolve debug id for "$debugFilePath". Proceeding without map modification.');
-            }
-
-            Log.info(
-                "Uploading Dart symbol map '$symbolMapPath' paired with '$debugFilePath'");
-
-            final args = [
-              ...config.baseArgs(),
-              'dart-symbol-map',
-              'upload',
-              ...config.orgProjectArgs(),
-              symbolMapPath,
-              debugFilePath,
-            ];
-
-            final int exitCode = await _startAndForward(
-              processManager: processManager,
-              cliPath: cliPath,
-              args: args,
-              errorContext:
-                  'Failed to upload Dart symbol map for $debugFilePath',
-              commandName: 'dart-symbol-map upload',
-            );
-
-            if (exitCode == 0) {
-              succeeded++;
-            } else {
-              failed++;
-            }
-
-            // Propagate non-zero exit code consistently with the plugin behavior.
-            Log.processExitCode(exitCode);
-          }
-        } finally {
-          span.setAttributes({
-            'attempted': SentryAttribute.int(attempted),
-            'succeeded': SentryAttribute.int(succeeded),
-            'failed': SentryAttribute.int(failed),
-          });
-          Log.info(
-              'Dart symbol map upload summary: attempted=$attempted, succeeded=$succeeded, failed=$failed');
+        if (exitCode == 0) {
+          succeeded++;
+        } else {
+          failed++;
         }
-      });
+
+        // Propagate non-zero exit code consistently with the plugin behavior.
+        Log.processExitCode(exitCode);
+      }
+    } finally {
+      Log.info(
+          'Dart symbol map upload summary: attempted=$attempted, succeeded=$succeeded, failed=$failed');
+    }
+  }
 
   /// Starts the process and forwards stdout/stderr to [Log]. Returns exit code.
   static Future<int> _startAndForward({
@@ -109,47 +100,31 @@ class DartSymbolMapUploader {
     required String cliPath,
     required List<String> args,
     required String errorContext,
-    required String commandName,
-  }) async =>
-      Sentry.startSpan('Execute Sentry CLI $commandName', (span) async {
-        span.setAttributes({
-          'cli.command': SentryAttribute.string(commandName),
-        });
-        int exitCode;
-        try {
-          final Process process =
-              await processManager.start([cliPath, ...args]);
+  }) async {
+    int exitCode;
+    try {
+      final Process process = await processManager.start([cliPath, ...args]);
 
-          process.stdout.transform(utf8.decoder).listen((String data) {
-            final String trimmed = data.trim();
-            if (trimmed.isNotEmpty) {
-              Log.info(trimmed);
-            }
-          });
-          process.stderr.transform(utf8.decoder).listen((String data) {
-            final String trimmed = data.trim();
-            if (trimmed.isNotEmpty) {
-              Log.error(trimmed);
-            }
-          });
-
-          exitCode = await process.exitCode;
-        } on Exception catch (exception) {
-          span.status = SentrySpanStatusV2.error;
-          Log.error('$errorContext: \n$exception');
-          return 1;
+      process.stdout.transform(utf8.decoder).listen((String data) {
+        final String trimmed = data.trim();
+        if (trimmed.isNotEmpty) {
+          Log.info(trimmed);
         }
-
-        span.setAttributes({
-          'exit_code': SentryAttribute.int(exitCode),
-        });
-
-        if (exitCode != 0) {
-          span.status = SentrySpanStatusV2.error;
-        }
-
-        return exitCode;
       });
+      process.stderr.transform(utf8.decoder).listen((String data) {
+        final String trimmed = data.trim();
+        if (trimmed.isNotEmpty) {
+          Log.error(trimmed);
+        }
+      });
+
+      exitCode = await process.exitCode;
+    } on Exception catch (exception) {
+      Log.error('$errorContext: \n$exception');
+      return 1;
+    }
+    return exitCode;
+  }
 
   /// Returns the debug id for the given [debugFilePath] by invoking:
   ///   sentry-cli debug-files check --json /debug_file_path
@@ -158,68 +133,56 @@ class DartSymbolMapUploader {
     required ProcessManager processManager,
     required String cliPath,
     required String debugFilePath,
-  }) async =>
-      Sentry.startSpan('Execute Sentry CLI debug-files check', (span) async {
-        span.setAttributes({
-          'cli.command': SentryAttribute.string('debug-files check'),
-        });
-        try {
-          final Process process = await processManager.start([
-            cliPath,
-            'debug-files',
-            'check',
-            '--json',
-            debugFilePath,
-          ]);
+  }) async {
+    try {
+      final Process process = await processManager.start([
+        cliPath,
+        'debug-files',
+        'check',
+        '--json',
+        debugFilePath,
+      ]);
 
-          final StringBuffer stdoutBuffer = StringBuffer();
-          final StringBuffer stderrBuffer = StringBuffer();
+      final StringBuffer stdoutBuffer = StringBuffer();
+      final StringBuffer stderrBuffer = StringBuffer();
 
-          process.stdout.transform(utf8.decoder).listen(stdoutBuffer.write);
-          process.stderr.transform(utf8.decoder).listen(stderrBuffer.write);
+      process.stdout.transform(utf8.decoder).listen(stdoutBuffer.write);
+      process.stderr.transform(utf8.decoder).listen(stderrBuffer.write);
 
-          final int code = await process.exitCode;
-          span.setAttributes({
-            'exit_code': SentryAttribute.int(code),
-          });
-          if (code != 0) {
-            span.status = SentrySpanStatusV2.error;
-            Log.warn(
-                'Failed to fetch debug id for "$debugFilePath" (exit=$code): ${stderrBuffer.toString().trim()}');
-            return null;
-          }
+      final int code = await process.exitCode;
+      if (code != 0) {
+        Log.warn(
+            'Failed to fetch debug id for "$debugFilePath" (exit=$code): ${stderrBuffer.toString().trim()}');
+        return null;
+      }
 
-          final String output = stdoutBuffer.toString().trim();
-          if (output.isEmpty) {
-            Log.warn(
-                'Empty output when fetching debug id for "$debugFilePath"');
-            return null;
-          }
+      final String output = stdoutBuffer.toString().trim();
+      if (output.isEmpty) {
+        Log.warn('Empty output when fetching debug id for "$debugFilePath"');
+        return null;
+      }
 
-          final dynamic decoded = jsonDecode(output);
-          if (decoded is! Map<String, dynamic>) {
-            Log.warn(
-                'Unexpected JSON when fetching debug id for "$debugFilePath"');
-            return null;
-          }
+      final dynamic decoded = jsonDecode(output);
+      if (decoded is! Map<String, dynamic>) {
+        Log.warn('Unexpected JSON when fetching debug id for "$debugFilePath"');
+        return null;
+      }
 
-          final variants = decoded['variants'];
-          if (variants is List && variants.isNotEmpty) {
-            final first = variants.first;
-            if (first is Map && first['debug_id'] is String) {
-              return first['debug_id'] as String;
-            }
-          }
-
-          Log.warn('No debug id found in variants for "$debugFilePath"');
-          return null;
-        } catch (e) {
-          span.status = SentrySpanStatusV2.error;
-          Log.warn(
-              'Exception while fetching debug id for "$debugFilePath": $e');
-          return null;
+      final variants = decoded['variants'];
+      if (variants is List && variants.isNotEmpty) {
+        final first = variants.first;
+        if (first is Map && first['debug_id'] is String) {
+          return first['debug_id'] as String;
         }
-      });
+      }
+
+      Log.warn('No debug id found in variants for "$debugFilePath"');
+      return null;
+    } catch (e) {
+      Log.warn('Exception while fetching debug id for "$debugFilePath": $e');
+      return null;
+    }
+  }
 
   static const _debugIdMarker = 'SENTRY_DEBUG_ID_MARKER';
 
