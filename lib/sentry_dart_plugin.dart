@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:file/file.dart';
 import 'package:process/process.dart';
+import 'package:sentry/sentry.dart';
 
 import 'src/configuration.dart';
 import 'src/utils/flutter_debug_files.dart';
@@ -9,6 +10,14 @@ import 'src/symbol_maps/dart_symbol_map.dart';
 import 'src/utils/injector.dart';
 import 'src/utils/log.dart';
 import 'src/utils/extensions.dart';
+
+/// Whether telemetry is enabled based on the given environment variables.
+///
+/// Telemetry is opt-out: it is enabled by default and can be disabled by
+/// setting `SENTRY_TELEMETRY=false`.
+bool isTelemetryEnabled(Map<String, String> environment) {
+  return environment['SENTRY_TELEMETRY'] != 'false';
+}
 
 /// Class responsible to load the configurations and upload the
 /// debug symbols and source maps
@@ -26,110 +35,143 @@ class SentryDartPlugin {
   Future<int> run(List<String> cliArguments) async {
     _configuration = injector.get<Configuration>();
 
-    try {
-      await _configuration.getConfigValues(cliArguments);
-      if (!_configuration.validateConfigValues()) {
-        return 1;
-      }
+    return Sentry.startSpan('Plugin Execution', (span) async {
+      try {
+        await _configuration.getConfigValues(cliArguments);
+        if (!await _configuration.validateConfigValues()) {
+          return 1;
+        }
 
-      if (_configuration.uploadDebugSymbols) {
-        await _executeCliForDebugSymbols();
-      } else {
-        Log.info('uploadNativeSymbols is disabled.');
-      }
+        // Not setting other attributes due to possible PII
+        span.setAttributes({
+          'config.upload_debug_symbols':
+              SentryAttribute.bool(_configuration.uploadDebugSymbols),
+          'config.upload_source_maps':
+              SentryAttribute.bool(_configuration.uploadSourceMaps),
+          'config.upload_sources':
+              SentryAttribute.bool(_configuration.uploadSources),
+          'config.wait_for_processing':
+              SentryAttribute.bool(_configuration.waitForProcessing),
+          'config.commits': SentryAttribute.string(_configuration.commits),
+          'config.ignore_missing':
+              SentryAttribute.bool(_configuration.ignoreMissing),
+          'config.legacy_web_symbolication':
+              SentryAttribute.bool(_configuration.legacyWebSymbolication),
+          'config.sentry_cli_version':
+              SentryAttribute.string(_configuration.sentryCliVersion ?? ''),
+        });
 
-      final release = _release;
-      final dist = _dist;
-
-      await _executeNewRelease(release);
-
-      if (_configuration.uploadSourceMaps) {
-        if (_configuration.legacyWebSymbolication) {
-          await _executeCliForLegacySourceMaps(release: release, dist: dist);
+        if (_configuration.uploadDebugSymbols) {
+          await _executeCliForDebugSymbols();
         } else {
-          await _executeCliForSourceMaps(release: release, dist: dist);
+          Log.info('uploadNativeSymbols is disabled.');
         }
-      } else {
-        Log.info('uploadSourceMaps is disabled.');
-      }
 
-      if (_configuration.commits.toLowerCase() != 'false') {
-        await _executeSetCommits(release);
-      } else {
-        Log.info('Commit integration is disabled.');
-      }
+        final release = _release;
+        final dist = _dist;
 
-      await _executeFinalizeRelease(release);
-    } on ExitError catch (e) {
-      return e.code;
-    }
-    return 0;
+        await _executeNewRelease(release);
+
+        if (_configuration.uploadSourceMaps) {
+          if (_configuration.legacyWebSymbolication) {
+            await _executeCliForLegacySourceMaps(release: release, dist: dist);
+          } else {
+            await _executeCliForSourceMaps(release: release, dist: dist);
+          }
+        } else {
+          Log.info('uploadSourceMaps is disabled.');
+        }
+
+        if (_configuration.commits.toLowerCase() != 'false') {
+          await _executeSetCommits(release);
+        } else {
+          Log.info('Commit integration is disabled.');
+        }
+
+        await _executeFinalizeRelease(release);
+      } on ExitError catch (e, stackTrace) {
+        span.status = SentrySpanStatusV2.error;
+        await Sentry.captureException(e, stackTrace: stackTrace);
+        return e.code;
+      }
+      return 0;
+    });
   }
 
-  Future<void> _executeCliForDebugSymbols() async {
-    const taskName = 'uploading debug symbols';
-    Log.startingTask(taskName);
+  Future<void> _executeCliForDebugSymbols() async =>
+      Sentry.startSpan('Upload Debug Symbols', (span) async {
+        const taskName = 'uploading debug symbols';
+        Log.startingTask(taskName);
 
-    List<String> params = [];
+        List<String> params = [];
 
-    _setUrlAndTokenAndLog(params);
+        _setUrlAndTokenAndLog(params);
 
-    params.add('debug-files');
-    params.add('upload');
+        params.add('debug-files');
+        params.add('upload');
 
-    _addOrgAndProject(params);
+        _addOrgAndProject(params);
 
-    if (_configuration.uploadSources) {
-      params.add('--include-sources');
-    } else {
-      Log.info('includeSources is disabled, not uploading sources.');
-    }
-
-    _addWait(params);
-
-    final fs = injector.get<FileSystem>();
-    final debugSymbolPaths =
-        enumerateDebugSearchRoots(fs: fs, config: _configuration);
-    await for (final path in debugSymbolPaths) {
-      if (await fs.directory(path).exists() || await fs.file(path).exists()) {
-        await _executeAndLog('Failed to upload symbols', [...params, path]);
-      }
-    }
-
-    for (final path in await _enumerateSymbolFiles()) {
-      await _executeAndLog('Failed to upload symbols', [...params, path]);
-    }
-
-    await _tryUploadDartSymbolMap();
-
-    Log.taskCompleted(taskName);
-  }
-
-  Future<Set<String>> _enumerateSymbolFiles() async {
-    final result = <String>{};
-    final fs = injector.get<FileSystem>();
-
-    if (_configuration.symbolsFolder.isNotEmpty) {
-      final symbolsRootDir = fs.directory(_configuration.symbolsFolder);
-      if (await symbolsRootDir.exists()) {
-        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
-          result.add(entry.path);
+        if (_configuration.uploadSources) {
+          params.add('--include-sources');
+        } else {
+          Log.info('includeSources is disabled, not uploading sources.');
         }
-      }
-    }
 
-    // for backward compatibility, also check the build dir if it has been
-    // configured with a different path.
-    if (_configuration.buildFilesFolder != _configuration.symbolsFolder) {
-      final symbolsRootDir = fs.directory(_configuration.buildFilesFolder);
-      if (await symbolsRootDir.exists()) {
-        await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
-          result.add(entry.path);
+        _addWait(params);
+
+        final fs = injector.get<FileSystem>();
+        final debugSymbolPaths =
+            enumerateDebugSearchRoots(fs: fs, config: _configuration);
+        await for (final path in debugSymbolPaths) {
+          if (await fs.directory(path).exists() ||
+              await fs.file(path).exists()) {
+            await _executeAndLog('debug-files upload',
+                'Failed to upload symbols', [...params, path]);
+          }
         }
-      }
-    }
-    return result;
-  }
+
+        for (final path in await _enumerateSymbolFiles()) {
+          await _executeAndLog('debug-files upload', 'Failed to upload symbols',
+              [...params, path]);
+        }
+
+        await _tryUploadDartSymbolMap();
+
+        Log.taskCompleted(taskName);
+      });
+
+  Future<Set<String>> _enumerateSymbolFiles() async =>
+      Sentry.startSpan('Enumerate Symbol Files', (span) async {
+        final result = <String>{};
+        final fs = injector.get<FileSystem>();
+
+        if (_configuration.symbolsFolder.isNotEmpty) {
+          final symbolsRootDir = fs.directory(_configuration.symbolsFolder);
+          if (await symbolsRootDir.exists()) {
+            await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+              result.add(entry.path);
+            }
+          }
+        }
+
+        // for backward compatibility, also check the build dir if it has been
+        // configured with a different path.
+        if (_configuration.buildFilesFolder != _configuration.symbolsFolder) {
+          final symbolsRootDir = fs.directory(_configuration.buildFilesFolder);
+          if (await symbolsRootDir.exists()) {
+            await for (final entry in symbolsRootDir.find(symbolFileRegexp)) {
+              result.add(entry.path);
+            }
+          }
+        }
+
+        span.setAttributes({
+          'files_found': SentryAttribute.int(result.length),
+        });
+
+        return result;
+      });
 
   List<String> _baseCliParams({bool addReleases = false}) {
     final params = <String>[];
@@ -149,50 +191,67 @@ class SentryDartPlugin {
 
   /// Upload Dart symbol map(s) if configured.
   /// This is needed to symbolicate Flutter issue titles for obfuscated builds.
-  Future<void> _tryUploadDartSymbolMap() async {
-    const taskName = 'uploading Dart symbol map(s)';
-    Log.startingTask(taskName);
+  Future<void> _tryUploadDartSymbolMap() async =>
+      Sentry.startSpan('Upload Dart Symbol Map', (span) async {
+        const taskName = 'uploading Dart symbol map(s)';
+        Log.startingTask(taskName);
 
-    try {
-      final fs = injector.get<FileSystem>();
-      await uploadDartSymbolMap(fs: fs, config: _configuration);
-    } catch (e) {
-      Log.error('Dart symbol map upload failed: $e');
-    } finally {
-      Log.taskCompleted(taskName);
-    }
-  }
+        try {
+          final fs = injector.get<FileSystem>();
+          await uploadDartSymbolMap(fs: fs, config: _configuration);
+        } catch (e, stackTrace) {
+          span.status = SentrySpanStatusV2.error;
+          Log.error('Dart symbol map upload failed: $e');
+          await Sentry.captureException(
+            Exception('Dart symbol map upload failed: ${e.runtimeType}'),
+            stackTrace: stackTrace,
+          );
+        } finally {
+          Log.taskCompleted(taskName);
+        }
+      });
 
-  Future<void> _executeNewRelease(String release) async {
-    await _executeAndLog('Failed to create a new release',
-        [..._releasesCliParams(), 'new', release]);
-  }
+  Future<void> _executeNewRelease(String release) async =>
+      Sentry.startSpan('Create Release', (span) async {
+        await _executeAndLog('releases new', 'Failed to create a new release',
+            [..._releasesCliParams(), 'new', release]);
+      });
 
-  Future<void> _executeFinalizeRelease(String release) async {
-    await _executeAndLog('Failed to finalize the new release',
-        [..._releasesCliParams(), 'finalize', release]);
-  }
+  Future<void> _executeFinalizeRelease(String release) async =>
+      Sentry.startSpan('Finalize Release', (span) async {
+        await _executeAndLog(
+            'releases finalize',
+            'Failed to finalize the new release',
+            [..._releasesCliParams(), 'finalize', release]);
+      });
 
-  Future<void> _executeSetCommits(String release) async {
-    final params = [
-      ..._releasesCliParams(),
-      'set-commits',
-      release,
-    ];
+  Future<void> _executeSetCommits(String release) async =>
+      Sentry.startSpan('Set Commits', (span) async {
+        final params = [
+          ..._releasesCliParams(),
+          'set-commits',
+          release,
+        ];
 
-    if (['auto', 'true', ''].contains(_configuration.commits.toLowerCase())) {
-      params.add('--auto');
-    } else {
-      params.add('--commit');
-      params.add(_configuration.commits);
-    }
+        final commitsMode = _configuration.commits.toLowerCase();
+        if (['auto', 'true', ''].contains(commitsMode)) {
+          params.add('--auto');
+        } else {
+          params.add('--commit');
+          params.add(_configuration.commits);
+        }
 
-    if (_configuration.ignoreMissing) {
-      params.add('--ignore-missing');
-    }
+        span.setAttributes({
+          'commits_mode': SentryAttribute.string(commitsMode),
+        });
 
-    await _executeAndLog('Failed to set commits', params);
-  }
+        if (_configuration.ignoreMissing) {
+          params.add('--ignore-missing');
+        }
+
+        await _executeAndLog(
+            'releases set-commits', 'Failed to set commits', params);
+      });
 
   Future<List<String>> _findAllJsFilePaths() async {
     final List<String> jsFiles = [];
@@ -234,76 +293,87 @@ class SentryDartPlugin {
     return sourceMapFiles;
   }
 
-  Future<bool> _injectDebugIds() async {
-    List<String> params = [];
-    params.add('sourcemaps');
+  Future<bool> _injectDebugIds() async =>
+      Sentry.startSpan('Inject Debug IDs', (span) async {
+        List<String> params = [];
+        params.add('sourcemaps');
 
-    // There is currently a sentry-cli bug that mutates the Flutter Web source map
-    // in such a way that it becomes corrupt / invalid -> that's why we need to
-    // inject each file separately instead of using a directory
-    // TODO(buenaflor): in the future we should use the directory when sentry-cli is fixed
-    final jsFilePaths = await _findAllJsFilePaths();
-    if (jsFilePaths.isEmpty) {
-      return false;
-    }
+        // There is currently a sentry-cli bug that mutates the Flutter Web source map
+        // in such a way that it becomes corrupt / invalid -> that's why we need to
+        // inject each file separately instead of using a directory
+        // TODO(buenaflor): in the future we should use the directory when sentry-cli is fixed
+        final jsFilePaths = await _findAllJsFilePaths();
+        if (jsFilePaths.isEmpty) {
+          span.setAttributes({
+            'js_files_found': SentryAttribute.int(0),
+          });
+          return false;
+        }
 
-    params.add('inject');
-    for (final path in jsFilePaths) {
-      params.add(path);
-    }
+        span.setAttributes({
+          'js_files_found': SentryAttribute.int(jsFilePaths.length),
+        });
 
-    params.addAll(_baseCliParams());
+        params.add('inject');
+        for (final path in jsFilePaths) {
+          params.add(path);
+        }
 
-    return await _executeAndLog('Failed to inject debug ids', params);
-  }
+        params.addAll(_baseCliParams());
+
+        return _executeAndLog(
+            'sourcemaps inject', 'Failed to inject debug ids', params);
+      });
 
   Future<void> _uploadSourceMaps(
-      {required String release, required String? dist}) async {
-    List<String> params = [];
+          {required String release, required String? dist}) async =>
+      Sentry.startSpan('Upload Source Map Files', (span) async {
+        List<String> params = [];
 
-    _setUrlAndTokenAndLog(params);
-    params.add('sourcemaps');
-    params.add('upload');
-    params.add('--release');
-    params.add(release);
-    if (dist != null) {
-      params.add('--dist');
-      params.add(dist);
-    }
-    _addWait(params);
-    _addUrlPrefix(params);
-    params.add(_configuration.webBuildFilesFolder);
-    params.add('--ext');
-    params.add('js');
-    params.add('--ext');
-    params.add('map');
+        _setUrlAndTokenAndLog(params);
+        params.add('sourcemaps');
+        params.add('upload');
+        params.add('--release');
+        params.add(release);
+        if (dist != null) {
+          params.add('--dist');
+          params.add(dist);
+        }
+        _addWait(params);
+        _addUrlPrefix(params);
+        params.add(_configuration.webBuildFilesFolder);
+        params.add('--ext');
+        params.add('js');
+        params.add('--ext');
+        params.add('map');
 
-    final sourceMapFiles = await _findAllSourceMapFiles();
-    final prefixesToStrip = await _extractPrefixesToStrip(sourceMapFiles);
+        final sourceMapFiles = await _findAllSourceMapFiles();
+        final prefixesToStrip = await _extractPrefixesToStrip(sourceMapFiles);
 
-    if (prefixesToStrip.isEmpty) {
-      Log.info('No prefixes to strip found in source maps.');
-    }
+        if (prefixesToStrip.isEmpty) {
+          Log.info('No prefixes to strip found in source maps.');
+        }
 
-    for (final prefix in prefixesToStrip) {
-      params.add('--strip-prefix');
-      params.add(prefix);
-    }
+        for (final prefix in prefixesToStrip) {
+          params.add('--strip-prefix');
+          params.add(prefix);
+        }
 
-    if (_configuration.uploadSources) {
-      // In the sourcemap dart source files are prefixed with /lib - we'd have to
-      // add the --url-prefix ~/lib however this would be applied to all files - even the source map -
-      // and not only the dart source files meaning symbolication would not work correctly
-      // TODO(buenaflor): revisit this approach when we can add --url-prefixes to specific files
-      params.add('./');
-      params.add('--ext');
-      params.add('dart');
-    }
+        if (_configuration.uploadSources) {
+          // In the sourcemap dart source files are prefixed with /lib - we'd have to
+          // add the --url-prefix ~/lib however this would be applied to all files - even the source map -
+          // and not only the dart source files meaning symbolication would not work correctly
+          // TODO(buenaflor): revisit this approach when we can add --url-prefixes to specific files
+          params.add('./');
+          params.add('--ext');
+          params.add('dart');
+        }
 
-    params.addAll(_baseCliParams());
+        params.addAll(_baseCliParams());
 
-    await _executeAndLog('Failed to sources files', params);
-  }
+        await _executeAndLog(
+            'sourcemaps upload', 'Failed to sources files', params);
+      });
 
   /// Extracts and returns a list of path prefixes to strip from source maps.
   ///
@@ -312,149 +382,169 @@ class SentryDartPlugin {
   /// - Paths leading up to Flutter source references
   /// - General relative path prefixes like '../', '../../', etc.
   Future<List<String>> _extractPrefixesToStrip(
-      List<File> sourceMapFiles) async {
-    final Set<String> flutterPrefixes = {};
-    final Set<String> parentDirPrefixes = {};
-    final parentDirPattern = RegExp(r'^(?:\.\./)+');
-    const flutterFragment = '/flutter/packages/flutter/lib/src/';
+          List<File> sourceMapFiles) async =>
+      Sentry.startSpan('Extract Prefixes To Strip', (span) async {
+        final Set<String> flutterPrefixes = {};
+        final Set<String> parentDirPrefixes = {};
+        final parentDirPattern = RegExp(r'^(?:\.\./)+');
+        const flutterFragment = '/flutter/packages/flutter/lib/src/';
 
-    for (final sourceMapFile in sourceMapFiles) {
-      late final Map<String, dynamic> sourceMap;
-      try {
-        final content = await sourceMapFile.readAsString();
-        sourceMap = jsonDecode(content) as Map<String, dynamic>;
-      } catch (e) {
-        Log.warn(
-            'Prefix Extraction: could not decode source map file ${sourceMapFile.path}');
-        continue;
-      }
+        for (final sourceMapFile in sourceMapFiles) {
+          late final Map<String, dynamic> sourceMap;
+          try {
+            final content = await sourceMapFile.readAsString();
+            sourceMap = jsonDecode(content) as Map<String, dynamic>;
+          } catch (e) {
+            Log.warn(
+                'Prefix Extraction: could not decode source map file ${sourceMapFile.path}');
+            continue;
+          }
 
-      final sources = sourceMap['sources'];
-      if (sources is! List) {
-        Log.info(
-            'Prefix Extraction: no sources found in source map file ${sourceMapFile.path}');
-        continue;
-      }
+          final sources = sourceMap['sources'];
+          if (sources is! List) {
+            Log.info(
+                'Prefix Extraction: no sources found in source map file ${sourceMapFile.path}');
+            continue;
+          }
 
-      for (final entry in sources.whereType<String>()) {
-        final index = entry.indexOf(flutterFragment);
-        if (index > 0) {
-          flutterPrefixes.add(entry.substring(0, index));
+          for (final entry in sources.whereType<String>()) {
+            final index = entry.indexOf(flutterFragment);
+            if (index > 0) {
+              flutterPrefixes.add(entry.substring(0, index));
+            }
+          }
+
+          for (final entry in sources.whereType<String>()) {
+            final match = parentDirPattern.firstMatch(entry);
+            if (match != null) {
+              final prefix = match.group(0)!;
+              // Each ../ segment is 3 characters long.
+              final matchCount = prefix.length ~/ 3;
+              parentDirPrefixes.add('../' * matchCount);
+            }
+          }
         }
-      }
 
-      for (final entry in sources.whereType<String>()) {
-        final match = parentDirPattern.firstMatch(entry);
-        if (match != null) {
-          final prefix = match.group(0)!;
-          // Each ../ segment is 3 characters long.
-          final matchCount = prefix.length ~/ 3;
-          parentDirPrefixes.add('../' * matchCount);
-        }
-      }
-    }
+        final sortedParentDirPrefixes = parentDirPrefixes.toList()
+          ..sort(
+              (a, b) => b.split('../').length.compareTo(a.split('../').length));
 
-    final sortedParentDirPrefixes = parentDirPrefixes.toList()
-      ..sort((a, b) => b.split('../').length.compareTo(a.split('../').length));
+        final result = [
+          ...flutterPrefixes,
+          ...sortedParentDirPrefixes,
+        ];
 
-    return [
-      ...flutterPrefixes,
-      ...sortedParentDirPrefixes,
-    ];
-  }
+        span.setAttributes({
+          'source_map_files_parsed': SentryAttribute.int(sourceMapFiles.length),
+          'prefixes_found': SentryAttribute.int(result.length),
+        });
+
+        return result;
+      });
 
   Future<void> _executeCliForLegacySourceMaps(
-      {required String release, required String? dist}) async {
-    void addExtensionToParams(List<String> exts, List<String> params,
-        String release, String folder, String? urlPrefix) {
-      params.add('files');
-      params.add(release);
-      params.add('upload-sourcemaps');
-      params.add(folder);
+          {required String release, required String? dist}) async =>
+      Sentry.startSpan('Upload Source Maps', (span) async {
+        span.setAttributes({
+          'legacy': SentryAttribute.bool(true),
+        });
 
-      for (final ext in exts) {
-        params.add('--ext');
-        params.add(ext);
-      }
+        void addExtensionToParams(List<String> exts, List<String> params,
+            String release, String folder, String? urlPrefix) {
+          params.add('files');
+          params.add(release);
+          params.add('upload-sourcemaps');
+          params.add(folder);
 
-      final configDist = _configuration.dist ?? "";
-      if (configDist.isNotEmpty) {
-        // Don't mutate dist users provide through env or plugin config.
-        params.add('--dist');
-        params.add(configDist);
-      } else if (release.contains('+')) {
-        params.add('--dist');
-        final values = release.split('+');
-        params.add(values.last);
-      }
+          for (final ext in exts) {
+            params.add('--ext');
+            params.add(ext);
+          }
 
-      if (urlPrefix != null) {
-        params.add("--url-prefix");
-        params.add(urlPrefix);
-      }
-    }
+          final configDist = _configuration.dist ?? "";
+          if (configDist.isNotEmpty) {
+            // Don't mutate dist users provide through env or plugin config.
+            params.add('--dist');
+            params.add(configDist);
+          } else if (release.contains('+')) {
+            params.add('--dist');
+            final values = release.split('+');
+            params.add(values.last);
+          }
 
-    const taskName = 'uploading source maps';
-    Log.startingTask(taskName);
+          if (urlPrefix != null) {
+            params.add("--url-prefix");
+            params.add(urlPrefix);
+          }
+        }
 
-    final params = <String>[];
-    _setUrlAndTokenAndLog(params);
-    params.add('releases');
-    _addOrgAndProject(params);
+        const taskName = 'uploading source maps';
+        Log.startingTask(taskName);
 
-    // upload source maps (js and map)
-    List<String> releaseJsFilesParams = [];
-    releaseJsFilesParams.addAll(params);
+        final params = <String>[];
+        _setUrlAndTokenAndLog(params);
+        params.add('releases');
+        _addOrgAndProject(params);
 
-    addExtensionToParams(
-      ['map', 'js'],
-      releaseJsFilesParams,
-      release,
-      _configuration.webBuildFilesFolder,
-      null,
-    );
+        // upload source maps (js and map)
+        List<String> releaseJsFilesParams = [];
+        releaseJsFilesParams.addAll(params);
 
-    _addWait(releaseJsFilesParams);
-    _addUrlPrefix(releaseJsFilesParams);
+        addExtensionToParams(
+          ['map', 'js'],
+          releaseJsFilesParams,
+          release,
+          _configuration.webBuildFilesFolder,
+          null,
+        );
 
-    await _executeAndLog('Failed to upload source maps', releaseJsFilesParams);
+        _addWait(releaseJsFilesParams);
+        _addUrlPrefix(releaseJsFilesParams);
 
-    if (_configuration.uploadSources) {
-      // upload source files (dart)
-      List<String> releaseDartFilesParams = [];
-      releaseDartFilesParams.addAll(params);
+        await _executeAndLog('releases files upload-sourcemaps',
+            'Failed to upload source maps', releaseJsFilesParams);
 
-      addExtensionToParams(
-        ['dart'],
-        releaseDartFilesParams,
-        release,
-        'lib',
-        '~/lib/',
-      );
+        if (_configuration.uploadSources) {
+          // upload source files (dart)
+          List<String> releaseDartFilesParams = [];
+          releaseDartFilesParams.addAll(params);
 
-      _addWait(releaseDartFilesParams);
+          addExtensionToParams(
+            ['dart'],
+            releaseDartFilesParams,
+            release,
+            'lib',
+            '~/lib/',
+          );
 
-      await _executeAndLog(
-          'Failed to upload source files', releaseDartFilesParams);
-    }
+          _addWait(releaseDartFilesParams);
 
-    Log.taskCompleted(taskName);
-  }
+          await _executeAndLog('releases files upload-sourcemaps',
+              'Failed to upload source files', releaseDartFilesParams);
+        }
+
+        Log.taskCompleted(taskName);
+      });
 
   Future<void> _executeCliForSourceMaps(
-      {required String release, required String? dist}) async {
-    const taskName = 'uploading source maps';
-    Log.startingTask(taskName);
+          {required String release, required String? dist}) async =>
+      Sentry.startSpan('Upload Source Maps', (span) async {
+        span.setAttributes({
+          'legacy': SentryAttribute.bool(false),
+        });
 
-    final debugIdInjectionSucceeded = await _injectDebugIds();
-    if (debugIdInjectionSucceeded) {
-      await _uploadSourceMaps(release: release, dist: dist);
-    } else {
-      Log.warn('Skipping source maps upload. Could not inject debug ids.');
-    }
+        const taskName = 'uploading source maps';
+        Log.startingTask(taskName);
 
-    Log.taskCompleted(taskName);
-  }
+        final debugIdInjectionSucceeded = await _injectDebugIds();
+        if (debugIdInjectionSucceeded) {
+          await _uploadSourceMaps(release: release, dist: dist);
+        } else {
+          Log.warn('Skipping source maps upload. Could not inject debug ids.');
+        }
+
+        Log.taskCompleted(taskName);
+      });
 
   void _addUrlPrefix(List<String> releaseDartFilesParams) {
     if (_configuration.urlPrefix != null) {
@@ -485,30 +575,51 @@ class SentryDartPlugin {
     }
   }
 
-  Future<bool> _executeAndLog(String errorMessage, List<String> params) async {
-    int? exitCode;
+  Future<bool> _executeAndLog(
+      String commandName, String errorMessage, List<String> params) async {
+    return Sentry.startSpan('Execute Sentry CLI $commandName', (span) async {
+      span.setAttributes({
+        'cli.command': SentryAttribute.string(commandName),
+      });
+      int? exitCode;
 
-    try {
-      final process = await injector
-          .get<ProcessManager>()
-          .start([_configuration.cliPath!, ...params]);
+      try {
+        final process = await injector
+            .get<ProcessManager>()
+            .start([_configuration.cliPath!, ...params]);
 
-      process.stdout.transform(utf8.decoder).listen((data) {
-        Log.info(data.trim());
+        process.stdout.transform(utf8.decoder).listen((data) {
+          Log.info(data.trim());
+        });
+
+        process.stderr.transform(utf8.decoder).listen((data) {
+          Log.error(data.trim());
+        });
+
+        exitCode = await process.exitCode;
+      } on Exception catch (exception, stackTrace) {
+        span.status = SentrySpanStatusV2.error;
+        Log.error('$errorMessage: \n$exception');
+        // Don't send the raw exception to Sentry — ProcessException includes
+        // the full command arguments which may contain auth tokens.
+        await Sentry.captureException(
+          Exception('$errorMessage: ${exception.runtimeType}'),
+          stackTrace: stackTrace,
+        );
+        return false;
+      }
+
+      span.setAttributes({
+        'exit_code': SentryAttribute.int(exitCode),
       });
 
-      process.stderr.transform(utf8.decoder).listen((data) {
-        Log.error(data.trim());
-      });
+      if (exitCode != 0) {
+        span.status = SentrySpanStatusV2.error;
+      }
 
-      exitCode = await process.exitCode;
-    } on Exception catch (exception) {
-      Log.error('$errorMessage: \n$exception');
-      return false;
-    }
-
-    Log.processExitCode(exitCode);
-    return exitCode == 0;
+      Log.processExitCode(exitCode);
+      return exitCode == 0;
+    });
   }
 
   String get _release {
