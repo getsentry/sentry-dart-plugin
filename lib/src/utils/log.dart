@@ -35,6 +35,7 @@ class Log {
   static final _gray09 = AnsiPen()..gray(level: 0.9);
   static int _numberOfTasksCompleted = 0;
   static int _lastMessageLength = 0;
+  static Map<String, String> tasks = {};
 
   /// Log with colors.
   Log();
@@ -81,6 +82,7 @@ class Log {
 
   /// Info log on a new task
   static void startingTask(String name) {
+    tasks[name] = 'start';
     final emptyStr = _getlastMessageemptyStringLength();
     _lastMessageLength = name.length;
     _renderProgressBar();
@@ -89,9 +91,10 @@ class Log {
 
   /// Info log on a completed task
   static void taskCompleted(String name) {
+    tasks[name] = 'completed';
     _numberOfTasksCompleted++;
     stdout.writeCharCode(13);
-    stdout.write(_green('☑ '));
+    stdout.write(_green('✓ '));
     stdout.writeln(
         '$name                                                             ');
     if (_numberOfTasksCompleted >= _numberOfAllTasks) {
@@ -99,6 +102,46 @@ class Log {
       _renderProgressBar();
       stdout.writeln(emptyStr);
     }
+  }
+
+  /// Info log on a skipped task.
+  ///
+  /// e.g when some operations implicitly trigger related tasks for example,
+  /// uploading debug symbols for a Windows build may also queue a sourcemap upload
+  /// if the sourcemaps upload config is set up
+  static void taskSkipped(String name) {
+    tasks[name] = 'skipped';
+    stdout.writeCharCode(13);
+    stdout.write(_green('⏭ '));
+    stdout.writeln(
+        '$name                                                             ');
+  }
+
+  /// Logs a summary of executed tasks
+  static void tasksSummary() {
+    stdout.writeln();
+    stdout.writeln(_gray09('Tasks Summary:'));
+    var completedCount = tasks.values.where((s) => s == 'completed').length;
+    var skippedCount = tasks.values.where((s) => s == 'skipped').length;
+    var startedCount = tasks.values.where((s) => s == 'started').length;
+
+    stdout.writeln(_green('✔ Completed: $completedCount'));
+    stdout.writeln(_yellow('⏭ Skipped: $skippedCount'));
+    stdout.writeln();
+
+    tasks.forEach((name, status) {
+      if (status == 'completed' || status == 'skipped') {
+        String icon = status == 'completed' ? '✔' : '⏭';
+        AnsiPen pen = status == 'completed' ? _green : _yellow;
+        stdout.writeln(pen('$icon $name'));
+      } else if (status == 'started') {
+        // This case is very unlikely to happen but let's still log it if it does
+        AnsiPen pen = _yellow;
+        stdout
+            .writeln(pen('$startedCount tasks were started but not finished.'));
+      }
+    });
+    stdout.writeln();
   }
 
   static String _getlastMessageemptyStringLength() {
