@@ -23,6 +23,7 @@ void main() {
         "--sentry-define=org=fixture-org",
         "--sentry-define=auth_token=fixture-auth_token",
         "--sentry-define=url=fixture-url",
+        "--sentry-define=dart_symbol_map_path=fixture-dart-symbol-map.json",
         "--sentry-define=wait_for_processing=true",
         "--sentry-define=log_level=fixture-log_level",
         "--sentry-define=release=fixture-release",
@@ -48,6 +49,7 @@ void main() {
       expect(sut.org, 'fixture-org');
       expect(sut.authToken, 'fixture-auth_token');
       expect(sut.url, 'fixture-url');
+      expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -92,6 +94,7 @@ void main() {
       upload_source_maps: true
       upload_sources: true
       url: fixture-url
+      dart_symbol_map_path: fixture-dart-symbol-map.json
       wait_for_processing: true
       log_level: fixture-log_level
       release: fixture-release
@@ -138,6 +141,7 @@ void main() {
       expect(sut.org, 'o');
       expect(sut.authToken, 't');
       expect(sut.url, 'fixture-url');
+      expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -161,6 +165,7 @@ void main() {
       upload_source_maps=true
       upload_sources=true
       url=fixture-url
+      dart_symbol_map_path=fixture-dart-symbol-map.json
       wait_for_processing=true
       log_level=fixture-log_level
       release=fixture-release
@@ -204,6 +209,7 @@ void main() {
       expect(sut.org, 'o');
       expect(sut.authToken, 't');
       expect(sut.url, 'fixture-url');
+      expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -283,12 +289,69 @@ void main() {
         'SENTRY_RELEASE': 'fixture-release',
         'SENTRY_DIST': 'fixture-dist',
         'SENTRYCLI_CDNURL': 'fixture-sentry_cli_cdn_url',
+        'SENTRY_LOG_LEVEL': 'debug',
       };
 
       final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
       expect(sut.release, 'fixture-release');
       expect(sut.dist, 'fixture-dist');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
+      expect(sut.logLevel, 'debug');
+    });
+
+    test("fromPlatformEnvironment handles empty SENTRY_LOG_LEVEL", () {
+      final arguments = {
+        'SENTRY_LOG_LEVEL': '',
+      };
+
+      final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
+      expect(sut.logLevel, isNull);
+    });
+
+    test("merged gives priority to platformEnv.logLevel over args and file",
+        () {
+      final platformEnv = ConfigurationValues(logLevel: 'env-log-level');
+      final args = ConfigurationValues(logLevel: 'args-log-level');
+      final file = ConfigurationValues(logLevel: 'file-log-level');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.logLevel, 'env-log-level');
+    });
+
+    test("merged falls back to args.logLevel when platformEnv.logLevel is null",
+        () {
+      final platformEnv = ConfigurationValues();
+      final args = ConfigurationValues(logLevel: 'args-log-level');
+      final file = ConfigurationValues(logLevel: 'file-log-level');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.logLevel, 'args-log-level');
+    });
+
+    test(
+        "merged falls back to file.logLevel when platformEnv and args logLevel are null",
+        () {
+      final platformEnv = ConfigurationValues();
+      final args = ConfigurationValues();
+      final file = ConfigurationValues(logLevel: 'file-log-level');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.logLevel, 'file-log-level');
     });
   });
 }

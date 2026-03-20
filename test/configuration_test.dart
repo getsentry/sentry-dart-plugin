@@ -62,6 +62,7 @@ void main() {
         org: 'org-args-config',
         authToken: 'auth_token-args-config',
         url: 'url-args-config',
+        dartSymbolMapPath: 'args-dart-symbol-map.json',
         urlPrefix: 'url-prefix-args-config',
         waitForProcessing: true,
         logLevel: 'warning',
@@ -89,6 +90,7 @@ void main() {
         org: 'org-file-config',
         authToken: 'auth_token-file-config',
         url: 'url-file-config',
+        dartSymbolMapPath: 'file-dart-symbol-map.json',
         urlPrefix: 'url-prefix-file-config',
         waitForProcessing: false,
         logLevel: 'debug',
@@ -122,6 +124,7 @@ void main() {
       expect(sut.org, 'org-args-config');
       expect(sut.authToken, 'auth_token-args-config');
       expect(sut.url, 'url-args-config');
+      expect(sut.dartSymbolMapPath, 'args-dart-symbol-map.json');
       expect(sut.urlPrefix, 'url-prefix-args-config');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'warning');
@@ -159,6 +162,7 @@ void main() {
         org: 'org-file-config',
         authToken: 'auth_token-file-config',
         url: 'url-file-config',
+        dartSymbolMapPath: 'file-dart-symbol-map.json',
         urlPrefix: 'url-prefix-file-config',
         waitForProcessing: true,
         logLevel: 'debug',
@@ -193,6 +197,7 @@ void main() {
       expect(sut.org, 'org-file-config');
       expect(sut.authToken, 'auth_token-file-config');
       expect(sut.url, 'url-file-config');
+      expect(sut.dartSymbolMapPath, 'file-dart-symbol-map.json');
       expect(sut.urlPrefix, 'url-prefix-file-config');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'debug');
@@ -231,6 +236,7 @@ void main() {
       expect(sut.uploadDebugSymbols, isTrue);
       expect(sut.uploadSourceMaps, isFalse);
       expect(sut.uploadSources, isFalse);
+      expect(sut.dartSymbolMapPath, isNull);
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, isFalse);
       expect(sut.buildFilesFolder, 'build');
