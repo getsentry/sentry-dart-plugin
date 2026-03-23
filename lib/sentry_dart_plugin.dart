@@ -232,8 +232,9 @@ class SentryDartPlugin {
       final path = entity.path;
       if (!path.toLowerCase().endsWith(extension)) continue;
 
-      final relative =
-          fs.path.relative(path, from: _configuration.webBuildFilesFolder);
+      final relative = fs.path
+          .relative(path, from: _configuration.webBuildFilesFolder)
+          .replaceAll(r'\', '/');
 
       if (!shouldIgnore(relative)) {
         results.add(builder(entity));
