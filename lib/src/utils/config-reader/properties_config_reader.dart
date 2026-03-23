@@ -22,7 +22,14 @@ class PropertiesConfigReader implements ConfigReader {
     return get(key, deprecatedKey, (key) {
       final value = _properties.get(key);
       if (value != null && value.isNotEmpty) {
-        return value.split(',').map((e) => e.trim()).toList();
+        final stripped = value.startsWith('[') && value.endsWith(']')
+            ? value.substring(1, value.length - 1)
+            : value;
+        return stripped
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
       }
       return null;
     });
