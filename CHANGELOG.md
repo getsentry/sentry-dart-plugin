@@ -9,6 +9,10 @@
   - No sensitive data (auth tokens, project names, organization slugs, or file paths) is collected.
   - To opt out, set the environment variable `SENTRY_TELEMETRY=false` before running the plugin.
 
+### Fixes
+
+- Fix processor architecture for Linux (#355)(https://github.com/getsentry/sentry-dart-plugin/pull/355)
+
 ## 3.2.1
 
 ### Fixes
