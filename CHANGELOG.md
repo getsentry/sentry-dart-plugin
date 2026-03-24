@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix processor architecture for Linux ([#355](https://github.com/getsentry/sentry-dart-plugin/pull/355))
+
 ## 3.2.1
 
 ### Fixes
