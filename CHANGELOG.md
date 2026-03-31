@@ -8,6 +8,10 @@
   - You can use the `ignore_web_source_paths` field: e.g `ignore_web_source_paths: [test/**/*.js]`
   - This will ignore all specified files and directories from being uploaded
 
+### Fixes
+
+- Fix processor architecture for Linux ([#355](https://github.com/getsentry/sentry-dart-plugin/pull/355))
+
 ## 3.2.1
 
 ### Fixes
