@@ -220,8 +220,8 @@ class SentryDartPlugin {
     final ignoreGlobs =
         _configuration.ignoreWebSourcePaths.map((p) => Glob(p)).toList();
 
-    bool shouldIgnore(String relative) =>
-        ignoreGlobs.any((g) => g.matches(relative));
+    bool shouldIgnore(String absolute, String relative) =>
+        ignoreGlobs.any((g) => g.matches(absolute) || g.matches(relative));
 
     final results = <T>[];
 
@@ -236,8 +236,10 @@ class SentryDartPlugin {
           .relative(path, from: _configuration.webBuildFilesFolder)
           .replaceAll(r'\', '/');
 
-      if (!shouldIgnore(relative)) {
+      if (!shouldIgnore(path, relative)) {
         results.add(builder(entity));
+      } else {
+        Log.info('Ignoring $relative (matched ignore_web_source_paths)');
       }
     }
 
