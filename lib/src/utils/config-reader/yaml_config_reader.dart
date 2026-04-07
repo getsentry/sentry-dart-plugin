@@ -18,6 +18,19 @@ class YamlConfigReader implements ConfigReader {
   }
 
   @override
+  List<String>? getList(String key, {String? deprecatedKey}) {
+    return get(key, deprecatedKey, (key) {
+      final value = _yamlMap?[key];
+      if (value is YamlList) {
+        return value.map((e) => e.toString()).toList();
+      } else if (value is List) {
+        return value.map((e) => e.toString()).toList();
+      }
+      return null;
+    });
+  }
+
+  @override
   bool contains(String key) {
     return _yamlMap?.containsKey(key) ?? false;
   }
