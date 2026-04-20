@@ -10,7 +10,6 @@
 
 ### Fixes
 
-- Restrict iOS/macOS debug symbol uploads to a configured Flutter flavor using `flavor` ([#308](https://github.com/getsentry/sentry-dart-plugin/pull/308))
 - Fix processor architecture for Linux ([#355](https://github.com/getsentry/sentry-dart-plugin/pull/355))
 
 ## 3.2.1
