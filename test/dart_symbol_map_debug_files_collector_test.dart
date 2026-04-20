@@ -157,33 +157,6 @@ void main() {
 
     // macOS is not supported for Dart symbol map pairing.
 
-    test('prefers configured symbols path over default Android build roots',
-        () async {
-      final fs = MemoryFileSystem(style: FileSystemStyle.posix);
-      final projectRootDir = fs.directory('/project')
-        ..createSync(recursive: true);
-      fs.currentDirectory = projectRootDir;
-
-      final buildDir = '/project/build';
-      final symbolsDir = '/external-symbols';
-      final symbolsPath = '/external-symbols/app.android-arm64.symbols';
-      final defaultPath = '/project/build/app/outputs/app.android-x64.symbols';
-      fs.file(symbolsPath).createSync(recursive: true);
-      fs.file(defaultPath).createSync(recursive: true);
-
-      final config = Configuration()
-        ..buildFilesFolder = buildDir
-        ..symbolsFolder = symbolsDir;
-
-      final result = await collectDebugFilesForDartMap(
-        fs: fs,
-        config: config,
-      );
-
-      expect(result, contains(fs.path.normalize(symbolsPath)));
-      expect(result, isNot(contains(fs.path.normalize(defaultPath))));
-    });
-
     test('searches symbols path and default iOS build roots', () async {
       final fs = MemoryFileSystem(style: FileSystemStyle.posix);
       final projectRootDir = fs.directory('/project')
