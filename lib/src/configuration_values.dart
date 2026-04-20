@@ -113,7 +113,11 @@ class ConfigurationValues {
       legacyWebSymbolication: boolFromString(
         sentryArguments['legacy_web_symbolication'],
       ),
-      ignoreWebSourcePaths: sentryArguments['ignore_web_source_paths']?.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+      ignoreWebSourcePaths: sentryArguments['ignore_web_source_paths']
+          ?.split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
     );
   }
 
@@ -217,7 +221,8 @@ class ConfigurationValues {
       sentryCliVersion: args.sentryCliVersion ?? file.sentryCliVersion,
       legacyWebSymbolication:
           args.legacyWebSymbolication ?? file.legacyWebSymbolication,
-      ignoreWebSourcePaths: args.ignoreWebSourcePaths ?? file.ignoreWebSourcePaths,
+      ignoreWebSourcePaths:
+          args.ignoreWebSourcePaths ?? file.ignoreWebSourcePaths,
     );
   }
 }

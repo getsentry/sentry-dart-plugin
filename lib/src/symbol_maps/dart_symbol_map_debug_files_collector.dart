@@ -1,6 +1,5 @@
 import 'package:file/file.dart';
 import 'package:sentry_dart_plugin/src/utils/log.dart';
-// import 'package:sentry_dart_plugin/src/utils/flutter_debug_files.dart';
 
 import '../configuration.dart';
 
@@ -23,6 +22,9 @@ Future<Set<String>> collectDebugFilesForDartMap({
   final Set<String> foundAndroidPaths = <String>{};
   final Set<String> foundIosPaths = <String>{};
   final path = fs.path;
+  final String normalizedSymbolsFolder = path.normalize(config.symbolsFolder);
+  final bool hasCustomSymbolsFolder = config.symbolsFolder.isNotEmpty &&
+      normalizedSymbolsFolder != Configuration.defaultSymbolsFolder;
 
   Future<void> collectAndroidSymbolsUnder(String rootPath) async {
     if (rootPath.isEmpty) return;
@@ -43,13 +45,17 @@ Future<Set<String>> collectDebugFilesForDartMap({
     }
   }
 
-  // Prefer scanning Android symbols under the configured symbols folder; if not
-  // set, fall back to the build folder.
+  // Prefer scanning Android symbols under the configured symbols folder; if no
+  // custom folder is set, fall back to the default Flutter build locations:
+  // - build/app/outputs
+  // - build/app/intermediates
   final List<String> androidRoots = <String>[];
-  if (config.symbolsFolder.isNotEmpty) {
-    androidRoots.add(path.normalize(config.symbolsFolder));
+  if (hasCustomSymbolsFolder) {
+    androidRoots.add(normalizedSymbolsFolder);
   } else if (config.buildFilesFolder.isNotEmpty) {
-    androidRoots.add(path.normalize(config.buildFilesFolder));
+    final normalizedBuildFolder = path.normalize(config.buildFilesFolder);
+    androidRoots.add(path.join(normalizedBuildFolder, 'app', 'outputs'));
+    androidRoots.add(path.join(normalizedBuildFolder, 'app', 'intermediates'));
   }
 
   for (final String root in androidRoots) {
@@ -61,7 +67,8 @@ Future<Set<String>> collectDebugFilesForDartMap({
         'No Android symbols found in the configured symbols folder or build folder.');
   }
 
-  // iOS: only search under two roots to simplify discovery:
+  // Prefer scanning iOS symbols under the configured symbols folder; if not
+  // set, fall back to the default locations used by Flutter/Xcode:
   // - build/ios
   // - <projectRoot>/ios/build (Fastlane)
   final String buildDir = config.buildFilesFolder;
@@ -90,12 +97,21 @@ Future<Set<String>> collectDebugFilesForDartMap({
     }
   }
 
-  await collectIosAppDsymsUnderRoot(path.join(path.normalize(buildDir), 'ios'));
-  await collectIosAppDsymsUnderRoot(path.join(projectRoot, 'ios', 'build'));
+  final List<String> iosRoots = <String>[];
+  if (hasCustomSymbolsFolder) {
+    iosRoots.add(normalizedSymbolsFolder);
+  } else {
+    iosRoots.add(path.join(path.normalize(buildDir), 'ios'));
+    iosRoots.add(path.join(projectRoot, 'ios', 'build'));
+  }
+
+  for (final String root in iosRoots) {
+    await collectIosAppDsymsUnderRoot(root);
+  }
 
   if (foundIosPaths.isEmpty) {
     Log.warn(
-        'No iOS symbols found in the configured build folder or project root.');
+        'No iOS symbols found in the configured symbols folder, build folder, or project root.');
   }
 
   return foundAndroidPaths.union(foundIosPaths).toSet();

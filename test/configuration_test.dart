@@ -240,6 +240,7 @@ void main() {
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, isFalse);
       expect(sut.buildFilesFolder, 'build');
+      expect(sut.symbolsFolder, Configuration.defaultSymbolsFolder);
       expect(
         sut.webBuildFilesFolder,
         fixture.fs.path.join(sut.buildFilesFolder, 'web'),
