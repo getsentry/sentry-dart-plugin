@@ -72,35 +72,30 @@ void main() {
       }
     });
 
-    test('uses focused Android fallback roots for default symbols path',
-        () async {
+    test('uses symbols path for Android symbol discovery', () async {
       final fs = MemoryFileSystem(style: FileSystemStyle.posix);
       final projectRootDir = fs.directory('/project')
         ..createSync(recursive: true);
       fs.currentDirectory = projectRootDir;
 
       final buildDir = '/project/out';
-      final outputsSymbols = '$buildDir/app/outputs/app.android-arm64.symbols';
-      final intermediatesSymbols =
-          '$buildDir/app/intermediates/app.android-x64.symbols';
-      final unrelatedProjectRootSymbols = '/project/app.android-arm.symbols';
+      final symbolsDir = '/project/build/symbols';
+      final symbolsPath = '$symbolsDir/app.android-arm64.symbols';
+      final outputsSymbols = '$buildDir/app/outputs/app.android-x64.symbols';
+      fs.file(symbolsPath).createSync(recursive: true);
       fs.file(outputsSymbols).createSync(recursive: true);
-      fs.file(intermediatesSymbols).createSync(recursive: true);
-      fs.file(unrelatedProjectRootSymbols).createSync(recursive: true);
 
       final config = Configuration()
         ..buildFilesFolder = buildDir
-        ..symbolsFolder = Configuration.defaultSymbolsFolder;
+        ..symbolsFolder = symbolsDir;
 
       final result = await collectDebugFilesForDartMap(
         fs: fs,
         config: config,
       );
 
-      expect(result, contains(fs.path.normalize(outputsSymbols)));
-      expect(result, contains(fs.path.normalize(intermediatesSymbols)));
-      expect(result,
-          isNot(contains(fs.path.normalize(unrelatedProjectRootSymbols))));
+      expect(result, contains(fs.path.normalize(symbolsPath)));
+      expect(result, isNot(contains(fs.path.normalize(outputsSymbols))));
     });
 
     test('uses focused iOS fallback roots for default symbols path', () async {
@@ -189,8 +184,7 @@ void main() {
       expect(result, isNot(contains(fs.path.normalize(defaultPath))));
     });
 
-    test('prefers configured symbols path over default iOS build roots',
-        () async {
+    test('searches symbols path and default iOS build roots', () async {
       final fs = MemoryFileSystem(style: FileSystemStyle.posix);
       final projectRootDir = fs.directory('/project')
         ..createSync(recursive: true);
@@ -200,9 +194,12 @@ void main() {
       final symbolsDir = '/external-symbols';
       final symbolsMachO =
           '/external-symbols/App.framework.dSYM/Contents/Resources/DWARF/App';
+      final buildMachO =
+          '/project/build/ios/Release-iphoneos/App.framework.dSYM/Contents/Resources/DWARF/App';
       final fastlaneMachO =
           '/project/ios/build/App.framework.dSYM/Contents/Resources/DWARF/App';
       fs.file(symbolsMachO).createSync(recursive: true);
+      fs.file(buildMachO).createSync(recursive: true);
       fs.file(fastlaneMachO).createSync(recursive: true);
 
       final config = Configuration()
@@ -215,7 +212,8 @@ void main() {
       );
 
       expect(result, contains(fs.path.normalize(symbolsMachO)));
-      expect(result, isNot(contains(fs.path.normalize(fastlaneMachO))));
+      expect(result, contains(fs.path.normalize(buildMachO)));
+      expect(result, contains(fs.path.normalize(fastlaneMachO)));
     });
 
     test('finds App.framework.dSYM inside iOS Xcode archive dSYMs', () async {
