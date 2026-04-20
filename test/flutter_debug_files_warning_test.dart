@@ -15,7 +15,7 @@ void main() {
     expect(
       result.stdout as String,
       contains(
-        'Multiple release directories found for native debug symbols. Consider setting `sentry.dart_plugin.flavor` to restrict uploads to one flavor.',
+        'Multiple release directories found for native debug symbols. Consider setting `flavor` to restrict uploads to one flavor.',
       ),
     );
   });
