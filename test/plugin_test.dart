@@ -499,6 +499,57 @@ void main() {
                       '$cli $commonArgs debug-files upload $orgAndProject $dir'));
             }
           });
+
+          test('filters debug symbol uploads to the configured flavor',
+              () async {
+            const version = '1.0.0';
+            const flavor = 'prod';
+            final config = '''
+              upload_debug_symbols: true
+              flavor: $flavor
+            ''';
+
+            final selectedDirectories = [
+              'macos/Build/Products/Release-$flavor',
+              'macos/framework/Release-$flavor',
+              'ios/Release-$flavor-iphoneos',
+              'ios/framework/Release-$flavor',
+            ];
+            final ignoredDirectories = [
+              'macos/Build/Products/Release-dev',
+              'macos/Build/Products/ReleaseNotes',
+              'macos/framework/Release-dev',
+              'ios/Release-dev-iphoneos',
+              'ios/framework/Release-dev',
+            ];
+
+            for (final dir in [...selectedDirectories, ...ignoredDirectories]) {
+              if (dir.endsWith('ReleaseNotes')) {
+                fs.file('$buildDir/$dir').createSync(recursive: true);
+              } else {
+                fs
+                    .directory(buildDir)
+                    .childDirectory(dir)
+                    .createSync(recursive: true);
+              }
+            }
+
+            final commandLog = await runWith(version, config);
+
+            for (final dir in selectedDirectories) {
+              expect(
+                  commandLog,
+                  contains(
+                      '$cli $commonArgs debug-files upload $orgAndProject $buildDir/$dir'));
+            }
+
+            for (final dir in ignoredDirectories) {
+              expect(
+                  commandLog,
+                  isNot(contains(
+                      '$cli $commonArgs debug-files upload $orgAndProject $buildDir/$dir')));
+            }
+          });
         });
       });
     }

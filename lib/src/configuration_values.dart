@@ -20,6 +20,7 @@ class ConfigurationValues {
   final String? buildPath;
   final String? webBuildPath;
   final String? symbolsPath;
+  final String? flavor;
   final String? dartSymbolMapPath;
   final String? commits;
   final bool? ignoreMissing;
@@ -48,6 +49,7 @@ class ConfigurationValues {
     this.buildPath,
     this.webBuildPath,
     this.symbolsPath,
+    this.flavor,
     this.dartSymbolMapPath,
     this.commits,
     this.ignoreMissing,
@@ -103,6 +105,7 @@ class ConfigurationValues {
       buildPath: sentryArguments['build_path'],
       webBuildPath: sentryArguments['web_build_path'],
       symbolsPath: sentryArguments['symbols_path'],
+      flavor: sentryArguments['flavor'],
       dartSymbolMapPath: sentryArguments['dart_symbol_map_path'],
       commits: sentryArguments['commits'],
       ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
@@ -113,7 +116,11 @@ class ConfigurationValues {
       legacyWebSymbolication: boolFromString(
         sentryArguments['legacy_web_symbolication'],
       ),
-      ignoreWebSourcePaths: sentryArguments['ignore_web_source_paths']?.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+      ignoreWebSourcePaths: sentryArguments['ignore_web_source_paths']
+          ?.split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
     );
   }
 
@@ -142,6 +149,7 @@ class ConfigurationValues {
       buildPath: configReader.getString('build_path'),
       webBuildPath: configReader.getString('web_build_path'),
       symbolsPath: configReader.getString('symbols_path'),
+      flavor: configReader.getString('flavor'),
       dartSymbolMapPath: configReader.getString('dart_symbol_map_path'),
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
@@ -204,6 +212,7 @@ class ConfigurationValues {
       buildPath: args.buildPath ?? file.buildPath,
       webBuildPath: args.webBuildPath ?? file.webBuildPath,
       symbolsPath: args.symbolsPath ?? file.symbolsPath,
+      flavor: args.flavor ?? file.flavor,
       dartSymbolMapPath: platformEnv.dartSymbolMapPath ??
           args.dartSymbolMapPath ??
           file.dartSymbolMapPath,
@@ -217,7 +226,8 @@ class ConfigurationValues {
       sentryCliVersion: args.sentryCliVersion ?? file.sentryCliVersion,
       legacyWebSymbolication:
           args.legacyWebSymbolication ?? file.legacyWebSymbolication,
-      ignoreWebSourcePaths: args.ignoreWebSourcePaths ?? file.ignoreWebSourcePaths,
+      ignoreWebSourcePaths:
+          args.ignoreWebSourcePaths ?? file.ignoreWebSourcePaths,
     );
   }
 }
