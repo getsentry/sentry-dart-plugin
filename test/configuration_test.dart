@@ -256,7 +256,6 @@ void main() {
     });
 
     test("treats empty symbols_path as the default symbols folder", () {
-      final envConfig = ConfigurationValues();
       final fileConfig = ConfigurationValues();
       final platformEnvConfig = ConfigurationValues();
       final argsConfig = ConfigurationValues(symbolsPath: '');
