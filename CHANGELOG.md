@@ -11,7 +11,8 @@
 ### Fixes
 
 - Fix processor architecture for Linux ([#355](https://github.com/getsentry/sentry-dart-plugin/pull/355))
-- Use SENTRY_URL for Dart symbol map uploads ([#395](https://github.com/getsentry/sentry-dart-plugin/pull/395))
+- Add custom `symbols_path` in iOS symbol map discovery ([#394](https://github.com/getsentry/sentry-dart-plugin/pull/394))
+- Use `SENTRY_URL` for Dart symbol map uploads ([#395](https://github.com/getsentry/sentry-dart-plugin/pull/395))
 
 ## 3.2.1
 
