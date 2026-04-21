@@ -478,12 +478,15 @@ void main() {
               'linux/x64/release/bundle',
               'linux/arm64/release/bundle',
               'macos/Build/Products/Release',
+              'macos/Build/Products/Release-anyrandomflavor',
               'macos/framework/Release',
+              'macos/framework/Release-anyrandomflavor',
               'ios/iphoneos/Runner.app',
               'ios/Release-iphoneos',
               'ios/Release-anyrandomflavor-iphoneos',
               'ios/archive',
               'ios/framework/Release',
+              'ios/framework/Release-anyrandomflavor',
             ];
             // Alternative output directories from 'root'
             final alternativeOutputDirectories = ['ios/build'];
