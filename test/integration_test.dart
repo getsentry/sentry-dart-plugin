@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
 const appName = 'testapp';
+const _serverReadyLine = 'INTEGRATION_SERVER_READY';
 late final String serverUri;
 
 // Platforms to be tested are either coming from the CI env var or
@@ -46,11 +47,15 @@ void main() async {
     // Also, we collect the output so that we can check it in tests.
     // Note: we're using the python dummy sever because it was already available.
     // If we wanted, we could do all this in plain dart in the future.
-    testServer = await Process.start('python3', ['test-server.py', serverUri],
-        workingDirectory: '${repoRootDir.path}/test');
+    testServer = await Process.start(
+      'python3',
+      ['-u', 'test-server.py', serverUri],
+      workingDirectory: '${repoRootDir.path}/test',
+    );
 
     // capture & forward streams
     final collector = _ProcessStreamCollector(testServer);
+    await _waitForServerReady(testServer.exitCode, collector);
 
     stopServer = () async {
       await http.get(Uri.parse('$serverUri/STOP'));
@@ -193,6 +198,30 @@ Future<Iterable<String>> _runPlugin(Directory cwd) => _exec(
       cwd: cwd.path,
     );
 
+Future<void> _waitForServerReady(
+    Future<int> exitCode, _ProcessStreamCollector collector) async {
+  int? observedExitCode;
+  unawaited(exitCode.then((value) => observedExitCode = value));
+
+  final deadline = DateTime.now().add(const Duration(seconds: 10));
+
+  while (DateTime.now().isBefore(deadline)) {
+    if (collector.outputSoFar.contains(_serverReadyLine)) {
+      return;
+    }
+
+    if (observedExitCode != null) {
+      throw StateError(
+          'Test server exited early with code $observedExitCode.\n${collector.outputSoFar}');
+    }
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+  throw StateError(
+      'Timed out waiting for test server readiness signal.\n${collector.outputSoFar}');
+}
+
 // e.g. Flutter 3.24.4 • channel stable • https://github.com/flutter/flutter.git
 final _flutterVersionInfo =
     _flutter(['--version']).then((output) => output.first);
@@ -302,6 +331,8 @@ class _ProcessStreamCollector {
     print(str.trim());
     _output.write(str);
   }
+
+  String get outputSoFar => _output.toString();
 
   Future<String> get output =>
       Future.wait(_futures).then((_) => _output.toString());
