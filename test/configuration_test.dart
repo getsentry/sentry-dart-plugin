@@ -254,6 +254,21 @@ void main() {
       expect(sut.legacyWebSymbolication, isFalse);
       expect(sut.ignoreWebSourcePaths, []);
     });
+
+    test("treats empty symbols_path as the default symbols folder", () {
+      final envConfig = ConfigurationValues();
+      final fileConfig = ConfigurationValues();
+      final platformEnvConfig = ConfigurationValues();
+      final argsConfig = ConfigurationValues(symbolsPath: '');
+
+      final sut = fixture.getSut(
+        argsConfig: argsConfig,
+        fileConfig: fileConfig,
+        platformEnvConfig: platformEnvConfig,
+      );
+
+      expect(sut.symbolsFolder, Configuration.defaultSymbolsFolder);
+    });
   });
 }
 

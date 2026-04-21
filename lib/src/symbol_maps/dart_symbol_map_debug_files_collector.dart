@@ -42,7 +42,8 @@ Future<Set<String>> collectDebugFilesForDartMap({
           basename.endsWith('.symbols') &&
           !basename.contains('darwin') &&
           !basename.contains('ios')) {
-        foundAndroidPaths.add(fs.file(entity.path).absolute.path);
+        foundAndroidPaths
+            .add(path.normalize(fs.file(entity.path).absolute.path));
       }
     }
   }

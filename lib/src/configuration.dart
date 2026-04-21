@@ -162,7 +162,10 @@ class Configuration {
     // but can be customized so making it flexible.
     final webBuildPath = configValues.webBuildPath ?? 'web';
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
-    symbolsFolder = configValues.symbolsPath ?? defaultSymbolsFolder;
+    final symbolsPath = configValues.symbolsPath;
+    symbolsFolder = symbolsPath == null || symbolsPath.isEmpty
+        ? defaultSymbolsFolder
+        : symbolsPath;
     dartSymbolMapPath = configValues.dartSymbolMapPath;
 
     project = configValues.project; // or env. var. SENTRY_PROJECT
