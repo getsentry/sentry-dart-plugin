@@ -240,6 +240,7 @@ void main() {
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, isFalse);
       expect(sut.buildFilesFolder, 'build');
+      expect(sut.symbolsFolder, Configuration.defaultSymbolsFolder);
       expect(
         sut.webBuildFilesFolder,
         fixture.fs.path.join(sut.buildFilesFolder, 'web'),
@@ -252,6 +253,20 @@ void main() {
       );
       expect(sut.legacyWebSymbolication, isFalse);
       expect(sut.ignoreWebSourcePaths, []);
+    });
+
+    test("treats empty symbols_path as the default symbols folder", () {
+      final fileConfig = ConfigurationValues();
+      final platformEnvConfig = ConfigurationValues();
+      final argsConfig = ConfigurationValues(symbolsPath: '');
+
+      final sut = fixture.getSut(
+        argsConfig: argsConfig,
+        fileConfig: fileConfig,
+        platformEnvConfig: platformEnvConfig,
+      );
+
+      expect(sut.symbolsFolder, Configuration.defaultSymbolsFolder);
     });
   });
 }
