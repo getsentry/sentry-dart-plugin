@@ -18,7 +18,7 @@ void main() {
       injector.registerSingleton<ProcessManager>(() => pm, override: true);
     });
 
-    test('emits one command per debug file with all flags', () async {
+    test('emits one upload command per debug file with configured options', () async {
       final config = Configuration()
         ..cliPath = 'mock-cli'
         ..url = 'https://example.invalid'
@@ -49,11 +49,12 @@ void main() {
       expect(
         pm.commandLog[1],
         equals(
-          'mock-cli --url https://example.invalid --auth-token token --log-level debug '
+          'mock-cli --auth-token token --log-level debug '
           'dart-symbol-map upload --org my-org --project my-proj '
           '$map ${debugFiles[0]}',
         ),
       );
+      expect(pm.environmentLog[1], {'SENTRY_URL': 'https://example.invalid'});
       expect(
         pm.commandLog[2],
         equals(
@@ -63,11 +64,12 @@ void main() {
       expect(
         pm.commandLog[3],
         equals(
-          'mock-cli --url https://example.invalid --auth-token token --log-level debug '
+          'mock-cli --auth-token token --log-level debug '
           'dart-symbol-map upload --org my-org --project my-proj '
           '$map ${debugFiles[1]}',
         ),
       );
+      expect(pm.environmentLog[3], {'SENTRY_URL': 'https://example.invalid'});
     });
 
     test('omits optional flags when not configured', () async {
@@ -97,6 +99,7 @@ void main() {
         pm.commandLog[1],
         equals('mock-cli dart-symbol-map upload $map ${debugFiles.single}'),
       );
+      expect(pm.environmentLog[1], isNull);
     });
 
     test('propagates non-zero exit codes via ExitError', () async {
@@ -127,6 +130,7 @@ void main() {
 
 class MockProcessManager implements ProcessManager {
   final List<String> commandLog = <String>[];
+  final List<Map<String, String>?> environmentLog = <Map<String, String>?>[];
   List<int> exitCodes = <int>[]; // optional per-start exit codes
 
   @override
@@ -155,6 +159,8 @@ class MockProcessManager implements ProcessManager {
       covariant Encoding? stdoutEncoding = systemEncoding,
       covariant Encoding? stderrEncoding = systemEncoding}) {
     commandLog.add(command.join(' '));
+    environmentLog.add(
+        environment == null ? null : Map<String, String>.from(environment));
     final int code = exitCodes.isNotEmpty ? exitCodes.removeAt(0) : 0;
     return ProcessResult(-1, code, null, null);
   }
@@ -167,6 +173,8 @@ class MockProcessManager implements ProcessManager {
       bool runInShell = false,
       ProcessStartMode mode = ProcessStartMode.normal}) async {
     commandLog.add(command.join(' '));
+    environmentLog.add(
+        environment == null ? null : Map<String, String>.from(environment));
     final int code = exitCodes.isNotEmpty ? exitCodes.removeAt(0) : 0;
     return MockProcess(code);
   }
