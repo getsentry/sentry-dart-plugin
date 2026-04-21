@@ -237,32 +237,46 @@ void main() {
           final commandLog = await runWith(version, config);
           const release = '$name@$version';
 
-          final args = '$commonArgs --log-level debug';
+          final uploadIndex = pm.commandLog.indexWhere(
+            (e) => e.contains('dart-symbol-map upload '),
+          );
+          expect(uploadIndex, isNonNegative);
+          final uploadCommand = pm.commandLog[uploadIndex];
+          const dartSymbolMapArgs = '--auth-token t --log-level debug ';
+          final relStart =
+              '$cli ${dartSymbolMapArgs}dart-symbol-map upload $orgAndProject ${mapFile.path} ';
+          final absStart =
+              '$cli ${dartSymbolMapArgs}dart-symbol-map upload $orgAndProject ${fs.file(mapFile.path).absolute.path} ';
           expect(
-            commandLog,
-            anyElement((e) {
-              final relStart =
-                  '$cli $args dart-symbol-map upload $orgAndProject ${mapFile.path} ';
-              final absStart =
-                  '$cli $args dart-symbol-map upload $orgAndProject ${fs.file(mapFile.path).absolute.path} ';
-              return (e.startsWith(relStart) || e.startsWith(absStart)) &&
-                  e.endsWith('$buildDir/app/outputs/app-release.symbols');
-            }),
+            (uploadCommand.startsWith(relStart) ||
+                    uploadCommand.startsWith(absStart)) &&
+                uploadCommand
+                    .endsWith('$buildDir/app/outputs/app-release.symbols'),
+            isTrue,
+          );
+          expect(uploadCommand.contains('--url'), isFalse);
+          expect(
+            pm.commandEnvironmentLog[uploadIndex],
+            url == null ? isNull : {'SENTRY_URL': url},
           );
 
           // Ensure other expected commands still present
           expect(
               commandLog,
               contains(
-                  '$cli $args debug-files upload $orgAndProject $buildDir/app/outputs'));
-          expect(commandLog,
-              contains('$cli $args releases $orgAndProject new $release'));
+                  '$cli $commonArgs --log-level debug debug-files upload $orgAndProject $buildDir/app/outputs'));
           expect(
               commandLog,
               contains(
-                  '$cli $args releases $orgAndProject set-commits $release --auto'));
-          expect(commandLog,
-              contains('$cli $args releases $orgAndProject finalize $release'));
+                  '$cli $commonArgs --log-level debug releases $orgAndProject new $release'));
+          expect(
+              commandLog,
+              contains(
+                  '$cli $commonArgs --log-level debug releases $orgAndProject set-commits $release --auto'));
+          expect(
+              commandLog,
+              contains(
+                  '$cli $commonArgs --log-level debug releases $orgAndProject finalize $release'));
         });
 
         group('release', () {
@@ -507,6 +521,7 @@ void main() {
 
 class MockProcessManager implements ProcessManager {
   final commandLog = <String>[];
+  final commandEnvironmentLog = <Map<String, String>?>[];
 
   @override
   bool canRun(executable, {String? workingDirectory}) => true;
@@ -534,6 +549,8 @@ class MockProcessManager implements ProcessManager {
       covariant Encoding? stdoutEncoding = systemEncoding,
       covariant Encoding? stderrEncoding = systemEncoding}) {
     commandLog.add(command.join(' '));
+    commandEnvironmentLog.add(
+        environment == null ? null : Map<String, String>.from(environment));
     return ProcessResult(-1, 0, null, null);
   }
 
@@ -545,6 +562,8 @@ class MockProcessManager implements ProcessManager {
       bool runInShell = false,
       ProcessStartMode mode = ProcessStartMode.normal}) {
     commandLog.add(command.join(' '));
+    commandEnvironmentLog.add(
+        environment == null ? null : Map<String, String>.from(environment));
     return Future.value(MockProcess());
   }
 }
