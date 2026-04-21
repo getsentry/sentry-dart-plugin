@@ -14,6 +14,8 @@ import 'utils/injector.dart';
 import 'utils/log.dart';
 
 class Configuration {
+  static const String defaultSymbolsFolder = '.';
+
   late final FileSystem _fs = injector.get<FileSystem>();
 
   /// The Build folder, defaults `build`.
@@ -160,7 +162,10 @@ class Configuration {
     // but can be customized so making it flexible.
     final webBuildPath = configValues.webBuildPath ?? 'web';
     webBuildFilesFolder = _fs.path.join(buildFilesFolder, webBuildPath);
-    symbolsFolder = configValues.symbolsPath ?? '.';
+    final symbolsPath = configValues.symbolsPath;
+    symbolsFolder = symbolsPath == null || symbolsPath.isEmpty
+        ? defaultSymbolsFolder
+        : symbolsPath;
     dartSymbolMapPath = configValues.dartSymbolMapPath;
 
     project = configValues.project; // or env. var. SENTRY_PROJECT

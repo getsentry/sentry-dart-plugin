@@ -1,6 +1,5 @@
 import 'package:file/file.dart';
 import 'package:sentry_dart_plugin/src/utils/log.dart';
-// import 'package:sentry_dart_plugin/src/utils/flutter_debug_files.dart';
 
 import '../configuration.dart';
 
@@ -13,9 +12,10 @@ import '../configuration.dart';
 /// - Apple: include the Mach-O binary `App` inside
 ///   `App.framework.dSYM/Contents/Resources/DWARF/App`.
 ///
-/// The function returns absolute, deduplicated paths. It enumerates the
-/// configured `symbolsFolder`, `buildFilesFolder`, and other Flutter
-/// search roots discovered by `enumerateDebugSearchRoots`.
+/// The function returns absolute, deduplicated paths. Android symbols are
+/// discovered under the configured `symbolsFolder`. iOS dSYMs are discovered
+/// under the configured `symbolsFolder` as well as the standard Flutter/Xcode
+/// build roots.
 Future<Set<String>> collectDebugFilesForDartMap({
   required FileSystem fs,
   required Configuration config,
@@ -23,6 +23,10 @@ Future<Set<String>> collectDebugFilesForDartMap({
   final Set<String> foundAndroidPaths = <String>{};
   final Set<String> foundIosPaths = <String>{};
   final path = fs.path;
+  final String normalizedSymbolsFolder = path.normalize(config.symbolsFolder);
+  final bool shouldSearchSymbolsFolderForIos =
+      config.symbolsFolder.isNotEmpty &&
+          normalizedSymbolsFolder != Configuration.defaultSymbolsFolder;
 
   Future<void> collectAndroidSymbolsUnder(String rootPath) async {
     if (rootPath.isEmpty) return;
@@ -38,18 +42,17 @@ Future<Set<String>> collectDebugFilesForDartMap({
           basename.endsWith('.symbols') &&
           !basename.contains('darwin') &&
           !basename.contains('ios')) {
-        foundAndroidPaths.add(fs.file(entity.path).absolute.path);
+        foundAndroidPaths
+            .add(path.normalize(fs.file(entity.path).absolute.path));
       }
     }
   }
 
-  // Prefer scanning Android symbols under the configured symbols folder; if not
-  // set, fall back to the build folder.
+  // Android Dart symbol files are written to the configured split-debug-info
+  // directory (symbolsFolder).
   final List<String> androidRoots = <String>[];
   if (config.symbolsFolder.isNotEmpty) {
-    androidRoots.add(path.normalize(config.symbolsFolder));
-  } else if (config.buildFilesFolder.isNotEmpty) {
-    androidRoots.add(path.normalize(config.buildFilesFolder));
+    androidRoots.add(normalizedSymbolsFolder);
   }
 
   for (final String root in androidRoots) {
@@ -57,11 +60,12 @@ Future<Set<String>> collectDebugFilesForDartMap({
   }
 
   if (foundAndroidPaths.isEmpty) {
-    Log.warn(
-        'No Android symbols found in the configured symbols folder or build folder.');
+    Log.warn('No Android symbols found in the configured symbols folder.');
   }
 
-  // iOS: only search under two roots to simplify discovery:
+  // iOS App.framework.dSYM may live either in the configured symbols folder
+  // (for moved/downloaded artifacts) or in the default Flutter/Xcode
+  // locations:
   // - build/ios
   // - <projectRoot>/ios/build (Fastlane)
   final String buildDir = config.buildFilesFolder;
@@ -90,12 +94,20 @@ Future<Set<String>> collectDebugFilesForDartMap({
     }
   }
 
-  await collectIosAppDsymsUnderRoot(path.join(path.normalize(buildDir), 'ios'));
-  await collectIosAppDsymsUnderRoot(path.join(projectRoot, 'ios', 'build'));
+  final List<String> iosRoots = <String>[];
+  if (shouldSearchSymbolsFolderForIos) {
+    iosRoots.add(normalizedSymbolsFolder);
+  }
+  iosRoots.add(path.join(path.normalize(buildDir), 'ios'));
+  iosRoots.add(path.join(projectRoot, 'ios', 'build'));
+
+  for (final String root in iosRoots) {
+    await collectIosAppDsymsUnderRoot(root);
+  }
 
   if (foundIosPaths.isEmpty) {
     Log.warn(
-        'No iOS symbols found in the configured build folder or project root.');
+        'No iOS symbols found in the configured symbols folder, build folder, or project root.');
   }
 
   return foundAndroidPaths.union(foundIosPaths).toSet();
