@@ -12,9 +12,17 @@ import '../utils/log.dart';
 ///
 /// For every [debugFilePaths] entry, this emits one CLI invocation equivalent to:
 ///
-///   sentry-cli dart-symbol-map upload [--url ...] [--auth-token ...]
-///   [--log-level ...] --org ... --project ... [--wait]
+///   `SENTRY_URL=<custom-url>` sentry-cli dart-symbol-map upload
+///   [--auth-token ...] [--log-level ...] --org ... --project ... [--wait]
 ///   /path-to-map /path-to-debug-file
+///
+/// We pass the custom Sentry URL via `SENTRY_URL` instead of `--url` for
+/// compatibility with older sentry-cli versions that reject `--url` for the
+/// `dart-symbol-map upload` subcommand.
+///
+/// Note: sentry-cli 3.2.0 fixed this upstream in getsentry/sentry-cli#3108.
+/// Once this plugin no longer needs to support older bundled CLI versions,
+/// this workaround can be replaced with the normal `--url` argument again.
 ///
 class DartSymbolMapUploader {
   /// Uploads [symbolMapPath] for each entry in [debugFilePaths].
@@ -64,7 +72,7 @@ class DartSymbolMapUploader {
             "Uploading Dart symbol map '$symbolMapPath' paired with '$debugFilePath'");
 
         final args = [
-          ...config.baseArgs(),
+          ...config.baseArgs(includeUrl: false),
           'dart-symbol-map',
           'upload',
           ...config.orgProjectArgs(),
@@ -76,6 +84,7 @@ class DartSymbolMapUploader {
           processManager: processManager,
           cliPath: cliPath,
           args: args,
+          environment: _environmentForDartSymbolMapUpload(config),
           errorContext: 'Failed to upload Dart symbol map for $debugFilePath',
         );
 
@@ -99,11 +108,15 @@ class DartSymbolMapUploader {
     required ProcessManager processManager,
     required String cliPath,
     required List<String> args,
+    Map<String, String>? environment,
     required String errorContext,
   }) async {
     int exitCode;
     try {
-      final Process process = await processManager.start([cliPath, ...args]);
+      final Process process = await processManager.start(
+        [cliPath, ...args],
+        environment: environment,
+      );
 
       process.stdout.transform(utf8.decoder).listen((String data) {
         final String trimmed = data.trim();
@@ -124,6 +137,16 @@ class DartSymbolMapUploader {
       return 1;
     }
     return exitCode;
+  }
+
+  static Map<String, String>? _environmentForDartSymbolMapUpload(
+    Configuration config,
+  ) {
+    final url = config.url;
+    if (url == null || url.isEmpty) {
+      return null;
+    }
+    return <String, String>{'SENTRY_URL': url};
   }
 
   /// Returns the debug id for the given [debugFilePath] by invoking:
