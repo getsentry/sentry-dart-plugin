@@ -36,28 +36,42 @@ Stream<String> enumerateDebugSearchRoots({
     yield '$buildDir/linux$subdir/release/bundle';
   }
 
+  // Apple
+
+  final RegExp appleReleaseDirPattern = RegExp(r'^Release(?:-.+)?$');
+  final RegExp iosReleaseDirPattern = RegExp(r'^Release(?:-.+)?-iphoneos$');
+
   // macOS
-  yield '$buildDir/macos/Build/Products/Release';
+  yield* _enumerateReleaseDirectories(
+    fs: fs,
+    basePath: '$buildDir/macos/Build/Products',
+    releaseDirPattern: appleReleaseDirPattern,
+  );
 
   // macOS (macOS-framework)
-  yield '$buildDir/macos/framework/Release';
+  yield* _enumerateReleaseDirectories(
+    fs: fs,
+    basePath: '$buildDir/macos/framework',
+    releaseDirPattern: appleReleaseDirPattern,
+  );
 
   // iOS
   yield '$buildDir/ios/iphoneos/Runner.app';
-  final iosDir = fs.directory('$buildDir/ios');
-  if (await iosDir.exists()) {
-    final regexp = RegExp(r'^Release(-.*)?-iphoneos$');
-    yield* iosDir
-        .list()
-        .where((entity) => regexp.hasMatch(fs.path.basename(entity.path)))
-        .map((entity) => entity.path);
-  }
+  yield* _enumerateReleaseDirectories(
+    fs: fs,
+    basePath: '$buildDir/ios',
+    releaseDirPattern: iosReleaseDirPattern,
+  );
 
   // iOS (ipa)
   yield '$buildDir/ios/archive';
 
   // iOS (ios-framework)
-  yield '$buildDir/ios/framework/Release';
+  yield* _enumerateReleaseDirectories(
+    fs: fs,
+    basePath: '$buildDir/ios/framework',
+    releaseDirPattern: appleReleaseDirPattern,
+  );
 
   // iOS in Fastlane
   if (projectRoot == '/') {
@@ -65,4 +79,30 @@ Stream<String> enumerateDebugSearchRoots({
   } else {
     yield '$projectRoot/ios/build';
   }
+}
+
+Stream<String> _enumerateReleaseDirectories({
+  required FileSystem fs,
+  required String basePath,
+  required RegExp releaseDirPattern,
+}) async* {
+  final baseDir = fs.directory(basePath);
+  if (!await baseDir.exists()) {
+    return;
+  }
+
+  final matchingPaths = <String>[];
+
+  await for (final entity in baseDir.list()) {
+    if (entity is! Directory) {
+      continue;
+    }
+
+    final basename = fs.path.basename(entity.path);
+    if (releaseDirPattern.hasMatch(basename)) {
+      matchingPaths.add(entity.path);
+    }
+  }
+
+  yield* Stream<String>.fromIterable(matchingPaths);
 }
