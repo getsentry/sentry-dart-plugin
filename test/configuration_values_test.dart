@@ -31,7 +31,6 @@ void main() {
         "--sentry-define=build_path=fixture-build_path",
         "--sentry-define=web_build_path=fixture-web_build_path",
         "--sentry-define=symbols_path=fixture-symbols_path",
-        "--sentry-define=flavor=fixture-flavor",
         "--sentry-define=commits=fixture-commits",
         "--sentry-define=ignore_missing=true",
         "--sentry-define=bin_dir=fixture-bin_dir",
@@ -58,7 +57,6 @@ void main() {
       expect(sut.buildPath, 'fixture-build_path');
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.symbolsPath, 'fixture-symbols_path');
-      expect(sut.flavor, 'fixture-flavor');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, isTrue);
       expect(sut.binDir, 'fixture-bin_dir');
@@ -104,7 +102,6 @@ void main() {
       build_path: fixture-build_path
       web_build_path: fixture-web_build_path
       symbols_path: fixture-symbols_path
-      flavor: fixture-flavor
       commits: fixture-commits
       ignore_missing: true
       bin_dir: fixture-bin_dir
@@ -152,7 +149,6 @@ void main() {
       expect(sut.buildPath, 'fixture-build_path');
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.symbolsPath, 'fixture-symbols_path');
-      expect(sut.flavor, 'fixture-flavor');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, isTrue);
       expect(sut.binDir, 'fixture-bin_dir');
@@ -177,7 +173,6 @@ void main() {
       build_path=fixture-build_path
       web_build_path=fixture-web_build_path
       symbols_path: fixture-symbols_path
-      flavor=fixture-flavor
       commits=fixture-commits
       ignore_missing=true
       bin_dir=fixture-bin_dir
@@ -222,7 +217,6 @@ void main() {
       expect(sut.buildPath, 'fixture-build_path');
       expect(sut.webBuildPath, 'fixture-web_build_path');
       expect(sut.symbolsPath, 'fixture-symbols_path');
-      expect(sut.flavor, 'fixture-flavor');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, isTrue);
       expect(sut.binDir, 'fixture-bin_dir');

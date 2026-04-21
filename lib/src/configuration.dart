@@ -75,10 +75,6 @@ class Configuration {
   /// The directory passed to `--split-debug-info`, defaults to '.'
   late String symbolsFolder;
 
-  /// Restricts iOS/macOS debug symbol discovery to a single Flutter flavor.
-  /// Optional.
-  late String? flavor;
-
   /// Explicit path to the Dart obfuscation map file. Optional.
   late String? dartSymbolMapPath;
 
@@ -170,10 +166,6 @@ class Configuration {
     symbolsFolder = symbolsPath == null || symbolsPath.isEmpty
         ? defaultSymbolsFolder
         : symbolsPath;
-    flavor = configValues.flavor?.trim();
-    if (flavor?.isEmpty ?? false) {
-      flavor = null;
-    }
     dartSymbolMapPath = configValues.dartSymbolMapPath;
 
     project = configValues.project; // or env. var. SENTRY_PROJECT

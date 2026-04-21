@@ -1,7 +1,6 @@
 import 'package:file/file.dart';
 
 import '../configuration.dart';
-import 'log.dart';
 
 /// Enumerates the search roots used to discover native debug files, matching
 /// the existing behavior used by the plugin when uploading debug files.
@@ -19,7 +18,6 @@ Stream<String> enumerateDebugSearchRoots({
 }) async* {
   final String buildDir = config.buildFilesFolder;
   final String projectRoot = fs.currentDirectory.path;
-  final String? flavor = config.flavor;
 
   // Android (apk, appbundle)
   yield '$buildDir/app/outputs';
@@ -48,7 +46,6 @@ Stream<String> enumerateDebugSearchRoots({
     fs: fs,
     basePath: '$buildDir/macos/Build/Products',
     releaseDirPattern: appleReleaseDirPattern,
-    exactName: flavor == null ? null : 'Release-$flavor',
   );
 
   // macOS (macOS-framework)
@@ -56,7 +53,6 @@ Stream<String> enumerateDebugSearchRoots({
     fs: fs,
     basePath: '$buildDir/macos/framework',
     releaseDirPattern: appleReleaseDirPattern,
-    exactName: flavor == null ? null : 'Release-$flavor',
   );
 
   // iOS
@@ -65,7 +61,6 @@ Stream<String> enumerateDebugSearchRoots({
     fs: fs,
     basePath: '$buildDir/ios',
     releaseDirPattern: iosReleaseDirPattern,
-    exactName: flavor == null ? null : 'Release-$flavor-iphoneos',
   );
 
   // iOS (ipa)
@@ -76,7 +71,6 @@ Stream<String> enumerateDebugSearchRoots({
     fs: fs,
     basePath: '$buildDir/ios/framework',
     releaseDirPattern: appleReleaseDirPattern,
-    exactName: flavor == null ? null : 'Release-$flavor',
   );
 
   // iOS in Fastlane
@@ -91,7 +85,6 @@ Stream<String> _enumerateReleaseDirectories({
   required FileSystem fs,
   required String basePath,
   required RegExp releaseDirPattern,
-  String? exactName,
 }) async* {
   final baseDir = fs.directory(basePath);
   if (!await baseDir.exists()) {
@@ -106,22 +99,9 @@ Stream<String> _enumerateReleaseDirectories({
     }
 
     final basename = fs.path.basename(entity.path);
-    if (exactName != null) {
-      if (basename == exactName) {
-        matchingPaths.add(entity.path);
-      }
-      continue;
-    }
-
     if (releaseDirPattern.hasMatch(basename)) {
       matchingPaths.add(entity.path);
     }
-  }
-
-  if (exactName == null && matchingPaths.length > 1) {
-    Log.warn(
-      'Multiple release directories found for native debug symbols. Consider setting `flavor` to restrict uploads to one flavor.',
-    );
   }
 
   yield* Stream<String>.fromIterable(matchingPaths);
