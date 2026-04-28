@@ -25,16 +25,19 @@ void main() {
         release: 'release-platformEnv-config',
         dist: 'dist-platformEnv-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-platformEnv-config',
+        binPath: 'binPath-platformEnv-config',
       );
       final argsConfig = ConfigurationValues(
         release: 'release-args-config',
         dist: 'dist-args-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
+        binPath: 'binPath-args-config',
       );
       final fileConfig = ConfigurationValues(
         release: 'release-file-config',
         dist: 'dist-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
+        binPath: 'binPath-file-config',
       );
 
       final sut = fixture.getSut(
@@ -46,6 +49,7 @@ void main() {
       expect(sut.release, 'release-platformEnv-config');
       expect(sut.dist, 'dist-platformEnv-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-platformEnv-config');
+      expect(sut.binPath, 'binPath-platformEnv-config');
     });
 
     // env config
