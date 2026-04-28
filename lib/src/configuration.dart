@@ -99,6 +99,7 @@ class Configuration {
 
   /// An alternative path to sentry-cli. If provided, the SDK will not be
   /// downloaded. Please make sure to use the matching version.
+  /// Prefer setting this locally with SENTRY_CLI_BIN_PATH.
   late String? binPath;
 
   /// Place to download sentry-cli. Defaults to
@@ -145,6 +146,12 @@ class Configuration {
       file: fileConfig,
       platformEnv: platformEnvConfig,
     );
+    _warnIfUsingPubspecBinPath(
+      argsConfig: argsConfig,
+      fileConfig: fileConfig,
+      platformEnvConfig: platformEnvConfig,
+      pubspecBinPath: _readPubspecBinPath(pubspec),
+    );
 
     release = configValues.release;
     dist = configValues.dist;
@@ -182,6 +189,39 @@ class Configuration {
     sentryCliVersion = configValues.sentryCliVersion;
     legacyWebSymbolication = configValues.legacyWebSymbolication ?? false;
     ignoreWebSourcePaths = configValues.ignoreWebSourcePaths ?? [];
+  }
+
+  void _warnIfUsingPubspecBinPath({
+    required ConfigurationValues argsConfig,
+    required ConfigurationValues fileConfig,
+    required ConfigurationValues platformEnvConfig,
+    required String? pubspecBinPath,
+  }) {
+    if (_hasValue(pubspecBinPath) &&
+        fileConfig.binPath == pubspecBinPath &&
+        !_hasValue(argsConfig.binPath) &&
+        !_hasValue(platformEnvConfig.binPath)) {
+      Log.warn('bin_path is configured in pubspec.yaml. This is an intentional '
+          'arbitrary executable override and will be executed directly as '
+          'sentry-cli. Only use this with trusted project configuration. '
+          'Prefer SENTRY_CLI_BIN_PATH for user-local configuration.');
+    }
+  }
+
+  bool _hasValue(String? value) {
+    return value != null && value.isNotEmpty;
+  }
+
+  String? _readPubspecBinPath(dynamic pubspec) {
+    if (pubspec is! Map) {
+      return null;
+    }
+    final sentryConfig = pubspec['sentry'];
+    if (sentryConfig is! Map || !sentryConfig.containsKey('bin_path')) {
+      return null;
+    }
+    final binPath = sentryConfig['bin_path']?.toString();
+    return _hasValue(binPath) ? binPath : null;
   }
 
   /// Validates the configuration values and log an error if required fields

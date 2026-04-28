@@ -161,27 +161,23 @@ class ConfigurationValues {
   factory ConfigurationValues.fromPlatformEnvironment(
     Map<String, String> environment,
   ) {
-    String? envRelease = environment['SENTRY_RELEASE'];
-    if (envRelease?.isEmpty ?? false) {
-      envRelease = null;
+    String? envValue(String key) {
+      final value = environment[key];
+      return value == null || value.isEmpty ? null : value;
     }
-    String? envDist = environment['SENTRY_DIST'];
-    if (envDist?.isEmpty ?? false) {
-      envDist = null;
-    }
-    String? envSentryCliCdnUrl = environment['SENTRYCLI_CDNURL'];
-    if (envSentryCliCdnUrl?.isEmpty ?? false) {
-      envSentryCliCdnUrl = null;
-    }
-    String? envLogLevel = environment['SENTRY_LOG_LEVEL'];
-    if (envLogLevel?.isEmpty ?? false) {
-      envLogLevel = null;
-    }
+
+    final envRelease = envValue('SENTRY_RELEASE');
+    final envDist = envValue('SENTRY_DIST');
+    final envSentryCliCdnUrl = envValue('SENTRYCLI_CDNURL');
+    final envLogLevel = envValue('SENTRY_LOG_LEVEL');
+    final envBinPath = envValue('SENTRY_CLI_BIN_PATH');
+
     return ConfigurationValues(
       release: envRelease,
       dist: envDist,
       sentryCliCdnUrl: envSentryCliCdnUrl,
       logLevel: envLogLevel,
+      binPath: envBinPath,
     );
   }
 
@@ -214,7 +210,7 @@ class ConfigurationValues {
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
       binDir: args.binDir ?? file.binDir,
-      binPath: args.binPath ?? file.binPath,
+      binPath: platformEnv.binPath ?? args.binPath ?? file.binPath,
       sentryCliCdnUrl: platformEnv.sentryCliCdnUrl ??
           args.sentryCliCdnUrl ??
           file.sentryCliCdnUrl,

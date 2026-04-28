@@ -290,6 +290,7 @@ void main() {
         'SENTRY_DIST': 'fixture-dist',
         'SENTRYCLI_CDNURL': 'fixture-sentry_cli_cdn_url',
         'SENTRY_LOG_LEVEL': 'debug',
+        'SENTRY_CLI_BIN_PATH': 'fixture-bin-path',
       };
 
       final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
@@ -297,15 +298,18 @@ void main() {
       expect(sut.dist, 'fixture-dist');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.logLevel, 'debug');
+      expect(sut.binPath, 'fixture-bin-path');
     });
 
-    test("fromPlatformEnvironment handles empty SENTRY_LOG_LEVEL", () {
+    test("fromPlatformEnvironment handles empty environment values", () {
       final arguments = {
         'SENTRY_LOG_LEVEL': '',
+        'SENTRY_CLI_BIN_PATH': '',
       };
 
       final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
       expect(sut.logLevel, isNull);
+      expect(sut.binPath, isNull);
     });
 
     test("merged gives priority to platformEnv.logLevel over args and file",
@@ -321,6 +325,35 @@ void main() {
       );
 
       expect(sut.logLevel, 'env-log-level');
+    });
+
+    test("merged gives priority to platformEnv.binPath over args and file", () {
+      final platformEnv = ConfigurationValues(binPath: 'env-bin-path');
+      final args = ConfigurationValues(binPath: 'args-bin-path');
+      final file = ConfigurationValues(binPath: 'file-bin-path');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.binPath, 'env-bin-path');
+    });
+
+    test("merged falls back to args.binPath when platformEnv.binPath is null",
+        () {
+      final platformEnv = ConfigurationValues();
+      final args = ConfigurationValues(binPath: 'args-bin-path');
+      final file = ConfigurationValues(binPath: 'file-bin-path');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.binPath, 'args-bin-path');
     });
 
     test("merged falls back to args.logLevel when platformEnv.logLevel is null",
