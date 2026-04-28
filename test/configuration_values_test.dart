@@ -356,6 +356,20 @@ void main() {
       expect(sut.binPath, 'args-bin-path');
     });
 
+    test("merged treats empty args.binPath as an explicit value", () {
+      final platformEnv = ConfigurationValues();
+      final args = ConfigurationValues(binPath: '');
+      final file = ConfigurationValues(binPath: 'file-bin-path');
+
+      final sut = ConfigurationValues.merged(
+        platformEnv: platformEnv,
+        args: args,
+        file: file,
+      );
+
+      expect(sut.binPath, '');
+    });
+
     test("merged falls back to args.logLevel when platformEnv.logLevel is null",
         () {
       final platformEnv = ConfigurationValues();

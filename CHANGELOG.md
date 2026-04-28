@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `SENTRY_CLI_BIN_PATH` env variable ([#398](https://github.com/getsentry/sentry-dart-plugin/pull/398))
+
 ## 3.3.0
 
 ### Features

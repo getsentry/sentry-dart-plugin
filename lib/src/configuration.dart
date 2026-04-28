@@ -199,8 +199,8 @@ class Configuration {
   }) {
     if (_hasValue(pubspecBinPath) &&
         fileConfig.binPath == pubspecBinPath &&
-        !_hasValue(argsConfig.binPath) &&
-        !_hasValue(platformEnvConfig.binPath)) {
+        argsConfig.binPath == null &&
+        platformEnvConfig.binPath == null) {
       Log.warn('bin_path is configured in pubspec.yaml. This is an intentional '
           'arbitrary executable override and will be executed directly as '
           'sentry-cli. Only use this with trusted project configuration. '
