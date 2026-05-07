@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Bump CLI from v2.52.0 to v3.4.1 ([#354](https://github.com/getsentry/sentry-dart-plugin/pull/354))
+  - [changelog](https://github.com/getsentry/sentry-cli/blob/main master/CHANGELOG.md#341)
+  - [diff](https://github.com/getsentry/sentry-cli/compare/2.52.0...3.4.1)
+
 ## 3.3.0
 
 ### Features
