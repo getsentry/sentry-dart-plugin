@@ -249,7 +249,13 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   }
   final buildArgs = [
     platform,
-    if (['ipa', 'ios'].contains(platform)) '--no-codesign',
+    if (['ipa', 'ios', 'ios-framework', 'macos-framework'].contains(platform))
+      '--no-codesign',
+    // Framework integration tests only inspect Release outputs. Avoid building
+    // Debug/Profile because newer Flutter versions require Apple development
+    // signing for those configurations on hosted CI runners.
+    if (['ios-framework', 'macos-framework'].contains(platform)) '--no-debug',
+    if (['ios-framework', 'macos-framework'].contains(platform)) '--no-profile',
     if (platform == 'web') '--source-maps',
     if (platform != 'web') '--split-debug-info=symbols',
     if (platform != 'web') '--obfuscate',
