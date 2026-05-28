@@ -1,10 +1,19 @@
 # Changelog
 
-## Unreleases
+## 3.4.0
+
+### Dependencies
+
+- Bump sentry-cli to v2.58.6 by @szokeasaurusrex in [#402](https://github.com/getsentry/sentry-dart-plugin/pull/402)
 
 ### Fixes
 
-- Prevent stale dart symbol map debug ID markers ([#403](https://github.com/getsentry/sentry-dart-plugin/pull/403))
+- Prevent stale dart symbol map debug ID markers by @denrase in [#403](https://github.com/getsentry/sentry-dart-plugin/pull/403)
+
+### Internal Changes
+
+- (deps) Bump getsentry/craft from 2.19.0 to 2.25.2 by @dependabot in [#390](https://github.com/getsentry/sentry-dart-plugin/pull/390)
+- Notify linked issues on release by @buenaflor in [#404](https://github.com/getsentry/sentry-dart-plugin/pull/404)
 
 ## 3.3.0
 
