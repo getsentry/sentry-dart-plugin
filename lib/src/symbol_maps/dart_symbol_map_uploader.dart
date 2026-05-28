@@ -62,8 +62,12 @@ class DartSymbolMapUploader {
           debugFilePath: debugFilePath,
         );
         if (debugId != null && debugId.isNotEmpty) {
-          await _prependDebugIdMarkerToMapFile(symbolMapPath, debugId);
+          await _updateDebugIdMarkerInMapFile(symbolMapPath, debugId);
+          Log.info('Resolved debug id "$debugId" for "$debugFilePath".');
         } else {
+          // Clear any marker left by a previous iteration so this upload cannot
+          // be associated with the wrong debug file if debug-id lookup fails.
+          await _updateDebugIdMarkerInMapFile(symbolMapPath, null);
           Log.warn(
               'Could not resolve debug id for "$debugFilePath". Proceeding without map modification.');
         }
@@ -88,16 +92,26 @@ class DartSymbolMapUploader {
           errorContext: 'Failed to upload Dart symbol map for $debugFilePath',
         );
 
+        final String debugIdSuffix = debugId != null && debugId.isNotEmpty
+            ? ' with debug id "$debugId"'
+            : '';
         if (exitCode == 0) {
           succeeded++;
+          Log.info(
+              'Dart symbol map upload succeeded for "$debugFilePath"$debugIdSuffix.');
         } else {
           failed++;
+          Log.warn(
+              'Dart symbol map upload failed for "$debugFilePath"$debugIdSuffix.');
         }
 
         // Propagate non-zero exit code consistently with the plugin behavior.
         Log.processExitCode(exitCode);
       }
     } finally {
+      // The marker is only an upload-time checksum discriminator. Remove it so
+      // the user-provided obfuscation map is not left modified after the run.
+      await _updateDebugIdMarkerInMapFile(symbolMapPath, null);
       Log.info(
           'Dart symbol map upload summary: attempted=$attempted, succeeded=$succeeded, failed=$failed');
     }
@@ -118,13 +132,15 @@ class DartSymbolMapUploader {
         environment: environment,
       );
 
-      process.stdout.transform(utf8.decoder).listen((String data) {
+      final Future<void> stdoutDone =
+          process.stdout.transform(utf8.decoder).forEach((String data) {
         final String trimmed = data.trim();
         if (trimmed.isNotEmpty) {
           Log.info(trimmed);
         }
       });
-      process.stderr.transform(utf8.decoder).listen((String data) {
+      final Future<void> stderrDone =
+          process.stderr.transform(utf8.decoder).forEach((String data) {
         final String trimmed = data.trim();
         if (trimmed.isNotEmpty) {
           Log.error(trimmed);
@@ -132,6 +148,7 @@ class DartSymbolMapUploader {
       });
 
       exitCode = await process.exitCode;
+      await Future.wait(<Future<void>>[stdoutDone, stderrDone]);
     } on Exception catch (exception) {
       Log.error('$errorContext: \n$exception');
       return 1;
@@ -169,10 +186,13 @@ class DartSymbolMapUploader {
       final StringBuffer stdoutBuffer = StringBuffer();
       final StringBuffer stderrBuffer = StringBuffer();
 
-      process.stdout.transform(utf8.decoder).listen(stdoutBuffer.write);
-      process.stderr.transform(utf8.decoder).listen(stderrBuffer.write);
+      final Future<void> stdoutDone =
+          process.stdout.transform(utf8.decoder).forEach(stdoutBuffer.write);
+      final Future<void> stderrDone =
+          process.stderr.transform(utf8.decoder).forEach(stderrBuffer.write);
 
       final int code = await process.exitCode;
+      await Future.wait(<Future<void>>[stdoutDone, stderrDone]);
       if (code != 0) {
         Log.warn(
             'Failed to fetch debug id for "$debugFilePath" (exit=$code): ${stderrBuffer.toString().trim()}');
@@ -209,16 +229,21 @@ class DartSymbolMapUploader {
 
   static const _debugIdMarker = 'SENTRY_DEBUG_ID_MARKER';
 
-  /// Reads the Dart symbol map at [mapPath] and ensures the array starts with
-  /// ["SENTRY_DEBUG_ID_MARKER", debugId]. If a previous marker is present, it
-  /// will be replaced.
-  static Future<void> _prependDebugIdMarkerToMapFile(
-      String mapPath, String debugId) async {
+  /// Reads the Dart symbol map at [mapPath] and updates the leading debug id
+  /// marker. If [debugId] is non-null, the array starts with
+  /// ["SENTRY_DEBUG_ID_MARKER", debugId]. If [debugId] is null, any previous
+  /// marker is removed.
+  static Future<void> _updateDebugIdMarkerInMapFile(
+    String mapPath,
+    String? debugId,
+  ) async {
     try {
       final File file = File(mapPath);
       if (!await file.exists()) {
-        Log.warn(
-            "Cannot modify Dart symbol map: file does not exist at '$mapPath'.");
+        if (debugId != null) {
+          Log.warn(
+              "Cannot modify Dart symbol map: file does not exist at '$mapPath'.");
+        }
         return;
       }
 
@@ -233,24 +258,27 @@ class DartSymbolMapUploader {
       final List<dynamic> original = List<dynamic>.from(decoded);
 
       // If the file already has the same marker, do nothing to keep it untouched.
-      if (original.length >= 2 &&
+      if (debugId != null &&
+          original.length >= 2 &&
           original[0] == _debugIdMarker &&
           original[1] == debugId) {
         return;
       }
 
-      List<dynamic> tail;
-      if (original.isNotEmpty && original.first == _debugIdMarker) {
-        tail = original.length > 2 ? original.sublist(2) : <dynamic>[];
-      } else {
-        tail = original;
-      }
+      final List<dynamic> tail =
+          original.isNotEmpty && original.first == _debugIdMarker
+              ? original.length > 2
+                  ? original.sublist(2)
+                  : <dynamic>[]
+              : original;
 
-      final List<dynamic> updated = <dynamic>[
-        _debugIdMarker,
-        debugId,
-        ...tail,
-      ];
+      final List<dynamic> updated = debugId == null
+          ? tail
+          : <dynamic>[
+              _debugIdMarker,
+              debugId,
+              ...tail,
+            ];
 
       await file.writeAsString(jsonEncode(updated));
     } catch (e) {

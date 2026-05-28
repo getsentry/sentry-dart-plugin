@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleases
+
+### Fixes
+
+- Prevent stale dart symbol map debug ID markers ([#403](https://github.com/getsentry/sentry-dart-plugin/pull/403))
+
 ## 3.3.0
 
 ### Features
