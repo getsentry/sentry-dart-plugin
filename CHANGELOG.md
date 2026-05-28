@@ -4,7 +4,7 @@
 
 ### Dependencies
 
-- (sentry-cli) Upgrade to 2.58.6 by @szokeasaurusrex in [#402](https://github.com/getsentry/sentry-dart-plugin/pull/402)
+- Bump sentry-cli to v2.58.6 by @szokeasaurusrex in [#402](https://github.com/getsentry/sentry-dart-plugin/pull/402)
 
 ### Bug Fixes 🐛
 
