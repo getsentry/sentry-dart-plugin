@@ -165,11 +165,11 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.flush()
 
 
-print("HTTP server listening on {}".format(uri.geturl()))
-print("To stop the server, execute a GET request to {}/STOP".format(uri.geturl()))
-
 try:
     httpd = ThreadingHTTPServer((uri.hostname, uri.port), Handler)
+    print("INTEGRATION_SERVER_READY", flush=True)
+    print("HTTP server listening on {}".format(uri.geturl()), flush=True)
+    print("To stop the server, execute a GET request to {}/STOP".format(uri.geturl()), flush=True)
     target = httpd.serve_forever()
 except KeyboardInterrupt:
     pass

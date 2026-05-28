@@ -1,8 +1,8 @@
 import '../configuration.dart';
 
 extension SentryCliArgs on Configuration {
-  List<String> baseArgs() => [
-        if (url != null) ...['--url', url!],
+  List<String> baseArgs({bool includeUrl = true}) => [
+        if (includeUrl && url != null) ...['--url', url!],
         if (authToken != null) ...['--auth-token', authToken!],
         if (logLevel != null) ...['--log-level', logLevel!],
       ];

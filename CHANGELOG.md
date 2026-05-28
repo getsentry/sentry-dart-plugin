@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleases
+
+### Fixes
+
+- Prevent stale dart symbol map debug ID markers ([#403](https://github.com/getsentry/sentry-dart-plugin/pull/403))
+
+## 3.3.0
+
+### Features
+
+- Ignore path list for web ([#340](https://github.com/getsentry/sentry-dart-plugin/pull/340))
+  - You can use the `ignore_web_source_paths` field: e.g `ignore_web_source_paths: [test/**/*.js]`
+  - This will ignore all specified files and directories from being uploaded
+- Improve flavored Apple debug symbol discovery ([#393](https://github.com/getsentry/sentry-dart-plugin/pull/393))
+
+### Fixes
+
+- Fix processor architecture for Linux ([#355](https://github.com/getsentry/sentry-dart-plugin/pull/355))
+- Add custom `symbols_path` in iOS symbol map discovery ([#394](https://github.com/getsentry/sentry-dart-plugin/pull/394))
+- Use `SENTRY_URL` for Dart symbol map uploads ([#395](https://github.com/getsentry/sentry-dart-plugin/pull/395))
+
 ## 3.2.1
 
 ### Fixes
