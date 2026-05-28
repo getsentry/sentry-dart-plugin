@@ -29,13 +29,6 @@ dartaotruntime bin/sentry_dart_plugin.aot
 
 Build is automatically run against branches and pull requests via GH Actions.
 
-# Pull Requests
-
-If a PR should notify a linked issue after release, use a GitHub closing keyword in the PR
-description, such as `Fixes #123`, `Closes #123`, or `Resolves #123`. Release notification
-automation only comments on issues GitHub recognizes as closed by the released PR; mentioning an
-issue without a closing keyword is not enough.
-
 ## Branch Naming
 
 Use the format `git-username/type/short-description` for branch names.
