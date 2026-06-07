@@ -53,7 +53,7 @@ jobs:
       - run: (flutter --version)[0] | Out-File flutter.version
         shell: pwsh
 
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: temp/testapp-${{ matrix.target }}
           key: integration-test-${{ matrix.host }}-${{ matrix.target }}-${{ hashFiles('flutter.version') }}
