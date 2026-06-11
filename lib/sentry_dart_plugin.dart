@@ -267,10 +267,6 @@ class SentryDartPlugin {
     params.add('inject');
     params.add(_configuration.webBuildFilesFolder);
 
-    // Exit successfully when there are no JS + sourcemap pairs instead of
-    // erroring out, e.g. when the web build contains no source maps.
-    params.add('--allow-empty');
-
     // Honor ignore_web_source_paths during injection so ignored files are not
     // mutated in-place. Patterns are gitignore-style globs interpreted relative
     // to the web build folder, matching the upload step.
