@@ -246,32 +246,37 @@ class SentryDartPlugin {
     return results;
   }
 
-  Future<List<String>> _findAllJsFilePaths() => _collectWebFiles<String>(
-        extension: '.js',
-        builder: (file) => file.path,
-      );
-
   Future<List<File>> _findAllSourceMapFiles() => _collectWebFiles<File>(
         extension: '.js.map',
         builder: (file) => file.absolute,
       );
 
   Future<bool> _injectDebugIds() async {
-    List<String> params = [];
-    params.add('sourcemaps');
-
-    // There is currently a sentry-cli bug that mutates the Flutter Web source map
-    // in such a way that it becomes corrupt / invalid -> that's why we need to
-    // inject each file separately instead of using a directory
-    // TODO(buenaflor): in the future we should use the directory when sentry-cli is fixed
-    final jsFilePaths = await _findAllJsFilePaths();
-    if (jsFilePaths.isEmpty) {
+    final fs = injector.get<FileSystem>();
+    final webDir = fs.directory(_configuration.webBuildFilesFolder);
+    if (!await webDir.exists()) {
+      Log.warn(
+        'Web build directory "${_configuration.webBuildFilesFolder}" does not exist, '
+        'skipping debug id injection.',
+      );
       return false;
     }
 
+    List<String> params = [];
+    params.add('sourcemaps');
     params.add('inject');
-    for (final path in jsFilePaths) {
-      params.add(path);
+    params.add(_configuration.webBuildFilesFolder);
+
+    // Exit successfully when there are no JS + sourcemap pairs instead of
+    // erroring out, e.g. when the web build contains no source maps.
+    params.add('--allow-empty');
+
+    // Honor ignore_web_source_paths during injection so ignored files are not
+    // mutated in-place. Patterns are gitignore-style globs interpreted relative
+    // to the web build folder, matching the upload step.
+    for (final ignorePattern in _configuration.ignoreWebSourcePaths) {
+      params.add('--ignore');
+      params.add(ignorePattern);
     }
 
     params.addAll(_baseCliParams());
