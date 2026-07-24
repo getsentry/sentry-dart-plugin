@@ -1,0 +1,43 @@
+name: Dependency Audit
+
+on:
+  push:
+    branches:
+      - main
+      - release/**
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pub-dependencies:
+    name: Pub dependency report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # pin@v1.7.2
+      - name: Resolve dependencies
+        run: dart pub get
+      - name: Report dependency graph
+        run: dart pub deps
+      - name: Report outdated dependencies
+        run: dart pub outdated
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          fail-on-scopes: runtime, development
+
+  action-pinning:
+    name: Enforce Action SHA pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: zgosalvez/github-actions-ensure-sha-pinned-actions@3db98c0363e2fa5df3e1c4c471777a7c10b24cc9 # v5.0.5
