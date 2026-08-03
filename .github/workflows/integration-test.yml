@@ -10,30 +10,32 @@ on:
 jobs:
   integration-test:
     name: ${{ matrix.target }}
-    runs-on: ${{ matrix.host }}-latest
+    runs-on: ${{ matrix.host }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - host: macos
+          # macOS is pinned because the Xcode version selected below only exists
+          # on the macos-15 image; macos-latest now points at macOS 26.
+          - host: macos-15
             target: macos
-          - host: macos
+          - host: macos-15
             target: macos-framework
-          - host: macos
+          - host: macos-15
             target: ios
-          - host: macos
+          - host: macos-15
             target: ios-framework
-          - host: macos
+          - host: macos-15
             target: ipa
-          - host: ubuntu
+          - host: ubuntu-latest
             target: linux
-          - host: ubuntu
+          - host: ubuntu-latest
             target: web
-          - host: ubuntu
+          - host: ubuntu-latest
             target: apk
-          - host: ubuntu
+          - host: ubuntu-latest
             target: appbundle
-          - host: windows
+          - host: windows-latest
             target: windows
     env:
       TEST_PLATFORM: ${{ matrix.target }}
