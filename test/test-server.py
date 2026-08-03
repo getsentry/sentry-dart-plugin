@@ -3,6 +3,7 @@
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
+import socketserver
 import sys
 import threading
 import binascii
@@ -165,8 +166,17 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.flush()
 
 
+class Server(ThreadingHTTPServer):
+    # HTTPServer.server_bind() resolves the bound address through
+    # socket.getfqdn(), a reverse DNS lookup that can stall for tens of seconds
+    # on CI runners and delay the readiness signal the tests wait for.
+    def server_bind(self):
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+
+
 try:
-    httpd = ThreadingHTTPServer((uri.hostname, uri.port), Handler)
+    httpd = Server((uri.hostname, uri.port), Handler)
     print("INTEGRATION_SERVER_READY", flush=True)
     print("HTTP server listening on {}".format(uri.geturl()), flush=True)
     print("To stop the server, execute a GET request to {}/STOP".format(uri.geturl()), flush=True)
