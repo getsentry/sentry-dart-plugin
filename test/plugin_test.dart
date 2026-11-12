@@ -217,6 +217,18 @@ void main() {
           });
         });
 
+        test('skips finalize when finalize_release is false', () async {
+          const version = '1.0.0';
+          final commandLog = await runWith(version, 'finalize_release: false');
+          const release = '$name@$version';
+
+          expect(commandLog, [
+            '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
+            '$cli $commonArgs releases $orgAndProject new $release',
+            '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
+          ]);
+        });
+
         test('emits dart-symbol-map upload command', () async {
           const version = '1.0.0';
           // Create Android symbols and a fake Dart symbol map

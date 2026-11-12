@@ -33,6 +33,7 @@ void main() {
         "--sentry-define=symbols_path=fixture-symbols_path",
         "--sentry-define=commits=fixture-commits",
         "--sentry-define=ignore_missing=true",
+        "--sentry-define=finalize_release=false",
         "--sentry-define=bin_dir=fixture-bin_dir",
         "--sentry-define=sentry_cli_cdn_url=fixture-sentry_cli_cdn_url",
         "--sentry-define=sentry_cli_version=1.0.0",
@@ -59,6 +60,7 @@ void main() {
       expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, isTrue);
+      expect(sut.finalizeRelease, isFalse);
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.sentryCliVersion, '1.0.0');
@@ -104,6 +106,7 @@ void main() {
       symbols_path: fixture-symbols_path
       commits: fixture-commits
       ignore_missing: true
+      finalize_release: false
       bin_dir: fixture-bin_dir
       sentry_cli_cdn_url: fixture-sentry_cli_cdn_url
       sentry_cli_version: 1.0.0
@@ -151,6 +154,7 @@ void main() {
       expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, isTrue);
+      expect(sut.finalizeRelease, isFalse);
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.legacyWebSymbolication, isTrue);
@@ -175,6 +179,7 @@ void main() {
       symbols_path: fixture-symbols_path
       commits=fixture-commits
       ignore_missing=true
+      finalize_release=false
       bin_dir=fixture-bin_dir
       sentry_cli_cdn_url=fixture-sentry_cli_cdn_url
       sentry_cli_version=1.0.0
@@ -219,6 +224,7 @@ void main() {
       expect(sut.symbolsPath, 'fixture-symbols_path');
       expect(sut.commits, 'fixture-commits');
       expect(sut.ignoreMissing, isTrue);
+      expect(sut.finalizeRelease, isFalse);
       expect(sut.binDir, 'fixture-bin_dir');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.sentryCliVersion, '1.0.0');

@@ -60,7 +60,11 @@ class SentryDartPlugin {
         Log.info('Commit integration is disabled.');
       }
 
-      await _executeFinalizeRelease(release);
+      if (_configuration.finalizeRelease) {
+        await _executeFinalizeRelease(release);
+      } else {
+        Log.info('Release finalization is disabled.');
+      }
     } on ExitError catch (e) {
       return e.code;
     }

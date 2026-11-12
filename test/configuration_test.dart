@@ -73,6 +73,7 @@ void main() {
         symbolsPath: 'symbols_path-args-config',
         commits: 'commits-args-config',
         ignoreMissing: true,
+        finalizeRelease: false,
         binDir: 'binDir-args-config',
         binPath: 'binPath-args-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
@@ -101,6 +102,7 @@ void main() {
         symbolsPath: 'symbols_path-args-config',
         commits: 'commits-file-config',
         ignoreMissing: false,
+        finalizeRelease: true,
         binDir: 'binDir-file-config',
         binPath: 'binPath-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
@@ -141,6 +143,7 @@ void main() {
       );
       expect(sut.commits, 'commits-args-config');
       expect(sut.ignoreMissing, isTrue);
+      expect(sut.finalizeRelease, isFalse);
       expect(sut.binDir, 'binDir-args-config');
       expect(sut.binPath, 'binPath-args-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-args-config');
@@ -173,6 +176,7 @@ void main() {
         symbolsPath: 'symbols_path-args-config',
         commits: 'commits-file-config',
         ignoreMissing: true,
+        finalizeRelease: false,
         binDir: 'binDir-file-config',
         binPath: 'binPath-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
@@ -212,6 +216,7 @@ void main() {
       );
       expect(sut.commits, 'commits-file-config');
       expect(sut.ignoreMissing, isTrue);
+      expect(sut.finalizeRelease, isFalse);
       expect(sut.binDir, 'binDir-file-config');
       expect(sut.binPath, 'binPath-file-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-file-config');
@@ -239,6 +244,7 @@ void main() {
       expect(sut.dartSymbolMapPath, isNull);
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, isFalse);
+      expect(sut.finalizeRelease, isTrue);
       expect(sut.buildFilesFolder, 'build');
       expect(sut.symbolsFolder, Configuration.defaultSymbolsFolder);
       expect(
