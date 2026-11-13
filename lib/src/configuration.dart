@@ -93,6 +93,11 @@ class Configuration {
   /// https://docs.sentry.io/product/cli/releases/#dealing-with-missing-commits
   late bool ignoreMissing;
 
+  /// Whether to finalize the release after the other steps, defaults to true.
+  /// Set to `false` to finalize the release yourself, for example when the
+  /// build goes live rather than when it is built.
+  late bool finalizeRelease;
+
   /// The directory where the sentry-cli binary is downloaded to. Defaults to
   /// `.dart_tool/pub/bin/sentry_dart_plugin`.
   late String binDir;
@@ -155,6 +160,7 @@ class Configuration {
     uploadSources = configValues.uploadSources ?? false;
     commits = configValues.commits ?? 'auto';
     ignoreMissing = configValues.ignoreMissing ?? false;
+    finalizeRelease = configValues.finalizeRelease ?? true;
 
     buildFilesFolder = configValues.buildPath ?? 'build';
     // uploading JS and Map files need to have the correct folder structure

@@ -23,6 +23,7 @@ class ConfigurationValues {
   final String? dartSymbolMapPath;
   final String? commits;
   final bool? ignoreMissing;
+  final bool? finalizeRelease;
   final String? binDir;
   final String? binPath;
   final String? sentryCliCdnUrl;
@@ -51,6 +52,7 @@ class ConfigurationValues {
     this.dartSymbolMapPath,
     this.commits,
     this.ignoreMissing,
+    this.finalizeRelease,
     this.binDir,
     this.binPath,
     this.sentryCliCdnUrl,
@@ -106,6 +108,7 @@ class ConfigurationValues {
       dartSymbolMapPath: sentryArguments['dart_symbol_map_path'],
       commits: sentryArguments['commits'],
       ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
+      finalizeRelease: boolFromString(sentryArguments['finalize_release']),
       binDir: sentryArguments['bin_dir'],
       binPath: sentryArguments['bin_path'],
       sentryCliCdnUrl: sentryArguments['sentry_cli_cdn_url'],
@@ -149,6 +152,7 @@ class ConfigurationValues {
       dartSymbolMapPath: configReader.getString('dart_symbol_map_path'),
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
+      finalizeRelease: configReader.getBool('finalize_release'),
       binDir: configReader.getString('bin_dir'),
       binPath: configReader.getString('bin_path'),
       sentryCliCdnUrl: configReader.getString('sentry_cli_cdn_url'),
@@ -213,6 +217,7 @@ class ConfigurationValues {
           file.dartSymbolMapPath,
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
+      finalizeRelease: args.finalizeRelease ?? file.finalizeRelease,
       binDir: args.binDir ?? file.binDir,
       binPath: args.binPath ?? file.binPath,
       sentryCliCdnUrl: platformEnv.sentryCliCdnUrl ??
