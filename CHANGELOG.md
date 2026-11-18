@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.6.0
+
+### Fixes
+
+- (cli) Fail on bad Sentry CLI downloads and deflake download tests by @buenaflor with @sentry-junior in [#422](https://github.com/getsentry/sentry-dart-plugin/pull/422)
+
+### Dependencies
+
+- Bump sentry-cli from v2.58.6 to v3.8.2 ([changelog](https://github.com/getsentry/sentry-cli/blob/master/CHANGELOG.md#382), [diff](https://github.com/getsentry/sentry-cli/compare/2.58.6...3.8.2)) by @lucas-zimerman and @claude in [#423](https://github.com/getsentry/sentry-dart-plugin/pull/423)
+  - **Self-hosted:** Sentry CLI v3 officially supports Sentry 24.11.1 and newer. If your Sentry URL is only set in `.sentryclirc`, also set `url` in the plugin config or `SENTRY_URL`, otherwise uploads go to sentry.io.
+  - **Staying on v2:** set `sentry_cli_version: 2.58.6` and delete the cached `sentry-cli` binary in `.dart_tool/pub/bin/sentry_dart_plugin/`.
+  - `legacy_web_symbolication` now uploads with `sourcemaps upload --release`. Uploaded artifacts are unchanged.
+
 ## 3.5.0
 
 ### Features
