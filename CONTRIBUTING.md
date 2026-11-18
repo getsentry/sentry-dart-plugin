@@ -90,6 +90,23 @@ Add a new function called `foo` which prints "Hello, world!"
 The text under "Changelog Entry" will be used verbatim in the changelog instead of the PR title. If
 no such section is present, the PR title is used as usual.
 
+### Release Notes
+
+For a note that should stand out at the top of a release, such as an upgrade warning, add it to
+`.github/release-note.md` in your PR instead of the "Changelog Entry". Craft renders each entry as
+a list item, and GitHub alerts like `> [!IMPORTANT]` don't render inside lists.
+
+```markdown
+> [!IMPORTANT]
+> This release bundles Sentry CLI v3. Self-hosted users need Sentry 24.11.1 or newer.
+```
+
+When the next release is prepared, `scripts/bump-version.sh` inserts the file's content right under
+the new `## <version>` heading in `CHANGELOG.md` and deletes the file. The note then appears in the
+published package's changelog and in the GitHub release. If several PRs need a note, add each one to
+the same file. Don't add the note to `CHANGELOG.md` directly: a `## Unreleased` section stops craft
+from generating the other entries.
+
 
 # AI Use
 
