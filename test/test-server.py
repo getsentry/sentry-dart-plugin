@@ -77,6 +77,9 @@ class Handler(BaseHTTPRequestHandler):
             self.writeJSON(jsonResponse)
         elif self.isApi('api/0/projects/{}/{}/releases/'.format(apiOrg, apiProject)):
             self.writeJSONFile("integration-server-assets/release.json")
+        # sentry-cli 3.x creates releases via the organization endpoint.
+        elif self.isApi('api/0/organizations/{}/releases/'.format(apiOrg)):
+            self.writeJSONFile("integration-server-assets/release.json")
         elif self.isApi('/api/0/organizations/{}/releases/{}@{}/deploys/'.format(apiOrg, appIdentifier, version)):
             self.writeJSONFile("integration-server-assets/deploy.json")
         elif self.isApi('/api/0/projects/{}/{}/releases/{}@{}/files/'.format(apiOrg, apiProject, appIdentifier, version)):
