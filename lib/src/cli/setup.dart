@@ -10,8 +10,10 @@ import 'sources.dart';
 
 class CLISetup {
   final /*CLISources*/ Map<HostPlatform, CLISource> _sources;
+  final http.Client Function() _httpClientFactory;
 
-  CLISetup(this._sources);
+  CLISetup(this._sources, {http.Client Function()? httpClientFactory})
+      : _httpClientFactory = httpClientFactory ?? http.Client.new;
 
   Future<String> download(
     HostPlatform platform,
@@ -55,9 +57,13 @@ class CLISetup {
     Log.info(
         "Downloading Sentry CLI ${versionOverride ?? source.version} from $downloadUrl to ${file.path}");
 
-    final client = http.Client();
+    final client = _httpClientFactory();
     try {
       final response = await client.send(http.Request('GET', downloadUrl));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(
+            'Failed to download Sentry CLI from $downloadUrl: HTTP ${response.statusCode}');
+      }
       final sink = file.openWrite();
       await sink.addStream(response.stream);
       await sink.close();
@@ -65,12 +71,12 @@ class CLISetup {
       client.close();
     }
 
-    if (await _check(source, file, versionOverride)) {
-      Log.info("Sentry CLI downloaded successfully.");
-    } else {
-      Log.error(
+    if (!await _check(source, file, versionOverride)) {
+      await file.delete();
+      throw Exception(
           "Failed to download Sentry CLI: downloaded file doesn't match the expected checksum.");
     }
+    Log.info("Sentry CLI downloaded successfully.");
   }
 
   Future<bool> _check(
