@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.5.0
+
+### Features
+
+- Add finalize_release option to skip finalizing the release by @landenai with @sentry-junior in [#420](https://github.com/getsentry/sentry-dart-plugin/pull/420)
+
+### Internal Changes
+
+- (deps) Pin lints bound and release-comment action SHA by @buenaflor and @cursoragent in [#415](https://github.com/getsentry/sentry-dart-plugin/pull/415)
+- (release) Bump craft to 3.9.0 and update config by @BYK with @sentry-junior in [#419](https://github.com/getsentry/sentry-dart-plugin/pull/419)
+- Remove disabled changelog-preview workflow by @oioki and @claude in [#416](https://github.com/getsentry/sentry-dart-plugin/pull/416)
+- Add AI Use section to CONTRIBUTING.md by @christophaigner with @sentry-junior in [#413](https://github.com/getsentry/sentry-dart-plugin/pull/413)
+- Pin GitHub Actions to full-length commit SHAs by @joshuarli in [#385](https://github.com/getsentry/sentry-dart-plugin/pull/385)
+- Remove Danger workflow and add changelog policy by @buenaflor, @codex and @cursoragent in [#405](https://github.com/getsentry/sentry-dart-plugin/pull/405)
+
 ## 3.4.0
 
 ### Dependencies
