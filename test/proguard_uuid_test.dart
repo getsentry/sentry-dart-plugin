@@ -19,7 +19,8 @@ void main() {
     config = Configuration()
       ..buildFilesFolder = 'build'
       ..uploadProguard = true
-      ..proguardUuid = null;
+      ..proguardUuid = null
+      ..proguardMappingPath = null;
   });
 
   String? injectedUuid() {
@@ -42,6 +43,10 @@ void main() {
   });
 
   group('parseProguardUuid', () {
+    test('accepts a whitespace separator', () {
+      expect(parseProguardUuid('io.sentry.ProguardUuids $uuid'), uuid);
+    });
+
     test('reads the value, ignoring comments and other keys', () {
       expect(
         parseProguardUuid('# comment\n'
@@ -159,6 +164,30 @@ void main() {
       expect(await hasInjectedProguardUuid(fs), isFalse);
     });
 
+    test('detects the Gradle plugin applied via a version catalog alias',
+        () async {
+      fs.file('android/gradle/libs.versions.toml')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('[plugins]\n'
+            'sentry-android = { id = "io.sentry.android.gradle", version = "5.0.0" }\n');
+      fs.file('android/app/build.gradle.kts')
+        ..createSync(recursive: true)
+        ..writeAsStringSync(
+            'plugins {\n  alias(libs.plugins.sentry.android)\n}');
+      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+    });
+
+    test('detects the Gradle plugin after a string containing /*', () async {
+      fs.file('android/app/build.gradle.kts')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('val sources = "src/*.kt"\n'
+            'plugins { id("io.sentry.android.gradle") }\n'
+            '/* end */');
+      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+    });
+
     test('handles a non-UTF-8 debug-meta file it did not create', () async {
       // 0xE9 is "é" in ISO-8859-1, the encoding of .properties files.
       final bytes = [
@@ -247,27 +276,31 @@ void main() {
   });
 
   group('removeConsumedInjectedProguardUuid', () {
-    const apk = 'build/app/outputs/flutter-apk/app-release.apk';
-
-    Future<void> inject({required DateTime at}) async {
+    Future<String> inject({required DateTime at}) async {
       fs.directory('android/app').createSync(recursive: true);
       await injectProguardUuid(fs: fs, config: config);
       fs.file(debugMetaAssetPath).setLastModifiedSync(at);
+      return injectedUuid()!;
     }
 
-    void build({required DateTime at}) => fs.file(apk)
-      ..createSync(recursive: true)
-      ..writeAsBytesSync(buildZip({'AndroidManifest.xml': ''}))
-      ..setLastModifiedSync(at);
+    void build(String name, {required DateTime at, String? uuid}) =>
+        fs.file('build/app/outputs/flutter-apk/$name')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(buildZip({
+            if (uuid != null)
+              'assets/sentry-debug-meta.properties':
+                  'io.sentry.ProguardUuids=$uuid',
+          }))
+          ..setLastModifiedSync(at);
 
     Future<bool> removed() async {
       await removeConsumedInjectedProguardUuid(fs: fs, config: config);
       return !fs.file(debugMetaAssetPath).existsSync();
     }
 
-    test('removes the file once a newer APK/AAB exists', () async {
-      await inject(at: DateTime(2026, 1, 1));
-      build(at: DateTime(2026, 1, 2));
+    test('removes the file once a release build packaged it', () async {
+      final injected = await inject(at: DateTime(2026, 1, 1));
+      build('app-release.apk', at: DateTime(2026, 1, 2), uuid: injected);
       expect(await removed(), isTrue);
     });
 
@@ -276,8 +309,15 @@ void main() {
       expect(await removed(), isFalse);
     });
 
-    test('keeps the file when the newest APK/AAB predates it', () async {
-      build(at: DateTime(2026, 1, 1));
+    test('keeps the file after a debug or profile build', () async {
+      final injected = await inject(at: DateTime(2026, 1, 1));
+      build('app-debug.apk', at: DateTime(2026, 1, 2), uuid: injected);
+      build('app-free-profile.apk', at: DateTime(2026, 1, 2), uuid: injected);
+      expect(await removed(), isFalse);
+    });
+
+    test('keeps the file when the release build predates it', () async {
+      build('app-release.apk', at: DateTime(2026, 1, 1));
       await inject(at: DateTime(2026, 1, 2));
       expect(await removed(), isFalse);
     });
@@ -287,8 +327,61 @@ void main() {
         ..createSync(recursive: true)
         ..writeAsStringSync('io.sentry.ProguardUuids=$uuid\n')
         ..setLastModifiedSync(DateTime(2026, 1, 1));
-      build(at: DateTime(2026, 1, 2));
+      build('app-release.apk', at: DateTime(2026, 1, 2), uuid: uuid);
       expect(await removed(), isFalse);
+    });
+  });
+
+  group('variantsBuiltWithInjectedUuid', () {
+    test('lists each release variant once (APK and AAB)', () async {
+      fs.directory('android/app').createSync(recursive: true);
+      await injectProguardUuid(fs: fs, config: config);
+      fs.file(debugMetaAssetPath).setLastModifiedSync(DateTime(2026, 1, 1));
+      final meta = {
+        'assets/sentry-debug-meta.properties':
+            fs.file(debugMetaAssetPath).readAsStringSync()
+      };
+      for (final path in [
+        'flutter-apk/app-free-release.apk',
+        'apk/free/release/app-free-release.apk',
+        'flutter-apk/app-paid-release.apk',
+        'flutter-apk/app-paid-debug.apk',
+      ]) {
+        fs.file('build/app/outputs/$path')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(buildZip(meta))
+          ..setLastModifiedSync(DateTime(2026, 1, 2));
+      }
+      expect(await variantsBuiltWithInjectedUuid(fs: fs, config: config),
+          {'app-free-release', 'app-paid-release'});
+    });
+  });
+
+  group('readBuiltAppProguardUuid with a mapping time', () {
+    void writeApk(String name, DateTime at, {bool withUuid = true}) =>
+        fs.file('build/app/outputs/flutter-apk/$name')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(buildZip({
+            if (withUuid)
+              'assets/sentry-debug-meta.properties':
+                  'io.sentry.ProguardUuids=$uuid',
+          }))
+          ..setLastModifiedSync(at);
+
+    test('reads the first artifact built after the mapping', () async {
+      writeApk('app-release.apk', DateTime(2026, 1, 2));
+      writeApk('app-debug.apk', DateTime(2026, 1, 3), withUuid: false);
+      final built = await readBuiltAppProguardUuid(
+          fs: fs, config: config, mappingBuiltAt: DateTime(2026, 1, 1));
+      expect(built?.uuid, uuid);
+    });
+
+    test('ignores artifacts older than the mapping', () async {
+      writeApk('app-release.apk', DateTime(2026, 1, 1));
+      expect(
+          await readBuiltAppProguardUuid(
+              fs: fs, config: config, mappingBuiltAt: DateTime(2026, 1, 2)),
+          isNull);
     });
   });
 }

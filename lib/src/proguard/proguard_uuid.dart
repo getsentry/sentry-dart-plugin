@@ -45,7 +45,9 @@ String? parseProguardUuid(String content) {
     if (line.isEmpty || line.startsWith('#') || line.startsWith('!')) {
       continue;
     }
-    final match = RegExp(r'^([^=:\s]+)\s*[=:]\s*(.*)$').firstMatch(line);
+    // Java properties separate key and value by '=', ':' or whitespace.
+    final match =
+        RegExp(r'^([^=:\s]+)(?:\s*[=:]\s*|\s+)(.*)$').firstMatch(line);
     if (match == null || match.group(1) != _proguardUuidsKey) {
       continue;
     }
@@ -134,32 +136,48 @@ Future<int> injectProguardUuid({
   }
 }
 
-/// Reads the ProGuard UUID from the most recently built APK or AAB under
-/// `<build_path>/app/outputs`, or null if it has none.
+/// Reads the ProGuard UUID from a built APK or AAB under
+/// `<build_path>/app/outputs`, or returns null if it has none.
 ///
-/// Only the newest artifact is considered: an older one may come from a
-/// previous build with a different mapping.
+/// With [mappingBuiltAt], reads the most recent APK/AAB that has a UUID and
+/// isn't older than the mapping. Gradle rewrites `mapping.txt` only when the
+/// code changes, so every artifact built after it matches that mapping, while
+/// a later debug build may have no UUID. Without it (an explicit
+/// `proguard_mapping_path`), reads the most recent APK/AAB.
 Future<BuiltAppProguardUuid?> readBuiltAppProguardUuid({
   required FileSystem fs,
   required Configuration config,
+  DateTime? mappingBuiltAt,
 }) async {
-  final newest = (await _newestAndroidArtifact(fs, config))?.file;
-  if (newest == null) {
+  try {
+    final artifacts = await _listArtifacts(fs, config);
+    if (mappingBuiltAt == null) {
+      artifacts.removeRange(artifacts.isEmpty ? 0 : 1, artifacts.length);
+    }
+    for (final artifact in artifacts) {
+      if (mappingBuiltAt != null &&
+          artifact.modified.isBefore(mappingBuiltAt)) {
+        break;
+      }
+      final uuid = await artifact.uuid();
+      if (uuid != null) {
+        return BuiltAppProguardUuid(uuid, artifact.file.path);
+      }
+    }
+  } on FileSystemException catch (e) {
+    Log.warn('Could not look for the built APK/AAB: $e');
+  }
+  return null;
+}
+
+/// When `--inject-uuid` wrote its file, or null if it isn't there.
+Future<DateTime?> injectedProguardUuidTime(FileSystem fs) async {
+  if (!await hasInjectedProguardUuid(fs)) {
     return null;
   }
-
-  final entryName = newest.path.toLowerCase().endsWith('.aab')
-      ? 'base/assets/sentry-debug-meta.properties'
-      : 'assets/sentry-debug-meta.properties';
   try {
-    final bytes = await readZipEntry(newest, entryName);
-    if (bytes == null) {
-      return null;
-    }
-    final uuid = parseProguardUuid(utf8.decode(bytes, allowMalformed: true));
-    return uuid == null ? null : BuiltAppProguardUuid(uuid, newest.path);
-  } on FileSystemException catch (e) {
-    Log.warn("Could not read '${newest.path}': $e");
+    return await fs.file(debugMetaAssetPath).lastModified();
+  } on FileSystemException {
     return null;
   }
 }
@@ -174,11 +192,39 @@ Future<bool> hasInjectedProguardUuid(FileSystem fs) async {
   }
 }
 
-/// Removes the file written by `--inject-uuid` once an Android build has
-/// packaged it, i.e. when an APK/AAB newer than the file exists. This way a
-/// later build without `--inject-uuid` can't silently reuse the UUID with a
-/// different mapping, while a run for another platform (or one that fails
-/// before the Android build) leaves it for the Android build that follows.
+/// The release-type variants (e.g. `app-free-release`) built since
+/// `--inject-uuid` that packaged its UUID. More than one means several builds
+/// share the UUID, so no single mapping matches it.
+Future<Set<String>> variantsBuiltWithInjectedUuid({
+  required FileSystem fs,
+  required Configuration config,
+}) async {
+  final injectedAt = await injectedProguardUuidTime(fs);
+  if (injectedAt == null) {
+    return {};
+  }
+  final injected = parseProguardUuid(
+      latin1.decode(await fs.file(debugMetaAssetPath).readAsBytes()));
+  final variants = <String>{};
+  for (final artifact in await _listArtifacts(fs, config)) {
+    if (!artifact.modified.isAfter(injectedAt)) {
+      break;
+    }
+    if (artifact.isUnminified) {
+      continue;
+    }
+    if ((await artifact.uuid())?.toLowerCase() == injected?.toLowerCase()) {
+      variants.add(artifact.variant);
+    }
+  }
+  return variants;
+}
+
+/// Removes the file written by `--inject-uuid` once a release build has
+/// packaged it, i.e. when a release-type APK/AAB newer than the file contains
+/// its UUID. This way a later build without `--inject-uuid` can't silently
+/// reuse the UUID with a different mapping, while a run for another platform,
+/// a debug build, or a run before the release build leaves it in place.
 ///
 /// Files not created by this plugin are left untouched. Never throws.
 Future<void> removeConsumedInjectedProguardUuid({
@@ -186,16 +232,10 @@ Future<void> removeConsumedInjectedProguardUuid({
   required Configuration config,
 }) async {
   try {
-    if (!await hasInjectedProguardUuid(fs)) {
+    if ((await variantsBuiltWithInjectedUuid(fs: fs, config: config)).isEmpty) {
       return;
     }
-    final file = fs.file(debugMetaAssetPath);
-    final artifact = await _newestAndroidArtifact(fs, config);
-    if (artifact == null ||
-        !artifact.modified.isAfter(await file.lastModified())) {
-      return;
-    }
-    await file.delete();
+    await fs.file(debugMetaAssetPath).delete();
     Log.info("Removed '$debugMetaAssetPath'. Run --inject-uuid again before "
         'the next build.');
   } on FileSystemException catch (e) {
@@ -203,40 +243,62 @@ Future<void> removeConsumedInjectedProguardUuid({
   }
 }
 
-/// The most recently written APK or AAB under `<build_path>/app/outputs`.
 class _Artifact {
   final File file;
   final DateTime modified;
+  String? _uuid;
+  var _read = false;
 
   _Artifact(this.file, this.modified);
+
+  String get _name => file.basename.toLowerCase();
+
+  /// The file name without extension, shared by the APK and AAB of a variant
+  /// (`app-release`, `app-free-release`).
+  String get variant => _name.substring(0, _name.lastIndexOf('.'));
+
+  /// Debug and profile builds aren't minified by Flutter.
+  bool get isUnminified =>
+      variant.endsWith('-debug') || variant.endsWith('-profile');
+
+  Future<String?> uuid() async {
+    if (!_read) {
+      _read = true;
+      final entryName = _name.endsWith('.aab')
+          ? 'base/assets/sentry-debug-meta.properties'
+          : 'assets/sentry-debug-meta.properties';
+      try {
+        final bytes = await readZipEntry(file, entryName);
+        _uuid = bytes == null ? null : parseProguardUuid(latin1.decode(bytes));
+      } on FileSystemException catch (e) {
+        Log.warn("Could not read '${file.path}': $e");
+      }
+    }
+    return _uuid;
+  }
 }
 
-Future<_Artifact?> _newestAndroidArtifact(
-  FileSystem fs,
-  Configuration config,
-) async {
+/// The APKs/AABs under `<build_path>/app/outputs`, the most recent first.
+Future<List<_Artifact>> _listArtifacts(
+    FileSystem fs, Configuration config) async {
   final outputs =
       fs.directory(fs.path.join(config.buildFilesFolder, 'app', 'outputs'));
   if (!await outputs.exists()) {
-    return null;
+    return [];
   }
-
-  _Artifact? newest;
+  final artifacts = <_Artifact>[];
   await for (final entity
       in outputs.list(recursive: true, followLinks: false)) {
     if (entity is! File) {
       continue;
     }
     final path = entity.path.toLowerCase();
-    if (!path.endsWith('.apk') && !path.endsWith('.aab')) {
-      continue;
-    }
-    final modified = await entity.lastModified();
-    if (newest == null || modified.isAfter(newest.modified)) {
-      newest = _Artifact(entity, modified);
+    if (path.endsWith('.apk') || path.endsWith('.aab')) {
+      artifacts.add(_Artifact(entity, await entity.lastModified()));
     }
   }
-  return newest;
+  artifacts.sort((a, b) => b.modified.compareTo(a.modified));
+  return artifacts;
 }
 
 final _injectedMarkerBytes = ascii.encode(_injectedMarker);
@@ -255,16 +317,20 @@ Future<bool> _isInjectedByPlugin(File file) async {
   return true;
 }
 
-final _sentryGradlePluginId =
-    RegExp(r'''['"]io\.sentry\.android\.gradle['"]''');
+const _sentryGradlePluginId = 'io.sentry.android.gradle';
 final _applyFalse = RegExp(r'^[^\n]*?\bapply\s*\(?\s*false');
-final _blockComment = RegExp(r'/\*.*?\*/', dotAll: true);
-final _lineComment = RegExp(r'//[^\n]*');
 
 /// Returns the app module build file that applies the Sentry Android Gradle
 /// Plugin, or null. Only the app module is checked: `settings.gradle` and the
-/// root `build.gradle` usually just declare plugins (`apply false`).
+/// root `build.gradle` usually just declare plugins (`apply false`). Handles
+/// the plugin id, `apply plugin:`, and version catalog aliases
+/// (`alias(libs.plugins.<name>)`).
 Future<String?> _findSentryGradlePlugin(FileSystem fs) async {
+  final references = [
+    RegExp('''['"]${RegExp.escape(_sentryGradlePluginId)}['"]'''),
+    for (final accessor in await _versionCatalogSentryAccessors(fs))
+      RegExp('\\blibs\\.plugins\\.${RegExp.escape(accessor)}(?![\\w.])'),
+  ];
   const candidates = [
     'android/app/build.gradle',
     'android/app/build.gradle.kts',
@@ -274,17 +340,81 @@ Future<String?> _findSentryGradlePlugin(FileSystem fs) async {
     if (!await file.exists()) {
       continue;
     }
-    final source = utf8
-        .decode(await file.readAsBytes(), allowMalformed: true)
-        .replaceAll(_blockComment, '')
-        .replaceAll(_lineComment, '');
-    for (final match in _sentryGradlePluginId.allMatches(source)) {
-      // `id("io.sentry.android.gradle") version "x" apply false` declares the
-      // plugin without applying it.
-      if (!_applyFalse.hasMatch(source.substring(match.end))) {
-        return path;
+    final source = _stripComments(
+        utf8.decode(await file.readAsBytes(), allowMalformed: true));
+    for (final reference in references) {
+      for (final match in reference.allMatches(source)) {
+        // `id("io.sentry.android.gradle") version "x" apply false` declares
+        // the plugin without applying it.
+        if (!_applyFalse.hasMatch(source.substring(match.end))) {
+          return path;
+        }
       }
     }
   }
   return null;
+}
+
+/// The `libs.plugins.*` accessors that the version catalog
+/// (`android/gradle/libs.versions.toml`) maps to the Sentry Gradle plugin,
+/// e.g. `sentry.android` for `sentry-android = { id = "io.sentry.android.gradle" }`.
+Future<List<String>> _versionCatalogSentryAccessors(FileSystem fs) async {
+  final file = fs.file('android/gradle/libs.versions.toml');
+  if (!await file.exists()) {
+    return const [];
+  }
+  final accessors = <String>[];
+  var inPlugins = false;
+  final lines = const LineSplitter()
+      .convert(utf8.decode(await file.readAsBytes(), allowMalformed: true));
+  for (final rawLine in lines) {
+    final line = rawLine.trim();
+    if (line.startsWith('[')) {
+      inPlugins = line == '[plugins]';
+      continue;
+    }
+    if (!inPlugins || line.startsWith('#')) {
+      continue;
+    }
+    final match = RegExp(r'^([A-Za-z0-9_.-]+)\s*=\s*(.*)$').firstMatch(line);
+    if (match != null && match.group(2)!.contains(_sentryGradlePluginId)) {
+      accessors.add(match.group(1)!.replaceAll(RegExp('[-_]'), '.'));
+    }
+  }
+  return accessors;
+}
+
+/// Removes `//` and `/* */` comments from Groovy/Kotlin [source], leaving
+/// string literals (which may contain `//` or `/*`) intact.
+String _stripComments(String source) {
+  final out = StringBuffer();
+  var i = 0;
+  while (i < source.length) {
+    final c = source[i];
+    final next = i + 1 < source.length ? source[i + 1] : '';
+    if (c == '/' && next == '/') {
+      while (i < source.length && source[i] != '\n') {
+        i++;
+      }
+    } else if (c == '/' && next == '*') {
+      final end = source.indexOf('*/', i + 2);
+      i = end == -1 ? source.length : end + 2;
+      out.write(' ');
+    } else if (c == '"' || c == "'") {
+      final start = i;
+      i++;
+      while (i < source.length && source[i] != c && source[i] != '\n') {
+        if (source[i] == r'\') {
+          i++;
+        }
+        i++;
+      }
+      i++;
+      out.write(source.substring(start, i.clamp(start, source.length)));
+    } else {
+      out.write(c);
+      i++;
+    }
+  }
+  return out.toString();
 }

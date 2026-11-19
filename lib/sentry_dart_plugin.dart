@@ -155,13 +155,14 @@ class SentryDartPlugin {
 
     final fs = injector.get<FileSystem>();
     try {
-      final mappingPath =
-          await findProguardMapping(fs: fs, config: _configuration);
+      final injectedAt = await injectedProguardUuidTime(fs);
+      final lookup = await findProguardMapping(fs: fs, config: _configuration);
       final configuredUuid = _configuration.proguardUuid?.trim() ?? '';
 
-      if (mappingPath == null) {
-        if (_configuration.proguardMappingPath?.trim().isNotEmpty ?? false) {
-          return; // findProguardMapping already warned about the path.
+      final mapping = lookup.mapping;
+      if (mapping == null) {
+        if (lookup.reported) {
+          return;
         }
         // Only an Android build is expected to produce a mapping; the same
         // UUID may well be configured for every platform a CI job builds.
@@ -169,8 +170,7 @@ class SentryDartPlugin {
             .directory(
                 fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs'))
             .exists();
-        final expectsMapping =
-            configuredUuid.isNotEmpty || await hasInjectedProguardUuid(fs);
+        final expectsMapping = configuredUuid.isNotEmpty || injectedAt != null;
         if (expectsMapping && isAndroidBuild) {
           Log.warn('A ProGuard UUID is set but no ProGuard mapping file was '
               'found. Is minification enabled for this build?');
@@ -180,16 +180,27 @@ class SentryDartPlugin {
         return;
       }
 
-      final uuid = await _resolveProguardUuid(fs, configuredUuid);
+      final mappingPath = mapping.path;
+      final sharedBy =
+          await variantsBuiltWithInjectedUuid(fs: fs, config: _configuration);
+      if (sharedBy.length > 1) {
+        Log.warn('Several variants were built after --inject-uuid and all '
+            'contain the same ProGuard UUID: ${sharedBy.join(', ')}. No single '
+            'mapping matches it, so the ProGuard mapping upload is skipped. '
+            'Run --inject-uuid before each flutter build and the plugin after '
+            'each.');
+        return;
+      }
+      final uuid = await _resolveProguardUuid(fs, configuredUuid, mapping);
       if (uuid == null) {
-        if (await hasInjectedProguardUuid(fs)) {
+        if (injectedAt != null) {
           Log.warn("'$debugMetaAssetPath' exists, but the built app doesn't "
               'contain it: --inject-uuid ran after the last flutter build. '
               'Skipping the ProGuard mapping upload. Run --inject-uuid before '
               'flutter build; the next build will package the UUID.');
         } else {
-          Log.info("Found ProGuard mapping '$mappingPath' but no ProGuard "
-              'UUID, skipping. To upload it, run '
+          Log.info("Found ProGuard mapping '$mappingPath' but the APK/AAB "
+              'built with it has no ProGuard UUID, skipping. To upload it, run '
               "'dart run sentry_dart_plugin --inject-uuid' before "
               "'flutter build', or set 'proguard_uuid' to the UUID the app "
               'reports.');
@@ -208,6 +219,11 @@ class SentryDartPlugin {
       _addOrgAndProject(params);
       params.addAll(['--uuid', uuid, mappingPath]);
       await _executeAndLog('Failed to upload ProGuard mapping', params);
+    } on ExitError catch (e) {
+      // Like the Dart symbol map, a failed mapping upload must not stop the
+      // release from being created.
+      Log.error('ProGuard mapping upload failed with exit code ${e.code}, '
+          'continuing.');
     } on FileSystemException catch (e) {
       // Unreadable build outputs must not abort the rest of the run
       // (release creation, source maps, commits).
@@ -218,11 +234,11 @@ class SentryDartPlugin {
   }
 
   /// Returns the configured `proguard_uuid` if set, otherwise the UUID inside
-  /// the newest built APK/AAB, or null when there is neither.
+  /// the APK/AAB built with [mapping], or null when there is neither.
   Future<String?> _resolveProguardUuid(
-      FileSystem fs, String configuredUuid) async {
-    final built =
-        await readBuiltAppProguardUuid(fs: fs, config: _configuration);
+      FileSystem fs, String configuredUuid, ProguardMapping mapping) async {
+    final built = await readBuiltAppProguardUuid(
+        fs: fs, config: _configuration, mappingBuiltAt: mapping.builtAt);
 
     if (configuredUuid.isNotEmpty) {
       if (built != null &&

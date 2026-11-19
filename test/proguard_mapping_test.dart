@@ -28,20 +28,22 @@ void main() {
 
   group('findProguardMapping', () {
     test('returns null when there is no mapping directory', () async {
-      expect(await findProguardMapping(fs: fs, config: config), isNull);
+      expect((await findProguardMapping(fs: fs, config: config)).mapping?.path,
+          isNull);
     });
 
     test('returns null when no variant has a mapping.txt', () async {
       fs
           .directory('build/app/outputs/mapping/release')
           .createSync(recursive: true);
-      expect(await findProguardMapping(fs: fs, config: config), isNull);
+      expect((await findProguardMapping(fs: fs, config: config)).mapping?.path,
+          isNull);
     });
 
     test('finds the mapping of the single variant', () async {
       createMapping('release');
       expect(
-        await findProguardMapping(fs: fs, config: config),
+        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
         'build/app/outputs/mapping/release/mapping.txt',
       );
     });
@@ -52,7 +54,7 @@ void main() {
           .file('out/app/outputs/mapping/release/mapping.txt')
           .createSync(recursive: true);
       expect(
-        await findProguardMapping(fs: fs, config: config),
+        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
         'out/app/outputs/mapping/release/mapping.txt',
       );
     });
@@ -63,7 +65,7 @@ void main() {
       createMapping('paidRelease', modified: DateTime(2026, 1, 2));
       createMapping('release', modified: DateTime(2025, 12, 31));
       expect(
-        await findProguardMapping(fs: fs, config: config),
+        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
         'build/app/outputs/mapping/paidRelease/mapping.txt',
       );
     });
@@ -73,7 +75,7 @@ void main() {
       fs.file('custom/mapping.txt').createSync(recursive: true);
       config.proguardMappingPath = 'custom/mapping.txt';
       expect(
-        await findProguardMapping(fs: fs, config: config),
+        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
         'custom/mapping.txt',
       );
     });
@@ -81,14 +83,15 @@ void main() {
     test('returns null when proguard_mapping_path does not exist', () async {
       createMapping('release');
       config.proguardMappingPath = 'missing/mapping.txt';
-      expect(await findProguardMapping(fs: fs, config: config), isNull);
+      expect((await findProguardMapping(fs: fs, config: config)).mapping?.path,
+          isNull);
     });
 
     test('ignores a blank proguard_mapping_path', () async {
       createMapping('release');
       config.proguardMappingPath = '  ';
       expect(
-        await findProguardMapping(fs: fs, config: config),
+        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
         'build/app/outputs/mapping/release/mapping.txt',
       );
     });
