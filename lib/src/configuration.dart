@@ -78,6 +78,20 @@ class Configuration {
   /// Explicit path to the Dart obfuscation map file. Optional.
   late String? dartSymbolMapPath;
 
+  /// Whether to upload the Android ProGuard/R8 mapping file, defaults to true.
+  /// The upload only happens when [proguardUuid] is set.
+  late bool uploadProguard;
+
+  /// The UUID the ProGuard/R8 mapping file is uploaded under, or set via env.
+  /// var. SENTRY_PROGUARD_UUID. It must match the UUID the app reports at
+  /// runtime (`SentryFlutterOptions.proguardUuid`), so it has to be chosen
+  /// before the build.
+  late String? proguardUuid;
+
+  /// Explicit path to the ProGuard/R8 mapping file. Optional. Defaults to the
+  /// `mapping.txt` found under `<build_path>/app/outputs/mapping/`.
+  late String? proguardMappingPath;
+
   /// The URL prefix, defaults to null
   late String? urlPrefix;
 
@@ -173,6 +187,9 @@ class Configuration {
         ? defaultSymbolsFolder
         : symbolsPath;
     dartSymbolMapPath = configValues.dartSymbolMapPath;
+    uploadProguard = configValues.uploadProguard ?? true;
+    proguardUuid = configValues.proguardUuid;
+    proguardMappingPath = configValues.proguardMappingPath;
 
     project = configValues.project; // or env. var. SENTRY_PROJECT
     org = configValues.org; // or env. var. SENTRY_ORG

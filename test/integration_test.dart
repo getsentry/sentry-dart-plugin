@@ -102,6 +102,10 @@ void main() async {
                 'libflutter.so'
               ]));
           expect(debugSymbols, anyElement(matches(RegExp('^(lib)?app.so\$'))));
+          // Release builds are minified by R8, so the mapping must be found
+          // and uploaded under the configured UUID.
+          expect(pluginOutput,
+              anyElement(contains('Uploaded a total of 1 new mapping files')));
           break;
         case 'ios':
         case 'ipa':
@@ -192,9 +196,16 @@ Future<Iterable<String>> _exec(String executable, List<String> arguments,
 Future<Iterable<String>> _flutter(List<String> arguments, {String? cwd}) =>
     _exec('flutter', arguments, cwd: cwd);
 
+const _proguardUuid = 'c9fb2840-1f9c-4f08-81fe-6880753f345b';
+
 Future<Iterable<String>> _runPlugin(Directory cwd) => _exec(
       'dart',
-      ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
+      [
+        'run',
+        'sentry_dart_plugin',
+        '--sentry-define=url=$serverUri',
+        '--sentry-define=proguard_uuid=$_proguardUuid',
+      ],
       cwd: cwd.path,
     );
 

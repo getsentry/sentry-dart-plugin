@@ -5,6 +5,7 @@ import 'package:glob/glob.dart';
 import 'package:process/process.dart';
 
 import 'src/configuration.dart';
+import 'src/proguard/proguard_mapping.dart';
 import 'src/utils/flutter_debug_files.dart';
 import 'src/symbol_maps/dart_symbol_map.dart';
 import 'src/utils/injector.dart';
@@ -37,6 +38,12 @@ class SentryDartPlugin {
         await _executeCliForDebugSymbols();
       } else {
         Log.info('uploadNativeSymbols is disabled.');
+      }
+
+      if (_configuration.uploadProguard) {
+        await _executeCliForProguardMapping();
+      } else {
+        Log.info('uploadProguard is disabled.');
       }
 
       final release = _release;
@@ -106,6 +113,57 @@ class SentryDartPlugin {
     }
 
     await _tryUploadDartSymbolMap();
+
+    Log.taskCompleted(taskName);
+  }
+
+  /// Uploads the Android ProGuard/R8 mapping under [Configuration.proguardUuid].
+  ///
+  /// The plugin runs after the build, so it can't embed a UUID into the app.
+  /// The app has to report the same UUID at runtime (set through
+  /// `SentryFlutterOptions.proguardUuid`), which is why the upload is skipped
+  /// when no UUID is configured: a mapping uploaded under any other UUID would
+  /// never match an event.
+  Future<void> _executeCliForProguardMapping() async {
+    const taskName = 'uploading ProGuard mapping';
+    Log.startingTask(taskName);
+
+    final fs = injector.get<FileSystem>();
+    final mappingPath =
+        await findProguardMapping(fs: fs, config: _configuration);
+    final uuid = _configuration.proguardUuid?.trim() ?? '';
+
+    if (mappingPath == null) {
+      // Only an Android build is expected to produce a mapping; the same UUID
+      // may well be configured for every platform a CI job builds.
+      final isAndroidBuild = await fs
+          .directory(
+              fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs'))
+          .exists();
+      if (uuid.isNotEmpty && isAndroidBuild) {
+        Log.warn(
+            "'proguard_uuid' is set but no ProGuard mapping file was found. "
+            'Is minification enabled for this build?');
+      } else {
+        Log.info('No ProGuard mapping file found, skipping.');
+      }
+    } else if (uuid.isEmpty) {
+      Log.info(
+          "Found ProGuard mapping '$mappingPath' but 'proguard_uuid' is not "
+          'set, skipping. To upload it, pass the same UUID to the build '
+          '(--dart-define=SENTRY_PROGUARD_UUID=<uuid>) and to this plugin '
+          '(SENTRY_PROGUARD_UUID env. var. or proguard_uuid).');
+    } else if (!isValidProguardUuid(uuid)) {
+      Log.error(
+          "'proguard_uuid' is not a valid UUID: '$uuid'. Skipping the ProGuard mapping upload.");
+    } else {
+      final params = <String>[];
+      _setUrlAndTokenAndLog(params);
+      params.add('upload-proguard');
+      _addOrgAndProject(params);
+      params.addAll(['--uuid', uuid, mappingPath]);
+      await _executeAndLog('Failed to upload ProGuard mapping', params);
+    }
 
     Log.taskCompleted(taskName);
   }

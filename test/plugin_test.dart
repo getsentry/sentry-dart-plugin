@@ -153,6 +153,67 @@ void main() {
           ]);
         });
 
+        group('proguard', () {
+          const uuid = 'c9fb2840-1f9c-4f08-81fe-6880753f345b';
+          const mapping = '$buildDir/app/outputs/mapping/release/mapping.txt';
+          const version = '1.0.0';
+          const release = '$name@$version';
+
+          setUp(() {
+            fs.file(mapping).createSync(recursive: true);
+          });
+
+          test('uploads the mapping under proguard_uuid', () async {
+            final commandLog = await runWith(version, 'proguard_uuid: $uuid');
+
+            expect(commandLog, [
+              '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping',
+              '$cli $commonArgs releases $orgAndProject new $release',
+              '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
+              '$cli $commonArgs releases $orgAndProject finalize $release'
+            ]);
+          });
+
+          test('uploads the mapping at proguard_mapping_path', () async {
+            fs.file('custom/mapping.txt').createSync(recursive: true);
+            final commandLog = await runWith(version, '''
+              proguard_uuid: $uuid
+              proguard_mapping_path: custom/mapping.txt
+            ''');
+
+            expect(
+              commandLog,
+              contains(
+                  '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid custom/mapping.txt'),
+            );
+          });
+
+          test('uploads the mapping even if upload_debug_symbols is disabled',
+              () async {
+            final commandLog = await runWith(version, '''
+              proguard_uuid: $uuid
+              upload_debug_symbols: false
+            ''');
+
+            expect(commandLog.first,
+                '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping');
+          });
+
+          for (final config in [
+            '',
+            'proguard_uuid: not-a-uuid',
+            'proguard_uuid: $uuid\nupload_proguard: false',
+          ]) {
+            test('skips the upload with config "$config"', () async {
+              final commandLog = await runWith(version, config);
+
+              expect(commandLog.where((c) => c.contains('upload-proguard')),
+                  isEmpty);
+            });
+          }
+        });
+
         test('takes cli-path from binPath arg', () async {
           const version = '1.0.0';
           const customCliPath = './custom/path/sentry-local-cli';
