@@ -110,18 +110,42 @@ void main() {
       expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
     });
 
-    for (final gradleFile in [
-      'android/app/build.gradle',
-      'android/app/build.gradle.kts',
-      'android/settings.gradle.kts',
+    for (final applied in [
+      [
+        'android/app/build.gradle',
+        "plugins {\n  id 'io.sentry.android.gradle'\n}"
+      ],
+      [
+        'android/app/build.gradle.kts',
+        'plugins {\n  id("io.sentry.android.gradle") version "5.0.0"\n}'
+      ],
+      ['android/app/build.gradle', "apply plugin: 'io.sentry.android.gradle'"],
     ]) {
-      test('does nothing when the Sentry Gradle plugin is in $gradleFile',
+      test('does nothing when the Gradle plugin is applied: ${applied[1]}',
           () async {
-        fs.file(gradleFile)
+        fs.file(applied[0])
           ..createSync(recursive: true)
-          ..writeAsStringSync('plugins { id("io.sentry.android.gradle") }');
+          ..writeAsStringSync(applied[1]);
         expect(await injectProguardUuid(fs: fs, config: config), 0);
         expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+      });
+    }
+
+    for (final entry in {
+      'android/settings.gradle':
+          "plugins {\n  id 'io.sentry.android.gradle' version '5.0.0' apply false\n}",
+      'android/app/build.gradle.kts':
+          'plugins {\n  id("io.sentry.android.gradle") version "5.0.0" apply false\n}',
+      'android/app/build.gradle':
+          "// id 'io.sentry.android.gradle'\n/* apply plugin: 'io.sentry.android.gradle' */",
+    }.entries) {
+      test('injects when ${entry.key} only declares or mentions the plugin',
+          () async {
+        fs.file(entry.key)
+          ..createSync(recursive: true)
+          ..writeAsStringSync(entry.value);
+        expect(await injectProguardUuid(fs: fs, config: config), 0);
+        expect(injectedUuid(), isNotNull);
       });
     }
 
@@ -133,6 +157,39 @@ void main() {
       expect(await injectProguardUuid(fs: fs, config: config), 0);
       expect(fs.file(debugMetaAssetPath).readAsStringSync(), content);
       expect(await hasInjectedProguardUuid(fs), isFalse);
+    });
+
+    test('handles a non-UTF-8 debug-meta file it did not create', () async {
+      // 0xE9 is "é" in ISO-8859-1, the encoding of .properties files.
+      final bytes = [
+        ...'# caf'.codeUnits,
+        0xE9,
+        ...'\nio.sentry.ProguardUuids=$uuid\n'.codeUnits,
+      ];
+      fs.file(debugMetaAssetPath)
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(bytes);
+      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(fs.file(debugMetaAssetPath).readAsBytesSync(), bytes);
+      expect(await hasInjectedProguardUuid(fs), isFalse);
+    });
+
+    test('fails when proguard_uuid differs from a file it did not create',
+        () async {
+      fs.file(debugMetaAssetPath)
+        ..createSync(recursive: true)
+        ..writeAsStringSync('io.sentry.ProguardUuids=$uuid\n');
+      config.proguardUuid = generateUuid();
+      expect(await injectProguardUuid(fs: fs, config: config), 1);
+      expect(injectedUuid(), uuid);
+    });
+
+    test('accepts proguard_uuid matching a file it did not create', () async {
+      fs.file(debugMetaAssetPath)
+        ..createSync(recursive: true)
+        ..writeAsStringSync('io.sentry.ProguardUuids=$uuid\n');
+      config.proguardUuid = uuid.toUpperCase();
+      expect(await injectProguardUuid(fs: fs, config: config), 0);
     });
   });
 
@@ -189,20 +246,49 @@ void main() {
     });
   });
 
-  group('removeInjectedProguardUuid', () {
-    test('removes the file written by --inject-uuid', () async {
+  group('removeConsumedInjectedProguardUuid', () {
+    const apk = 'build/app/outputs/flutter-apk/app-release.apk';
+
+    Future<void> inject({required DateTime at}) async {
       fs.directory('android/app').createSync(recursive: true);
       await injectProguardUuid(fs: fs, config: config);
-      await removeInjectedProguardUuid(fs);
-      expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+      fs.file(debugMetaAssetPath).setLastModifiedSync(at);
+    }
+
+    void build({required DateTime at}) => fs.file(apk)
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(buildZip({'AndroidManifest.xml': ''}))
+      ..setLastModifiedSync(at);
+
+    Future<bool> removed() async {
+      await removeConsumedInjectedProguardUuid(fs: fs, config: config);
+      return !fs.file(debugMetaAssetPath).existsSync();
+    }
+
+    test('removes the file once a newer APK/AAB exists', () async {
+      await inject(at: DateTime(2026, 1, 1));
+      build(at: DateTime(2026, 1, 2));
+      expect(await removed(), isTrue);
+    });
+
+    test('keeps the file without an Android build (other platforms)', () async {
+      await inject(at: DateTime(2026, 1, 1));
+      expect(await removed(), isFalse);
+    });
+
+    test('keeps the file when the newest APK/AAB predates it', () async {
+      build(at: DateTime(2026, 1, 1));
+      await inject(at: DateTime(2026, 1, 2));
+      expect(await removed(), isFalse);
     });
 
     test('keeps a debug-meta file it did not create', () async {
       fs.file(debugMetaAssetPath)
         ..createSync(recursive: true)
-        ..writeAsStringSync('io.sentry.ProguardUuids=$uuid\n');
-      await removeInjectedProguardUuid(fs);
-      expect(fs.file(debugMetaAssetPath).existsSync(), isTrue);
+        ..writeAsStringSync('io.sentry.ProguardUuids=$uuid\n')
+        ..setLastModifiedSync(DateTime(2026, 1, 1));
+      build(at: DateTime(2026, 1, 2));
+      expect(await removed(), isFalse);
     });
   });
 }

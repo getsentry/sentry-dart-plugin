@@ -85,24 +85,33 @@ Future<int> injectProguardUuid({
       return 0;
     }
 
+    final configured = config.proguardUuid?.trim() ?? '';
     final file = fs.file(debugMetaAssetPath);
     if (await file.exists() && !await _isInjectedByPlugin(file)) {
-      final existing = parseProguardUuid(await file.readAsString());
-      if (existing != null) {
-        Log.info(
-            "'$debugMetaAssetPath' already sets ProGuard UUID $existing and "
-            'was not created by this plugin, leaving it as is. The upload '
-            'will use it.');
-      } else {
+      // .properties files are ISO-8859-1 by spec.
+      final existing =
+          parseProguardUuid(latin1.decode(await file.readAsBytes()));
+      if (existing == null) {
         Log.warn(
             "'$debugMetaAssetPath' exists and was not created by this plugin, "
             'not modifying it. Add $_proguardUuidsKey=<uuid> to it yourself, '
             'or remove the file.');
+        return 0;
       }
+      if (configured.isNotEmpty &&
+          configured.toLowerCase() != existing.toLowerCase()) {
+        Log.error("'$debugMetaAssetPath' sets ProGuard UUID $existing, but "
+            "'proguard_uuid' is $configured. The app would report $existing "
+            'while the mapping is uploaded under $configured. Remove one of '
+            'them.');
+        return 1;
+      }
+      Log.info("'$debugMetaAssetPath' already sets ProGuard UUID $existing and "
+          'was not created by this plugin, leaving it as is. The upload '
+          'will use it.');
       return 0;
     }
 
-    final configured = config.proguardUuid?.trim() ?? '';
     if (configured.isNotEmpty && !isValidProguardUuid(configured)) {
       Log.error("'proguard_uuid' is not a valid UUID: '$configured'.");
       return 1;
@@ -134,29 +143,7 @@ Future<BuiltAppProguardUuid?> readBuiltAppProguardUuid({
   required FileSystem fs,
   required Configuration config,
 }) async {
-  final outputs =
-      fs.directory(fs.path.join(config.buildFilesFolder, 'app', 'outputs'));
-  if (!await outputs.exists()) {
-    return null;
-  }
-
-  File? newest;
-  DateTime? newestModified;
-  await for (final entity
-      in outputs.list(recursive: true, followLinks: false)) {
-    if (entity is! File) {
-      continue;
-    }
-    final path = entity.path.toLowerCase();
-    if (!path.endsWith('.apk') && !path.endsWith('.aab')) {
-      continue;
-    }
-    final modified = await entity.lastModified();
-    if (newestModified == null || modified.isAfter(newestModified)) {
-      newest = entity;
-      newestModified = modified;
-    }
-  }
+  final newest = (await _newestAndroidArtifact(fs, config))?.file;
   if (newest == null) {
     return null;
   }
@@ -180,18 +167,35 @@ Future<BuiltAppProguardUuid?> readBuiltAppProguardUuid({
 /// Whether `--inject-uuid` left its file in the project.
 Future<bool> hasInjectedProguardUuid(FileSystem fs) async {
   final file = fs.file(debugMetaAssetPath);
-  return await file.exists() && await _isInjectedByPlugin(file);
+  try {
+    return await file.exists() && await _isInjectedByPlugin(file);
+  } on FileSystemException {
+    return false;
+  }
 }
 
-/// Removes the file written by `--inject-uuid`, so a later build without
-/// `--inject-uuid` can't silently reuse the same UUID with a new mapping.
-/// Files not created by this plugin are left untouched.
-Future<void> removeInjectedProguardUuid(FileSystem fs) async {
-  if (!await hasInjectedProguardUuid(fs)) {
-    return;
-  }
+/// Removes the file written by `--inject-uuid` once an Android build has
+/// packaged it, i.e. when an APK/AAB newer than the file exists. This way a
+/// later build without `--inject-uuid` can't silently reuse the UUID with a
+/// different mapping, while a run for another platform (or one that fails
+/// before the Android build) leaves it for the Android build that follows.
+///
+/// Files not created by this plugin are left untouched. Never throws.
+Future<void> removeConsumedInjectedProguardUuid({
+  required FileSystem fs,
+  required Configuration config,
+}) async {
   try {
-    await fs.file(debugMetaAssetPath).delete();
+    if (!await hasInjectedProguardUuid(fs)) {
+      return;
+    }
+    final file = fs.file(debugMetaAssetPath);
+    final artifact = await _newestAndroidArtifact(fs, config);
+    if (artifact == null ||
+        !artifact.modified.isAfter(await file.lastModified())) {
+      return;
+    }
+    await file.delete();
     Log.info("Removed '$debugMetaAssetPath'. Run --inject-uuid again before "
         'the next build.');
   } on FileSystemException catch (e) {
@@ -199,23 +203,87 @@ Future<void> removeInjectedProguardUuid(FileSystem fs) async {
   }
 }
 
-Future<bool> _isInjectedByPlugin(File file) async =>
-    (await file.readAsString()).startsWith(_injectedMarker);
+/// The most recently written APK or AAB under `<build_path>/app/outputs`.
+class _Artifact {
+  final File file;
+  final DateTime modified;
 
+  _Artifact(this.file, this.modified);
+}
+
+Future<_Artifact?> _newestAndroidArtifact(
+  FileSystem fs,
+  Configuration config,
+) async {
+  final outputs =
+      fs.directory(fs.path.join(config.buildFilesFolder, 'app', 'outputs'));
+  if (!await outputs.exists()) {
+    return null;
+  }
+
+  _Artifact? newest;
+  await for (final entity
+      in outputs.list(recursive: true, followLinks: false)) {
+    if (entity is! File) {
+      continue;
+    }
+    final path = entity.path.toLowerCase();
+    if (!path.endsWith('.apk') && !path.endsWith('.aab')) {
+      continue;
+    }
+    final modified = await entity.lastModified();
+    if (newest == null || modified.isAfter(newest.modified)) {
+      newest = _Artifact(entity, modified);
+    }
+  }
+  return newest;
+}
+
+final _injectedMarkerBytes = ascii.encode(_injectedMarker);
+
+Future<bool> _isInjectedByPlugin(File file) async {
+  // Compare bytes: the file may not be valid UTF-8 if a user wrote it.
+  final bytes = await file.readAsBytes();
+  if (bytes.length < _injectedMarkerBytes.length) {
+    return false;
+  }
+  for (var i = 0; i < _injectedMarkerBytes.length; i++) {
+    if (bytes[i] != _injectedMarkerBytes[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+final _sentryGradlePluginId =
+    RegExp(r'''['"]io\.sentry\.android\.gradle['"]''');
+final _applyFalse = RegExp(r'^[^\n]*?\bapply\s*\(?\s*false');
+final _blockComment = RegExp(r'/\*.*?\*/', dotAll: true);
+final _lineComment = RegExp(r'//[^\n]*');
+
+/// Returns the app module build file that applies the Sentry Android Gradle
+/// Plugin, or null. Only the app module is checked: `settings.gradle` and the
+/// root `build.gradle` usually just declare plugins (`apply false`).
 Future<String?> _findSentryGradlePlugin(FileSystem fs) async {
   const candidates = [
     'android/app/build.gradle',
     'android/app/build.gradle.kts',
-    'android/build.gradle',
-    'android/build.gradle.kts',
-    'android/settings.gradle',
-    'android/settings.gradle.kts',
   ];
   for (final path in candidates) {
     final file = fs.file(path);
-    if (await file.exists() &&
-        (await file.readAsString()).contains('io.sentry.android.gradle')) {
-      return path;
+    if (!await file.exists()) {
+      continue;
+    }
+    final source = utf8
+        .decode(await file.readAsBytes(), allowMalformed: true)
+        .replaceAll(_blockComment, '')
+        .replaceAll(_lineComment, '');
+    for (final match in _sentryGradlePluginId.allMatches(source)) {
+      // `id("io.sentry.android.gradle") version "x" apply false` declares the
+      // plugin without applying it.
+      if (!_applyFalse.hasMatch(source.substring(match.end))) {
+        return path;
+      }
     }
   }
   return null;

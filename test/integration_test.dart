@@ -102,10 +102,9 @@ void main() async {
                 'libflutter.so'
               ]));
           expect(debugSymbols, anyElement(matches(RegExp('^(lib)?app.so\$'))));
-          // Release builds are minified by R8, so the mapping must be found
-          // and uploaded under the configured UUID.
-          // `--inject-uuid` ran before the build, so the plugin finds the
-          // UUID in the built app and uploads the R8 mapping under it.
+          // Release builds are minified by R8, and `--inject-uuid` ran before
+          // the build, so the plugin finds the UUID in the built app and
+          // uploads the R8 mapping under it.
           expect(debugSymbols,
               anyElement(matches(RegExp(r'^/proguard/[0-9a-f-]{36}\.txt$'))));
           expect(

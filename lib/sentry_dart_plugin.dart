@@ -39,8 +39,10 @@ class SentryDartPlugin {
       );
     }
 
+    var configLoaded = false;
     try {
       await _configuration.getConfigValues(cliArguments);
+      configLoaded = true;
       if (!_configuration.validateConfigValues()) {
         return 1;
       }
@@ -85,6 +87,15 @@ class SentryDartPlugin {
       }
     } on ExitError catch (e) {
       return e.code;
+    } finally {
+      // Also on failed runs: once an Android build packaged the injected
+      // UUID, the file must not be reused by the next build.
+      if (configLoaded) {
+        await removeConsumedInjectedProguardUuid(
+          fs: injector.get<FileSystem>(),
+          config: _configuration,
+        );
+      }
     }
     return 0;
   }
@@ -135,8 +146,9 @@ class SentryDartPlugin {
   /// the build). Without either, the upload is skipped: a mapping uploaded
   /// under any other UUID would never match an event.
   ///
-  /// The file written by `--inject-uuid` is removed afterwards, so the next
-  /// build can't silently reuse its UUID with a different mapping.
+  /// The file written by `--inject-uuid` is removed at the end of [run] once
+  /// an Android build has packaged it (see
+  /// [removeConsumedInjectedProguardUuid]).
   Future<void> _executeCliForProguardMapping() async {
     const taskName = 'uploading ProGuard mapping';
     Log.startingTask(taskName);
@@ -148,6 +160,9 @@ class SentryDartPlugin {
       final configuredUuid = _configuration.proguardUuid?.trim() ?? '';
 
       if (mappingPath == null) {
+        if (_configuration.proguardMappingPath?.trim().isNotEmpty ?? false) {
+          return; // findProguardMapping already warned about the path.
+        }
         // Only an Android build is expected to produce a mapping; the same
         // UUID may well be configured for every platform a CI job builds.
         final isAndroidBuild = await fs
@@ -169,8 +184,9 @@ class SentryDartPlugin {
       if (uuid == null) {
         if (await hasInjectedProguardUuid(fs)) {
           Log.warn("'$debugMetaAssetPath' exists, but the built app doesn't "
-              'contain it. Run --inject-uuid before flutter build, not after. '
-              'Skipping the ProGuard mapping upload.');
+              'contain it: --inject-uuid ran after the last flutter build. '
+              'Skipping the ProGuard mapping upload. Run --inject-uuid before '
+              'flutter build; the next build will package the UUID.');
         } else {
           Log.info("Found ProGuard mapping '$mappingPath' but no ProGuard "
               'UUID, skipping. To upload it, run '
@@ -192,8 +208,11 @@ class SentryDartPlugin {
       _addOrgAndProject(params);
       params.addAll(['--uuid', uuid, mappingPath]);
       await _executeAndLog('Failed to upload ProGuard mapping', params);
+    } on FileSystemException catch (e) {
+      // Unreadable build outputs must not abort the rest of the run
+      // (release creation, source maps, commits).
+      Log.warn('Skipping the ProGuard mapping upload: $e');
     } finally {
-      await removeInjectedProguardUuid(fs);
       Log.taskCompleted(taskName);
     }
   }

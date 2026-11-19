@@ -79,7 +79,8 @@ class Configuration {
   late String? dartSymbolMapPath;
 
   /// Whether to upload the Android ProGuard/R8 mapping file, defaults to true.
-  /// The upload only happens when [proguardUuid] is set.
+  /// The upload needs a ProGuard UUID: [proguardUuid] if set, otherwise the
+  /// one `--inject-uuid` packaged into the built APK/AAB.
   late bool uploadProguard;
 
   /// The UUID the ProGuard/R8 mapping file is uploaded under, or set via env.

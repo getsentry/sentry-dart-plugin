@@ -220,13 +220,19 @@ void main() {
             const builtUuid = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
             const apk = '$buildDir/app/outputs/flutter-apk/app-release.apk';
 
-            void writeApk({String? debugMeta}) => fs.file(apk)
-              ..createSync(recursive: true)
-              ..writeAsBytesSync(buildZip({
-                'AndroidManifest.xml': '',
-                if (debugMeta != null)
-                  'assets/sentry-debug-meta.properties': debugMeta,
-              }));
+            // Explicit times: the injected file is only removed once an
+            // APK/AAB newer than it exists.
+            final injectedAt = DateTime(2026, 1, 2);
+
+            void writeApk({String? debugMeta, DateTime? builtAt}) =>
+                fs.file(apk)
+                  ..createSync(recursive: true)
+                  ..writeAsBytesSync(buildZip({
+                    'AndroidManifest.xml': '',
+                    if (debugMeta != null)
+                      'assets/sentry-debug-meta.properties': debugMeta,
+                  }))
+                  ..setLastModifiedSync(builtAt ?? DateTime(2026, 1, 3));
 
             Future<String> injectUuid() async {
               configWriter.write(
@@ -238,6 +244,7 @@ void main() {
               expect(await plugin.run(['--inject-uuid']), 0);
               final file = fs.file(debugMetaAssetPath);
               expect(file.existsSync(), isTrue);
+              file.setLastModifiedSync(injectedAt);
               return file.readAsStringSync();
             }
 
@@ -269,13 +276,40 @@ void main() {
 
             test('skips the upload if the app was built before --inject-uuid',
                 () async {
-              writeApk();
+              writeApk(builtAt: DateTime(2026, 1, 1));
               await injectUuid();
 
               final commandLog = await runWith(version, '');
 
               expect(commandLog.where((c) => c.contains('upload-proguard')),
                   isEmpty);
+              // Kept for the next build, which will package it.
+              expect(fs.file(debugMetaAssetPath).existsSync(), isTrue);
+            });
+
+            test('keeps the injected file on runs without an Android build',
+                () async {
+              await injectUuid();
+              fs.directory('$buildDir/app/outputs').deleteSync(recursive: true);
+
+              await runWith(version, '');
+
+              expect(fs.file(debugMetaAssetPath).existsSync(), isTrue);
+            });
+
+            test('removes the consumed file even if the run fails', () async {
+              final debugMeta = await injectUuid();
+              writeApk(debugMeta: debugMeta);
+              // No auth token: validation fails before any upload.
+              if (fs.file('sentry.properties').existsSync()) {
+                fs.file('sentry.properties').deleteSync();
+              }
+              fs
+                  .file('pubspec.yaml')
+                  .writeAsStringSync('name: $name\nversion: $version\n');
+
+              expect(await plugin.run([]), 1);
+
               expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
             });
 
