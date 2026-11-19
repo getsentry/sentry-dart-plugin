@@ -32,6 +32,8 @@ jobs:
           - host: ubuntu-latest
             target: web
           - host: ubuntu-latest
+            target: web-legacy
+          - host: ubuntu-latest
             target: apk
           - host: ubuntu-latest
             target: appbundle

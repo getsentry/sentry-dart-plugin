@@ -454,11 +454,15 @@ class SentryDartPlugin {
 
   Future<void> _executeCliForLegacySourceMaps(
       {required String release, required String? dist}) async {
+    // `releases files <release> upload-sourcemaps` was removed in sentry-cli 3.
+    // `sourcemaps upload --release <release>` uploads the same release-bound
+    // artifacts; we simply don't inject debug ids in legacy mode.
     void addExtensionToParams(List<String> exts, List<String> params,
         String release, String folder, String? urlPrefix) {
-      params.add('files');
+      params.add('sourcemaps');
+      params.add('upload');
+      params.add('--release');
       params.add(release);
-      params.add('upload-sourcemaps');
       params.add(folder);
 
       for (final ext in exts) {
@@ -481,6 +485,8 @@ class SentryDartPlugin {
         params.add("--url-prefix");
         params.add(urlPrefix);
       }
+
+      _addOrgAndProject(params);
     }
 
     const taskName = 'uploading source maps';
@@ -488,8 +494,6 @@ class SentryDartPlugin {
 
     final params = <String>[];
     _setUrlAndTokenAndLog(params);
-    params.add('releases');
-    _addOrgAndProject(params);
 
     // upload source maps (js and map)
     List<String> releaseJsFilesParams = [];
