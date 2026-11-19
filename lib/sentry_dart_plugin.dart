@@ -6,6 +6,7 @@ import 'package:process/process.dart';
 
 import 'src/configuration.dart';
 import 'src/proguard/proguard_mapping.dart';
+import 'src/proguard/proguard_uuid.dart';
 import 'src/utils/flutter_debug_files.dart';
 import 'src/symbol_maps/dart_symbol_map.dart';
 import 'src/utils/injector.dart';
@@ -27,6 +28,16 @@ class SentryDartPlugin {
   /// debug symbols and source maps
   Future<int> run(List<String> cliArguments) async {
     _configuration = injector.get<Configuration>();
+
+    // Pre-build mode: only writes the ProGuard UUID into the Android assets,
+    // so it needs neither sentry-cli nor credentials.
+    if (cliArguments.contains('--inject-uuid')) {
+      await _configuration.getConfigValues(cliArguments, setupCli: false);
+      return injectProguardUuid(
+        fs: injector.get<FileSystem>(),
+        config: _configuration,
+      );
+    }
 
     try {
       await _configuration.getConfigValues(cliArguments);
@@ -117,55 +128,99 @@ class SentryDartPlugin {
     Log.taskCompleted(taskName);
   }
 
-  /// Uploads the Android ProGuard/R8 mapping under [Configuration.proguardUuid].
+  /// Uploads the Android ProGuard/R8 mapping under the UUID the app reports.
   ///
-  /// The plugin runs after the build, so it can't embed a UUID into the app.
-  /// The app has to report the same UUID at runtime (set through
-  /// `SentryFlutterOptions.proguardUuid`), which is why the upload is skipped
-  /// when no UUID is configured: a mapping uploaded under any other UUID would
-  /// never match an event.
+  /// The UUID is the configured `proguard_uuid` if set, otherwise the one
+  /// packaged into the newest built APK/AAB (written by `--inject-uuid` before
+  /// the build). Without either, the upload is skipped: a mapping uploaded
+  /// under any other UUID would never match an event.
+  ///
+  /// The file written by `--inject-uuid` is removed afterwards, so the next
+  /// build can't silently reuse its UUID with a different mapping.
   Future<void> _executeCliForProguardMapping() async {
     const taskName = 'uploading ProGuard mapping';
     Log.startingTask(taskName);
 
     final fs = injector.get<FileSystem>();
-    final mappingPath =
-        await findProguardMapping(fs: fs, config: _configuration);
-    final uuid = _configuration.proguardUuid?.trim() ?? '';
+    try {
+      final mappingPath =
+          await findProguardMapping(fs: fs, config: _configuration);
+      final configuredUuid = _configuration.proguardUuid?.trim() ?? '';
 
-    if (mappingPath == null) {
-      // Only an Android build is expected to produce a mapping; the same UUID
-      // may well be configured for every platform a CI job builds.
-      final isAndroidBuild = await fs
-          .directory(
-              fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs'))
-          .exists();
-      if (uuid.isNotEmpty && isAndroidBuild) {
-        Log.warn(
-            "'proguard_uuid' is set but no ProGuard mapping file was found. "
-            'Is minification enabled for this build?');
-      } else {
-        Log.info('No ProGuard mapping file found, skipping.');
+      if (mappingPath == null) {
+        // Only an Android build is expected to produce a mapping; the same
+        // UUID may well be configured for every platform a CI job builds.
+        final isAndroidBuild = await fs
+            .directory(
+                fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs'))
+            .exists();
+        final expectsMapping =
+            configuredUuid.isNotEmpty || await hasInjectedProguardUuid(fs);
+        if (expectsMapping && isAndroidBuild) {
+          Log.warn('A ProGuard UUID is set but no ProGuard mapping file was '
+              'found. Is minification enabled for this build?');
+        } else {
+          Log.info('No ProGuard mapping file found, skipping.');
+        }
+        return;
       }
-    } else if (uuid.isEmpty) {
-      Log.info(
-          "Found ProGuard mapping '$mappingPath' but 'proguard_uuid' is not "
-          'set, skipping. To upload it, pass the same UUID to the build '
-          '(--dart-define=SENTRY_PROGUARD_UUID=<uuid>) and to this plugin '
-          '(SENTRY_PROGUARD_UUID env. var. or proguard_uuid).');
-    } else if (!isValidProguardUuid(uuid)) {
-      Log.error(
-          "'proguard_uuid' is not a valid UUID: '$uuid'. Skipping the ProGuard mapping upload.");
-    } else {
+
+      final uuid = await _resolveProguardUuid(fs, configuredUuid);
+      if (uuid == null) {
+        if (await hasInjectedProguardUuid(fs)) {
+          Log.warn("'$debugMetaAssetPath' exists, but the built app doesn't "
+              'contain it. Run --inject-uuid before flutter build, not after. '
+              'Skipping the ProGuard mapping upload.');
+        } else {
+          Log.info("Found ProGuard mapping '$mappingPath' but no ProGuard "
+              'UUID, skipping. To upload it, run '
+              "'dart run sentry_dart_plugin --inject-uuid' before "
+              "'flutter build', or set 'proguard_uuid' to the UUID the app "
+              'reports.');
+        }
+        return;
+      }
+      if (!isValidProguardUuid(uuid)) {
+        Log.error("ProGuard UUID '$uuid' is not a valid UUID. Skipping the "
+            'ProGuard mapping upload.');
+        return;
+      }
+
       final params = <String>[];
       _setUrlAndTokenAndLog(params);
       params.add('upload-proguard');
       _addOrgAndProject(params);
       params.addAll(['--uuid', uuid, mappingPath]);
       await _executeAndLog('Failed to upload ProGuard mapping', params);
+    } finally {
+      await removeInjectedProguardUuid(fs);
+      Log.taskCompleted(taskName);
+    }
+  }
+
+  /// Returns the configured `proguard_uuid` if set, otherwise the UUID inside
+  /// the newest built APK/AAB, or null when there is neither.
+  Future<String?> _resolveProguardUuid(
+      FileSystem fs, String configuredUuid) async {
+    final built =
+        await readBuiltAppProguardUuid(fs: fs, config: _configuration);
+
+    if (configuredUuid.isNotEmpty) {
+      if (built != null &&
+          built.uuid.toLowerCase() != configuredUuid.toLowerCase()) {
+        Log.warn("The configured 'proguard_uuid' $configuredUuid differs from "
+            "ProGuard UUID ${built.uuid} in '${built.artifactPath}'. Uploading "
+            'under the configured one; make sure the app reports it.');
+      }
+      return configuredUuid;
     }
 
-    Log.taskCompleted(taskName);
+    if (built != null) {
+      Log.info(
+          "Using ProGuard UUID ${built.uuid} from '${built.artifactPath}'.");
+      return built.uuid;
+    }
+    return null;
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {

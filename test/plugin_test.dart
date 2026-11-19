@@ -7,12 +7,15 @@ import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 import 'package:sentry_dart_plugin/src/cli/host_platform.dart';
 import 'package:sentry_dart_plugin/src/cli/setup.dart';
+import 'package:sentry_dart_plugin/src/proguard/proguard_mapping.dart';
+import 'package:sentry_dart_plugin/src/proguard/proguard_uuid.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 import 'package:test/test.dart';
 
 import 'utils/config_file_type.dart';
 import 'utils/config_formatter.dart';
 import 'utils/config_writer.dart';
+import 'utils/zip_builder.dart';
 
 void main() {
   final plugin = SentryDartPlugin();
@@ -212,6 +215,94 @@ void main() {
                   isEmpty);
             });
           }
+
+          group('built app', () {
+            const builtUuid = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
+            const apk = '$buildDir/app/outputs/flutter-apk/app-release.apk';
+
+            void writeApk({String? debugMeta}) => fs.file(apk)
+              ..createSync(recursive: true)
+              ..writeAsBytesSync(buildZip({
+                'AndroidManifest.xml': '',
+                if (debugMeta != null)
+                  'assets/sentry-debug-meta.properties': debugMeta,
+              }));
+
+            Future<String> injectUuid() async {
+              configWriter.write(
+                version,
+                fileType,
+                ConfigFormatter.formatConfig('', fileType, url),
+              );
+              fs.directory('android/app').createSync(recursive: true);
+              expect(await plugin.run(['--inject-uuid']), 0);
+              final file = fs.file(debugMetaAssetPath);
+              expect(file.existsSync(), isTrue);
+              return file.readAsStringSync();
+            }
+
+            test('--inject-uuid writes a UUID without calling sentry-cli',
+                () async {
+              final debugMeta = await injectUuid();
+
+              expect(pm.commandLog, isEmpty);
+              expect(
+                  isValidProguardUuid(parseProguardUuid(debugMeta)!), isTrue);
+            });
+
+            test('uploads under the injected UUID and removes the file',
+                () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              // `flutter build` packages the asset into the app.
+              writeApk(debugMeta: debugMeta);
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $mapping'),
+              );
+              expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+            });
+
+            test('skips the upload if the app was built before --inject-uuid',
+                () async {
+              writeApk();
+              await injectUuid();
+
+              final commandLog = await runWith(version, '');
+
+              expect(commandLog.where((c) => c.contains('upload-proguard')),
+                  isEmpty);
+              expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+            });
+
+            test('uses the UUID packaged by other tools', () async {
+              writeApk(debugMeta: 'io.sentry.ProguardUuids=$builtUuid\n');
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $builtUuid $mapping'),
+              );
+            });
+
+            test('prefers the configured proguard_uuid', () async {
+              writeApk(debugMeta: 'io.sentry.ProguardUuids=$builtUuid\n');
+
+              final commandLog = await runWith(version, 'proguard_uuid: $uuid');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping'),
+              );
+            });
+          });
         });
 
         test('takes cli-path from binPath arg', () async {

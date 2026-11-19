@@ -134,8 +134,12 @@ class Configuration {
   /// Defaults to an empty list (no paths ignored).
   late List<String> ignoreWebSourcePaths;
 
-  /// Loads the configuration values
-  Future<void> getConfigValues(List<String> cliArguments) async {
+  /// Loads the configuration values. With [setupCli] false, sentry-cli is not
+  /// downloaded or located, for modes that make no CLI calls.
+  Future<void> getConfigValues(
+    List<String> cliArguments, {
+    bool setupCli = true,
+  }) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
 
@@ -147,7 +151,9 @@ class Configuration {
       ),
     );
 
-    await _findAndSetCliPath();
+    if (setupCli) {
+      await _findAndSetCliPath();
+    }
 
     Log.taskCompleted(taskName);
   }
