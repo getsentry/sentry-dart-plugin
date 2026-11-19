@@ -104,8 +104,7 @@ void main() async {
           expect(debugSymbols, anyElement(matches(RegExp('^(lib)?app.so\$'))));
           // Release builds are minified by R8, so the mapping must be found
           // and uploaded under the configured UUID.
-          expect(pluginOutput,
-              anyElement(contains('Uploaded a total of 1 new mapping files')));
+          expect(debugSymbols, contains('/proguard/$_proguardUuid.txt'));
           break;
         case 'ios':
         case 'ipa':
