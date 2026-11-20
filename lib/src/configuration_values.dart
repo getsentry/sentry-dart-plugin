@@ -21,6 +21,9 @@ class ConfigurationValues {
   final String? webBuildPath;
   final String? symbolsPath;
   final String? dartSymbolMapPath;
+  final bool? uploadProguard;
+  final String? proguardUuid;
+  final String? proguardMappingPath;
   final String? commits;
   final bool? ignoreMissing;
   final bool? finalizeRelease;
@@ -50,6 +53,9 @@ class ConfigurationValues {
     this.webBuildPath,
     this.symbolsPath,
     this.dartSymbolMapPath,
+    this.uploadProguard,
+    this.proguardUuid,
+    this.proguardMappingPath,
     this.commits,
     this.ignoreMissing,
     this.finalizeRelease,
@@ -106,6 +112,9 @@ class ConfigurationValues {
       webBuildPath: sentryArguments['web_build_path'],
       symbolsPath: sentryArguments['symbols_path'],
       dartSymbolMapPath: sentryArguments['dart_symbol_map_path'],
+      uploadProguard: boolFromString(sentryArguments['upload_proguard']),
+      proguardUuid: sentryArguments['proguard_uuid'],
+      proguardMappingPath: sentryArguments['proguard_mapping_path'],
       commits: sentryArguments['commits'],
       ignoreMissing: boolFromString(sentryArguments['ignore_missing']),
       finalizeRelease: boolFromString(sentryArguments['finalize_release']),
@@ -150,6 +159,9 @@ class ConfigurationValues {
       webBuildPath: configReader.getString('web_build_path'),
       symbolsPath: configReader.getString('symbols_path'),
       dartSymbolMapPath: configReader.getString('dart_symbol_map_path'),
+      uploadProguard: configReader.getBool('upload_proguard'),
+      proguardUuid: configReader.getString('proguard_uuid'),
+      proguardMappingPath: configReader.getString('proguard_mapping_path'),
       commits: configReader.getString('commits'),
       ignoreMissing: configReader.getBool('ignore_missing'),
       finalizeRelease: configReader.getBool('finalize_release'),
@@ -181,11 +193,16 @@ class ConfigurationValues {
     if (envLogLevel?.isEmpty ?? false) {
       envLogLevel = null;
     }
+    String? envProguardUuid = environment['SENTRY_PROGUARD_UUID'];
+    if (envProguardUuid?.isEmpty ?? false) {
+      envProguardUuid = null;
+    }
     return ConfigurationValues(
       release: envRelease,
       dist: envDist,
       sentryCliCdnUrl: envSentryCliCdnUrl,
       logLevel: envLogLevel,
+      proguardUuid: envProguardUuid,
     );
   }
 
@@ -215,6 +232,10 @@ class ConfigurationValues {
       dartSymbolMapPath: platformEnv.dartSymbolMapPath ??
           args.dartSymbolMapPath ??
           file.dartSymbolMapPath,
+      uploadProguard: args.uploadProguard ?? file.uploadProguard,
+      proguardUuid:
+          platformEnv.proguardUuid ?? args.proguardUuid ?? file.proguardUuid,
+      proguardMappingPath: args.proguardMappingPath ?? file.proguardMappingPath,
       commits: args.commits ?? file.commits,
       ignoreMissing: args.ignoreMissing ?? file.ignoreMissing,
       finalizeRelease: args.finalizeRelease ?? file.finalizeRelease,

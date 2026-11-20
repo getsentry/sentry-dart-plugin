@@ -78,6 +78,21 @@ class Configuration {
   /// Explicit path to the Dart obfuscation map file. Optional.
   late String? dartSymbolMapPath;
 
+  /// Whether to upload the Android ProGuard/R8 mapping file, defaults to true.
+  /// The upload needs a ProGuard UUID: [proguardUuid] if set, otherwise the
+  /// one `--inject-uuid` packaged into the built APK/AAB.
+  late bool uploadProguard;
+
+  /// The UUID the ProGuard/R8 mapping file is uploaded under, or set via env.
+  /// var. SENTRY_PROGUARD_UUID. It must match the UUID the app reports at
+  /// runtime (`SentryFlutterOptions.proguardUuid`), so it has to be chosen
+  /// before the build.
+  late String? proguardUuid;
+
+  /// Explicit path to the ProGuard/R8 mapping file. Optional. Defaults to the
+  /// `mapping.txt` found under `<build_path>/app/outputs/mapping/`.
+  late String? proguardMappingPath;
+
   /// The URL prefix, defaults to null
   late String? urlPrefix;
 
@@ -120,8 +135,12 @@ class Configuration {
   /// Defaults to an empty list (no paths ignored).
   late List<String> ignoreWebSourcePaths;
 
-  /// Loads the configuration values
-  Future<void> getConfigValues(List<String> cliArguments) async {
+  /// Loads the configuration values. With [setupCli] false, sentry-cli is not
+  /// downloaded or located, for modes that make no CLI calls.
+  Future<void> getConfigValues(
+    List<String> cliArguments, {
+    bool setupCli = true,
+  }) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
 
@@ -133,7 +152,9 @@ class Configuration {
       ),
     );
 
-    await _findAndSetCliPath();
+    if (setupCli) {
+      await _findAndSetCliPath();
+    }
 
     Log.taskCompleted(taskName);
   }
@@ -173,6 +194,9 @@ class Configuration {
         ? defaultSymbolsFolder
         : symbolsPath;
     dartSymbolMapPath = configValues.dartSymbolMapPath;
+    uploadProguard = configValues.uploadProguard ?? true;
+    proguardUuid = configValues.proguardUuid;
+    proguardMappingPath = configValues.proguardMappingPath;
 
     project = configValues.project; // or env. var. SENTRY_PROJECT
     org = configValues.org; // or env. var. SENTRY_ORG

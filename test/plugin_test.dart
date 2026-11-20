@@ -7,12 +7,15 @@ import 'package:process/process.dart';
 import 'package:sentry_dart_plugin/sentry_dart_plugin.dart';
 import 'package:sentry_dart_plugin/src/cli/host_platform.dart';
 import 'package:sentry_dart_plugin/src/cli/setup.dart';
+import 'package:sentry_dart_plugin/src/proguard/proguard_mapping.dart';
+import 'package:sentry_dart_plugin/src/proguard/proguard_uuid.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 import 'package:test/test.dart';
 
 import 'utils/config_file_type.dart';
 import 'utils/config_formatter.dart';
 import 'utils/config_writer.dart';
+import 'utils/zip_builder.dart';
 
 void main() {
   final plugin = SentryDartPlugin();
@@ -151,6 +154,347 @@ void main() {
             '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
             '$cli $commonArgs releases $orgAndProject finalize $release'
           ]);
+        });
+
+        group('proguard', () {
+          const uuid = 'c9fb2840-1f9c-4f08-81fe-6880753f345b';
+          const mapping = '$buildDir/app/outputs/mapping/release/mapping.txt';
+          const version = '1.0.0';
+          const release = '$name@$version';
+
+          setUp(() {
+            fs.file(mapping).createSync(recursive: true);
+          });
+
+          test('uploads the mapping under proguard_uuid', () async {
+            final commandLog = await runWith(version, 'proguard_uuid: $uuid');
+
+            expect(commandLog, [
+              '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping',
+              '$cli $commonArgs releases $orgAndProject new $release',
+              '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
+              '$cli $commonArgs releases $orgAndProject finalize $release'
+            ]);
+          });
+
+          test('a failed mapping upload does not abort the run', () async {
+            pm.failingCommands.add('upload-proguard');
+            final commandLog = await runWith(version, 'proguard_uuid: $uuid');
+
+            expect(commandLog, [
+              '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping',
+              '$cli $commonArgs releases $orgAndProject new $release',
+              '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
+              '$cli $commonArgs releases $orgAndProject finalize $release'
+            ]);
+          });
+
+          test('uploads the mapping at proguard_mapping_path', () async {
+            fs.file('custom/mapping.txt').createSync(recursive: true);
+            final commandLog = await runWith(version, '''
+              proguard_uuid: $uuid
+              proguard_mapping_path: custom/mapping.txt
+            ''');
+
+            expect(
+              commandLog,
+              contains(
+                  '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid custom/mapping.txt'),
+            );
+          });
+
+          test('uploads the mapping even if upload_debug_symbols is disabled',
+              () async {
+            final commandLog = await runWith(version, '''
+              proguard_uuid: $uuid
+              upload_debug_symbols: false
+            ''');
+
+            expect(commandLog.first,
+                '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping');
+          });
+
+          for (final config in [
+            '',
+            'proguard_uuid: not-a-uuid',
+            'proguard_uuid: $uuid\nupload_proguard: false',
+          ]) {
+            test('skips the upload with config "$config"', () async {
+              final commandLog = await runWith(version, config);
+
+              expect(commandLog.where((c) => c.contains('upload-proguard')),
+                  isEmpty);
+            });
+          }
+
+          group('built app', () {
+            const builtUuid = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
+            const apk = '$buildDir/app/outputs/flutter-apk/app-release.apk';
+
+            // Explicit times: the injected file is only removed once an
+            // APK/AAB newer than it exists.
+            final injectedAt = DateTime(2026, 1, 2);
+
+            // The minified build (writing the mapping) runs after the inject.
+            setUp(() =>
+                fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 3)));
+
+            void writeApk({String? debugMeta, DateTime? builtAt}) =>
+                fs.file(apk)
+                  ..createSync(recursive: true)
+                  ..writeAsBytesSync(buildZip({
+                    'AndroidManifest.xml': '',
+                    if (debugMeta != null)
+                      'assets/sentry-debug-meta.properties': debugMeta,
+                  }))
+                  ..setLastModifiedSync(builtAt ?? DateTime(2026, 1, 3));
+
+            var injectCommands = <String>[];
+
+            Future<String> injectUuid() async {
+              configWriter.write(
+                version,
+                fileType,
+                ConfigFormatter.formatConfig('', fileType, url),
+              );
+              fs.directory('android/app').createSync(recursive: true);
+              expect(await plugin.run(['--inject-uuid']), 0);
+              // Keep the later `runWith` log free of the inject's commands.
+              injectCommands = List.of(pm.commandLog);
+              pm.commandLog.clear();
+              pm.commandEnvironmentLog.clear();
+              final file = fs.file(debugMetaAssetPath);
+              expect(file.existsSync(), isTrue);
+              file.setLastModifiedSync(injectedAt);
+              return file.readAsStringSync();
+            }
+
+            test('--inject-uuid writes a UUID without calling sentry-cli',
+                () async {
+              final debugMeta = await injectUuid();
+
+              // Only git is asked (about .gitignore), never sentry-cli.
+              expect(
+                  injectCommands, ['git check-ignore -q $debugMetaAssetPath']);
+              expect(pm.commandLog, isEmpty);
+              expect(
+                  isValidProguardUuid(parseProguardUuid(debugMeta)!), isTrue);
+            });
+
+            test('uploads under the injected UUID and removes the file',
+                () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              // `flutter build` packages the asset into the app.
+              writeApk(debugMeta: debugMeta);
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $mapping'),
+              );
+              expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+            });
+
+            test('skips the upload if the app was built before --inject-uuid',
+                () async {
+              fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 1));
+              writeApk(builtAt: DateTime(2026, 1, 1));
+              await injectUuid();
+
+              final commandLog = await runWith(version, '');
+
+              expect(commandLog.where((c) => c.contains('upload-proguard')),
+                  isEmpty);
+              // Kept for the next build, which will package it.
+              expect(fs.file(debugMetaAssetPath).existsSync(), isTrue);
+            });
+
+            test('keeps the injected file on runs without an Android build',
+                () async {
+              await injectUuid();
+              fs.directory('$buildDir/app/outputs').deleteSync(recursive: true);
+
+              await runWith(version, '');
+
+              expect(fs.file(debugMetaAssetPath).existsSync(), isTrue);
+            });
+
+            test('removes the consumed file even if the run fails', () async {
+              final debugMeta = await injectUuid();
+              writeApk(debugMeta: debugMeta);
+              // No auth token: validation fails before any upload.
+              if (fs.file('sentry.properties').existsSync()) {
+                fs.file('sentry.properties').deleteSync();
+              }
+              fs
+                  .file('pubspec.yaml')
+                  .writeAsStringSync('name: $name\nversion: $version\n');
+
+              expect(await plugin.run([]), 1);
+
+              expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+            });
+
+            test(
+                'skips the upload when several variants were built after one '
+                '--inject-uuid', () async {
+              final debugMeta = await injectUuid();
+              for (final variant in ['free', 'paid']) {
+                fs.file(
+                    '$buildDir/app/outputs/mapping/${variant}Release/mapping.txt')
+                  ..createSync(recursive: true)
+                  ..setLastModifiedSync(DateTime(2026, 1, 3));
+                fs.file(
+                    '$buildDir/app/outputs/flutter-apk/app-$variant-release.apk')
+                  ..createSync(recursive: true)
+                  ..writeAsBytesSync(buildZip(
+                      {'assets/sentry-debug-meta.properties': debugMeta}))
+                  ..setLastModifiedSync(DateTime(2026, 1, 3));
+              }
+
+              final commandLog = await runWith(version, '');
+
+              expect(commandLog.where((c) => c.contains('upload-proguard')),
+                  isEmpty);
+            });
+
+            void writeBuilt(String path, String debugMeta, DateTime at) => fs
+                .file('$buildDir/app/outputs/$path')
+              ..createSync(recursive: true)
+              ..writeAsBytesSync(
+                  buildZip({'assets/sentry-debug-meta.properties': debugMeta}))
+              ..setLastModifiedSync(at);
+
+            test('uploads once for the ABI splits of one variant', () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              for (final abi in ['armeabi-v7a', 'arm64-v8a', 'x86_64']) {
+                writeBuilt('flutter-apk/app-$abi-release.apk', debugMeta,
+                    DateTime(2026, 1, 3));
+                writeBuilt('apk/release/app-$abi-release.apk', debugMeta,
+                    DateTime(2026, 1, 3));
+              }
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $mapping'),
+              );
+              expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+            });
+
+            test('uploads once for an unsigned release build', () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              writeBuilt('apk/release/app-release-unsigned.apk', debugMeta,
+                  DateTime(2026, 1, 3));
+              writeBuilt('flutter-apk/app-release.apk', debugMeta,
+                  DateTime(2026, 1, 3));
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $mapping'),
+              );
+            });
+
+            test(
+                'uploads the mapping of the built flavor, not the newest one '
+                '(R8 was up to date for it)', () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              const freeMapping =
+                  '$buildDir/app/outputs/mapping/freeRelease/mapping.txt';
+              fs.file(freeMapping)
+                ..createSync(recursive: true)
+                ..setLastModifiedSync(DateTime(2026, 1, 3));
+              fs.file('$buildDir/app/outputs/mapping/paidRelease/mapping.txt')
+                ..createSync(recursive: true)
+                ..setLastModifiedSync(DateTime(2026, 1, 4));
+              // The free flavor was rebuilt last, with its mapping unchanged.
+              writeBuilt('flutter-apk/app-free-release.apk', debugMeta,
+                  DateTime(2026, 1, 5));
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $freeMapping'),
+              );
+              expect(commandLog.where((c) => c.contains('upload-proguard')),
+                  hasLength(1));
+            });
+
+            test('a later debug build does not consume the injected file',
+                () async {
+              final debugMeta = await injectUuid();
+              // `flutter run` packages the asset too, but isn't minified.
+              fs.file('$buildDir/app/outputs/flutter-apk/app-debug.apk')
+                ..createSync(recursive: true)
+                ..writeAsBytesSync(buildZip(
+                    {'assets/sentry-debug-meta.properties': debugMeta}))
+                ..setLastModifiedSync(DateTime(2026, 1, 3));
+
+              await runWith(version, '');
+
+              expect(fs.file(debugMetaAssetPath).existsSync(), isTrue);
+            });
+
+            test('reads the UUID from the build that wrote the mapping',
+                () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 3));
+              writeApk(debugMeta: debugMeta, builtAt: DateTime(2026, 1, 4));
+              // A later, non-minified debug build without the UUID.
+              fs.file('$buildDir/app/outputs/flutter-apk/app-debug.apk')
+                ..createSync(recursive: true)
+                ..writeAsBytesSync(buildZip({'AndroidManifest.xml': ''}))
+                ..setLastModifiedSync(DateTime(2026, 1, 5));
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $mapping'),
+              );
+            });
+
+            test('uses the UUID packaged by other tools', () async {
+              writeApk(debugMeta: 'io.sentry.ProguardUuids=$builtUuid\n');
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $builtUuid $mapping'),
+              );
+            });
+
+            test('prefers the configured proguard_uuid', () async {
+              writeApk(debugMeta: 'io.sentry.ProguardUuids=$builtUuid\n');
+
+              final commandLog = await runWith(version, 'proguard_uuid: $uuid');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping'),
+              );
+            });
+          });
         });
 
         test('takes cli-path from binPath arg', () async {
@@ -536,6 +880,9 @@ void main() {
 
 class MockProcessManager implements ProcessManager {
   final commandLog = <String>[];
+
+  /// Commands containing one of these exit with code 1.
+  final failingCommands = <String>{};
   final commandEnvironmentLog = <Map<String, String>?>[];
 
   @override
@@ -579,13 +926,19 @@ class MockProcessManager implements ProcessManager {
     commandLog.add(command.join(' '));
     commandEnvironmentLog.add(
         environment == null ? null : Map<String, String>.from(environment));
-    return Future.value(MockProcess());
+    final joined = command.join(' ');
+    final fails = failingCommands.any(joined.contains);
+    return Future.value(MockProcess(exitCode: fails ? 1 : 0));
   }
 }
 
 class MockProcess implements Process {
+  MockProcess({int exitCode = 0}) : _exitCode = exitCode;
+
+  final int _exitCode;
+
   @override
-  Future<int> get exitCode => Future.value(0);
+  Future<int> get exitCode => Future.value(_exitCode);
 
   @override
   bool kill([ProcessSignal signal = ProcessSignal.sigterm]) {

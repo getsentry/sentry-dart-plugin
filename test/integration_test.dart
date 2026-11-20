@@ -102,6 +102,17 @@ void main() async {
                 'libflutter.so'
               ]));
           expect(debugSymbols, anyElement(matches(RegExp('^(lib)?app.so\$'))));
+          // Release builds are minified by R8, and `--inject-uuid` ran before
+          // the build, so the plugin finds the UUID in the built app and
+          // uploads the R8 mapping under it.
+          expect(debugSymbols,
+              anyElement(matches(RegExp(r'^/proguard/[0-9a-f-]{36}\.txt$'))));
+          expect(
+              File('${appDir.path}/android/app/src/main/assets/'
+                      'sentry-debug-meta.properties')
+                  .existsSync(),
+              isFalse,
+              reason: 'the injected UUID file is removed after the upload');
           break;
         case 'ios':
         case 'ipa':
@@ -198,6 +209,8 @@ Future<Iterable<String>> _runPlugin(Directory cwd) => _exec(
       cwd: cwd.path,
     );
 
+bool _isAndroid(String platform) => ['apk', 'appbundle'].contains(platform);
+
 Future<void> _waitForServerReady(
     Future<int> exitCode, _ProcessStreamCollector collector) async {
   int? observedExitCode;
@@ -266,7 +279,9 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
   // In order to not run the build on every test execution, we store a hash.
   final hashFile = File('${appDir.path}/.hash');
   final hash = md5
-      .convert(utf8.encode(await _flutterVersionInfo + buildArgs.toString()))
+      .convert(utf8.encode(await _flutterVersionInfo +
+          buildArgs.toString() +
+          (_isAndroid(platform) ? 'inject-uuid' : '')))
       .toString();
 
   if (await hashFile.exists()) {
@@ -279,8 +294,6 @@ Future<Directory> _prepareTestApp(Directory tempDir, String platform) async {
 
   if (!await hashFile.exists()) {
     await _flutter(['create', appDir.path, '--project-name', appName]);
-
-    await _flutter(['build', ...buildArgs], cwd: appDir.path);
 
     var pubspec = await pubspecFile.readAsString();
     // Remove the plus symbol from the version. Current python sever has trouble
@@ -303,6 +316,14 @@ sentry:
   dart_symbol_map_path: obfuscation.map.json
 ''';
     await pubspecFile.writeAsString(pubspec);
+
+    // For Android, inject the ProGuard UUID before the build, as users would.
+    if (_isAndroid(platform)) {
+      await _exec('dart', ['run', 'sentry_dart_plugin', '--inject-uuid'],
+          cwd: appDir.path);
+    }
+
+    await _flutter(['build', ...buildArgs], cwd: appDir.path);
 
     // Store the hash so that we don't need to rebuild the app.
     await hashFile.writeAsString(hash);
