@@ -36,6 +36,7 @@ class SentryDartPlugin {
       return injectProguardUuid(
         fs: injector.get<FileSystem>(),
         config: _configuration,
+        processManager: injector.get<ProcessManager>(),
       );
     }
 

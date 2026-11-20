@@ -251,6 +251,8 @@ void main() {
                   }))
                   ..setLastModifiedSync(builtAt ?? DateTime(2026, 1, 3));
 
+            var injectCommands = <String>[];
+
             Future<String> injectUuid() async {
               configWriter.write(
                 version,
@@ -259,6 +261,10 @@ void main() {
               );
               fs.directory('android/app').createSync(recursive: true);
               expect(await plugin.run(['--inject-uuid']), 0);
+              // Keep the later `runWith` log free of the inject's commands.
+              injectCommands = List.of(pm.commandLog);
+              pm.commandLog.clear();
+              pm.commandEnvironmentLog.clear();
               final file = fs.file(debugMetaAssetPath);
               expect(file.existsSync(), isTrue);
               file.setLastModifiedSync(injectedAt);
@@ -269,6 +275,9 @@ void main() {
                 () async {
               final debugMeta = await injectUuid();
 
+              // Only git is asked (about .gitignore), never sentry-cli.
+              expect(
+                  injectCommands, ['git check-ignore -q $debugMetaAssetPath']);
               expect(pm.commandLog, isEmpty);
               expect(
                   isValidProguardUuid(parseProguardUuid(debugMeta)!), isTrue);

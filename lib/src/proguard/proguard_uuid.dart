@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:file/file.dart';
+import 'package:process/process.dart';
 
 import '../configuration.dart';
 import '../utils/log.dart';
@@ -65,9 +67,12 @@ String? parseProguardUuid(String content) {
 /// Runs `--inject-uuid`: writes a ProGuard UUID into [debugMetaAssetPath] so
 /// the next `flutter build` packages it into the app. Uses the configured
 /// `proguard_uuid` if set, otherwise generates one. Returns the exit code.
+///
+/// Warns to add the file to `.gitignore` when git reports it isn't ignored.
 Future<int> injectProguardUuid({
   required FileSystem fs,
   required Configuration config,
+  required ProcessManager processManager,
 }) async {
   const taskName = 'injecting ProGuard UUID';
   Log.startingTask(taskName);
@@ -131,14 +136,29 @@ Future<int> injectProguardUuid({
     Log.info("$source ProGuard UUID $uuid and injected it into "
         "'$debugMetaAssetPath'. Now run flutter build, then "
         'dart run sentry_dart_plugin to upload the mapping.');
-    Log.warn("Add '$debugMetaAssetPath' to your .gitignore so it isn't "
-        'committed by accident. The plugin removes it after the upload.');
+    if (await _isNotGitIgnored(processManager)) {
+      Log.warn("Add '$debugMetaAssetPath' to your .gitignore so it isn't "
+          'committed by accident. The plugin removes it after the upload.');
+    }
     return 0;
   } on FileSystemException catch (e) {
     Log.error('Failed to inject the ProGuard UUID: $e');
     return 1;
   } finally {
     Log.taskCompleted(taskName);
+  }
+}
+
+/// Whether git says [debugMetaAssetPath] isn't ignored (`git check-ignore`
+/// exits with 1). False if it is ignored, or if that can't be told: not a git
+/// repository (128), git isn't installed, etc. Never throws.
+Future<bool> _isNotGitIgnored(ProcessManager processManager) async {
+  try {
+    final result = await processManager
+        .run(['git', 'check-ignore', '-q', debugMetaAssetPath]);
+    return result.exitCode == 1;
+  } on ProcessException {
+    return false;
   }
 }
 

@@ -7,15 +7,18 @@ import 'package:sentry_dart_plugin/src/utils/injector.dart';
 import 'package:test/test.dart';
 
 import 'utils/capture_stdout.dart';
+import 'utils/fake_git_process_manager.dart';
 import 'utils/zip_builder.dart';
 
 void main() {
   const uuid = 'c9fb2840-1f9c-4f08-81fe-6880753f345b';
   late FileSystem fs;
   late Configuration config;
+  late FakeGitProcessManager git;
 
   setUp(() {
     fs = MemoryFileSystem.test();
+    git = FakeGitProcessManager(); // exit 1: not ignored
     injector.registerSingleton<FileSystem>(() => fs, override: true);
     config = Configuration()
       ..buildFilesFolder = 'build'
@@ -78,7 +81,9 @@ void main() {
     setUp(() => fs.directory('android/app').createSync(recursive: true));
 
     test('writes a generated UUID into the Android assets', () async {
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
       final injected = injectedUuid();
       expect(injected, isNotNull);
       expect(isValidProguardUuid(injected!), isTrue);
@@ -87,48 +92,85 @@ void main() {
 
     test('warns to add the injected file to .gitignore', () async {
       final output = await captureStdout(() async {
-        expect(await injectProguardUuid(fs: fs, config: config), 0);
+        expect(
+            await injectProguardUuid(
+                fs: fs, config: config, processManager: git),
+            0);
       });
       expect(output, contains('to your .gitignore'));
       expect(output, contains(debugMetaAssetPath));
     });
 
-    test('does not warn about .gitignore when nothing was injected', () async {
+    test('asks git whether the injected file is ignored', () async {
+      await injectProguardUuid(fs: fs, config: config, processManager: git);
+      expect(git.commands, ['git check-ignore -q $debugMetaAssetPath']);
+    });
+
+    for (final entry in {
+      'is already ignored': FakeGitProcessManager(exitCode: 0),
+      'is not a git repository': FakeGitProcessManager(exitCode: 128),
+      'is not installed': FakeGitProcessManager(missing: true),
+    }.entries) {
+      test('does not warn about .gitignore when git ${entry.key}', () async {
+        final output = await captureStdout(() async {
+          expect(
+              await injectProguardUuid(
+                  fs: fs, config: config, processManager: entry.value),
+              0);
+        });
+        expect(output, isNot(contains('.gitignore')));
+        expect(injectedUuid(), isNotNull);
+      });
+    }
+
+    test('does not ask git when nothing was injected', () async {
       fs.directory('android').deleteSync(recursive: true);
       final output = await captureStdout(() async {
-        expect(await injectProguardUuid(fs: fs, config: config), 0);
+        expect(
+            await injectProguardUuid(
+                fs: fs, config: config, processManager: git),
+            0);
       });
       expect(output, isNot(contains('.gitignore')));
+      expect(git.commands, isEmpty);
     });
 
     test('generates a new UUID on every run', () async {
-      await injectProguardUuid(fs: fs, config: config);
+      await injectProguardUuid(fs: fs, config: config, processManager: git);
       final first = injectedUuid();
-      await injectProguardUuid(fs: fs, config: config);
+      await injectProguardUuid(fs: fs, config: config, processManager: git);
       expect(injectedUuid(), isNot(first));
     });
 
     test('uses the configured proguard_uuid', () async {
       config.proguardUuid = uuid;
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
       expect(injectedUuid(), uuid);
     });
 
     test('fails on an invalid configured proguard_uuid', () async {
       config.proguardUuid = 'not-a-uuid';
-      expect(await injectProguardUuid(fs: fs, config: config), 1);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          1);
       expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
     });
 
     test('does nothing without an Android app', () async {
       fs.directory('android').deleteSync(recursive: true);
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
       expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
     });
 
     test('does nothing when upload_proguard is disabled', () async {
       config.uploadProguard = false;
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
       expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
     });
 
@@ -148,7 +190,10 @@ void main() {
         fs.file(applied[0])
           ..createSync(recursive: true)
           ..writeAsStringSync(applied[1]);
-        expect(await injectProguardUuid(fs: fs, config: config), 0);
+        expect(
+            await injectProguardUuid(
+                fs: fs, config: config, processManager: git),
+            0);
         expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
       });
     }
@@ -166,7 +211,10 @@ void main() {
         fs.file(entry.key)
           ..createSync(recursive: true)
           ..writeAsStringSync(entry.value);
-        expect(await injectProguardUuid(fs: fs, config: config), 0);
+        expect(
+            await injectProguardUuid(
+                fs: fs, config: config, processManager: git),
+            0);
         expect(injectedUuid(), isNotNull);
       });
     }
@@ -176,7 +224,9 @@ void main() {
       fs.file(debugMetaAssetPath)
         ..createSync(recursive: true)
         ..writeAsStringSync(content);
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
       expect(fs.file(debugMetaAssetPath).readAsStringSync(), content);
       expect(await hasInjectedProguardUuid(fs), isFalse);
     });
@@ -191,7 +241,9 @@ void main() {
         ..createSync(recursive: true)
         ..writeAsStringSync(
             'plugins {\n  alias(libs.plugins.sentry.android)\n}');
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
       expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
     });
 
@@ -201,7 +253,9 @@ void main() {
         ..writeAsStringSync('val sources = "src/*.kt"\n'
             'plugins { id("io.sentry.android.gradle") }\n'
             '/* end */');
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
       expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
     });
 
@@ -215,7 +269,9 @@ void main() {
       fs.file(debugMetaAssetPath)
         ..createSync(recursive: true)
         ..writeAsBytesSync(bytes);
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
       expect(fs.file(debugMetaAssetPath).readAsBytesSync(), bytes);
       expect(await hasInjectedProguardUuid(fs), isFalse);
     });
@@ -226,7 +282,9 @@ void main() {
         ..createSync(recursive: true)
         ..writeAsStringSync('io.sentry.ProguardUuids=$uuid\n');
       config.proguardUuid = generateUuid();
-      expect(await injectProguardUuid(fs: fs, config: config), 1);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          1);
       expect(injectedUuid(), uuid);
     });
 
@@ -235,7 +293,9 @@ void main() {
         ..createSync(recursive: true)
         ..writeAsStringSync('io.sentry.ProguardUuids=$uuid\n');
       config.proguardUuid = uuid.toUpperCase();
-      expect(await injectProguardUuid(fs: fs, config: config), 0);
+      expect(
+          await injectProguardUuid(fs: fs, config: config, processManager: git),
+          0);
     });
   });
 
@@ -295,7 +355,7 @@ void main() {
   group('removeConsumedInjectedProguardUuid', () {
     Future<String> inject({required DateTime at}) async {
       fs.directory('android/app').createSync(recursive: true);
-      await injectProguardUuid(fs: fs, config: config);
+      await injectProguardUuid(fs: fs, config: config, processManager: git);
       fs.file(debugMetaAssetPath).setLastModifiedSync(at);
       return injectedUuid()!;
     }
@@ -352,7 +412,7 @@ void main() {
   group('variantsBuiltWithInjectedUuid', () {
     test('lists each release variant once (APK and AAB)', () async {
       fs.directory('android/app').createSync(recursive: true);
-      await injectProguardUuid(fs: fs, config: config);
+      await injectProguardUuid(fs: fs, config: config, processManager: git);
       fs.file(debugMetaAssetPath).setLastModifiedSync(DateTime(2026, 1, 1));
       final meta = {
         'assets/sentry-debug-meta.properties':
@@ -376,7 +436,7 @@ void main() {
     test('counts the ABI splits and the unsigned build of a variant once',
         () async {
       fs.directory('android/app').createSync(recursive: true);
-      await injectProguardUuid(fs: fs, config: config);
+      await injectProguardUuid(fs: fs, config: config, processManager: git);
       fs.file(debugMetaAssetPath).setLastModifiedSync(DateTime(2026, 1, 1));
       final meta = {
         'assets/sentry-debug-meta.properties':
