@@ -23,7 +23,11 @@ class BuiltAppProguardUuid {
   final String uuid;
   final String artifactPath;
 
-  BuiltAppProguardUuid(this.uuid, this.artifactPath);
+  /// The mapping of the variant this APK/AAB was built from, when the lookup
+  /// was given the discovered mappings and one matches.
+  final ProguardMapping? mapping;
+
+  BuiltAppProguardUuid(this.uuid, this.artifactPath, [this.mapping]);
 }
 
 /// Generates a random (version 4) UUID.
@@ -139,29 +143,45 @@ Future<int> injectProguardUuid({
 /// Reads the ProGuard UUID from a built APK or AAB under
 /// `<build_path>/app/outputs`, or returns null if it has none.
 ///
-/// With [mappingBuiltAt], reads the most recent APK/AAB that has a UUID and
-/// isn't older than the mapping. Gradle rewrites `mapping.txt` only when the
-/// code changes, so every artifact built after it matches that mapping, while
-/// a later debug build may have no UUID. Without it (an explicit
+/// With [mappings] (the discovered `mapping.txt` files), reads the most recent
+/// minified APK/AAB that has a UUID, isn't older than the mapping of its own
+/// variant, and returns that mapping too. Gradle rewrites a `mapping.txt` only
+/// when the code changes, so every artifact built after it matches that
+/// mapping, while a later debug build may have no UUID. The mapping is matched
+/// by variant (`app-free-release.apk` -> `freeRelease`), as another variant's
+/// mapping may be newer. When there is a single mapping, the artifact's name
+/// doesn't have to match it. Without [mappings] (an explicit
 /// `proguard_mapping_path`), reads the most recent APK/AAB.
 Future<BuiltAppProguardUuid?> readBuiltAppProguardUuid({
   required FileSystem fs,
   required Configuration config,
-  DateTime? mappingBuiltAt,
+  List<ProguardMapping>? mappings,
 }) async {
   try {
     final artifacts = await _listArtifacts(fs, config);
-    if (mappingBuiltAt == null) {
+    if (mappings == null) {
       artifacts.removeRange(artifacts.isEmpty ? 0 : 1, artifacts.length);
     }
     for (final artifact in artifacts) {
-      if (mappingBuiltAt != null &&
-          artifact.modified.isBefore(mappingBuiltAt)) {
-        break;
+      ProguardMapping? mapping;
+      if (mappings != null) {
+        if (artifact.isUnminified) {
+          continue;
+        }
+        final named = mappings
+            .where((m) => m.variant?.toLowerCase() == artifact.mappingVariant);
+        mapping = named.isNotEmpty
+            ? named.first
+            : (mappings.length == 1 ? mappings.first : null);
+        if (mapping == null ||
+            (mapping.builtAt != null &&
+                artifact.modified.isBefore(mapping.builtAt!))) {
+          continue;
+        }
       }
       final uuid = await artifact.uuid();
       if (uuid != null) {
-        return BuiltAppProguardUuid(uuid, artifact.file.path);
+        return BuiltAppProguardUuid(uuid, artifact.file.path, mapping);
       }
     }
   } on FileSystemException catch (e) {
@@ -194,7 +214,9 @@ Future<bool> hasInjectedProguardUuid(FileSystem fs) async {
 
 /// The release-type variants (e.g. `app-free-release`) built since
 /// `--inject-uuid` that packaged its UUID. More than one means several builds
-/// share the UUID, so no single mapping matches it.
+/// share the UUID, so no single mapping matches it. The ABI splits of a
+/// variant (`--split-per-abi`) and its unsigned build share one mapping, so
+/// they count as one.
 Future<Set<String>> variantsBuiltWithInjectedUuid({
   required FileSystem fs,
   required Configuration config,
@@ -243,6 +265,10 @@ Future<void> removeConsumedInjectedProguardUuid({
   }
 }
 
+/// The ABI part of a `--split-per-abi` APK name, and `-unsigned`.
+final _abiOrUnsigned = RegExp(
+    r'-(armeabi-v7a|armeabi|arm64-v8a|x86_64|x86|mips64|mips|universal|unsigned)(?=-|$)');
+
 class _Artifact {
   final File file;
   final DateTime modified;
@@ -254,8 +280,16 @@ class _Artifact {
   String get _name => file.basename.toLowerCase();
 
   /// The file name without extension, shared by the APK and AAB of a variant
-  /// (`app-release`, `app-free-release`).
-  String get variant => _name.substring(0, _name.lastIndexOf('.'));
+  /// (`app-release`, `app-free-release`). The ABI of a split APK
+  /// (`app-arm64-v8a-release`) and `-unsigned` aren't part of it: they all
+  /// share the variant's one mapping.
+  String get variant =>
+      _name.substring(0, _name.lastIndexOf('.')).replaceAll(_abiOrUnsigned, '');
+
+  /// [variant] as the Gradle variant name of its mapping directory, lower
+  /// case: `app-free-release` -> `freerelease` (`freeRelease/`).
+  String get mappingVariant =>
+      variant.replaceFirst(RegExp(r'^app-'), '').replaceAll('-', '');
 
   /// Debug and profile builds aren't minified by Flutter.
   bool get isUnminified =>

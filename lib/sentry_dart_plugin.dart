@@ -180,7 +180,6 @@ class SentryDartPlugin {
         return;
       }
 
-      final mappingPath = mapping.path;
       final sharedBy =
           await variantsBuiltWithInjectedUuid(fs: fs, config: _configuration);
       if (sharedBy.length > 1) {
@@ -191,15 +190,16 @@ class SentryDartPlugin {
             'each.');
         return;
       }
-      final uuid = await _resolveProguardUuid(fs, configuredUuid, mapping);
-      if (uuid == null) {
+      final resolved = await _resolveProguardUuid(fs, configuredUuid, lookup);
+      final uuid = resolved?.uuid;
+      if (resolved == null || uuid == null) {
         if (injectedAt != null) {
           Log.warn("'$debugMetaAssetPath' exists, but the built app doesn't "
               'contain it: --inject-uuid ran after the last flutter build. '
               'Skipping the ProGuard mapping upload. Run --inject-uuid before '
               'flutter build; the next build will package the UUID.');
         } else {
-          Log.info("Found ProGuard mapping '$mappingPath' but the APK/AAB "
+          Log.info("Found ProGuard mapping '${mapping.path}' but the APK/AAB "
               'built with it has no ProGuard UUID, skipping. To upload it, run '
               "'dart run sentry_dart_plugin --inject-uuid' before "
               "'flutter build', or set 'proguard_uuid' to the UUID the app "
@@ -217,7 +217,7 @@ class SentryDartPlugin {
       _setUrlAndTokenAndLog(params);
       params.add('upload-proguard');
       _addOrgAndProject(params);
-      params.addAll(['--uuid', uuid, mappingPath]);
+      params.addAll(['--uuid', uuid, resolved.mapping.path]);
       await _executeAndLog('Failed to upload ProGuard mapping', params);
     } on ExitError catch (e) {
       // Like the Dart symbol map, a failed mapping upload must not stop the
@@ -234,11 +234,33 @@ class SentryDartPlugin {
   }
 
   /// Returns the configured `proguard_uuid` if set, otherwise the UUID inside
-  /// the APK/AAB built with [mapping], or null when there is neither.
-  Future<String?> _resolveProguardUuid(
-      FileSystem fs, String configuredUuid, ProguardMapping mapping) async {
+  /// the APK/AAB built with the mapping, together with the mapping to upload
+  /// under it, or null when there is no UUID.
+  ///
+  /// With several mappings (e.g. flavors) the mapping is the one of the
+  /// variant the APK/AAB was built from, not simply the newest: R8 doesn't
+  /// rewrite a mapping that is up to date, so another flavor's may be newer.
+  Future<_ResolvedProguardUuid?> _resolveProguardUuid(FileSystem fs,
+      String configuredUuid, ProguardMappingLookup lookup) async {
     final built = await readBuiltAppProguardUuid(
-        fs: fs, config: _configuration, mappingBuiltAt: mapping.builtAt);
+        fs: fs,
+        config: _configuration,
+        mappings: lookup.candidates.isEmpty ? null : lookup.candidates);
+
+    var mapping = lookup.mapping!;
+    final builtMapping = built?.mapping;
+    if (lookup.candidates.length > 1) {
+      if (builtMapping != null) {
+        mapping = builtMapping;
+        Log.info("Using ProGuard mapping '${mapping.path}', the one of "
+            "'${built!.artifactPath}'.");
+      } else {
+        Log.warn('Found multiple ProGuard mapping files: '
+            '${lookup.candidates.map((m) => m.path).join(', ')}. '
+            "Using the most recent one, '${mapping.path}'. "
+            "Set 'proguard_mapping_path' to choose a specific one.");
+      }
+    }
 
     if (configuredUuid.isNotEmpty) {
       if (built != null &&
@@ -247,13 +269,13 @@ class SentryDartPlugin {
             "ProGuard UUID ${built.uuid} in '${built.artifactPath}'. Uploading "
             'under the configured one; make sure the app reports it.');
       }
-      return configuredUuid;
+      return _ResolvedProguardUuid(configuredUuid, mapping);
     }
 
     if (built != null) {
       Log.info(
           "Using ProGuard UUID ${built.uuid} from '${built.artifactPath}'.");
-      return built.uuid;
+      return _ResolvedProguardUuid(built.uuid, mapping);
     }
     return null;
   }
@@ -752,4 +774,12 @@ class SentryDartPlugin {
       params.add(_configuration.project!);
     }
   }
+}
+
+/// The UUID to upload a ProGuard mapping under, and the mapping for it.
+class _ResolvedProguardUuid {
+  final String uuid;
+  final ProguardMapping mapping;
+
+  _ResolvedProguardUuid(this.uuid, this.mapping);
 }

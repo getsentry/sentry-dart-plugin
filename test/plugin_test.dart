@@ -354,6 +354,78 @@ void main() {
                   isEmpty);
             });
 
+            void writeBuilt(String path, String debugMeta, DateTime at) => fs
+                .file('$buildDir/app/outputs/$path')
+              ..createSync(recursive: true)
+              ..writeAsBytesSync(
+                  buildZip({'assets/sentry-debug-meta.properties': debugMeta}))
+              ..setLastModifiedSync(at);
+
+            test('uploads once for the ABI splits of one variant', () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              for (final abi in ['armeabi-v7a', 'arm64-v8a', 'x86_64']) {
+                writeBuilt('flutter-apk/app-$abi-release.apk', debugMeta,
+                    DateTime(2026, 1, 3));
+                writeBuilt('apk/release/app-$abi-release.apk', debugMeta,
+                    DateTime(2026, 1, 3));
+              }
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $mapping'),
+              );
+              expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+            });
+
+            test('uploads once for an unsigned release build', () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              writeBuilt('apk/release/app-release-unsigned.apk', debugMeta,
+                  DateTime(2026, 1, 3));
+              writeBuilt('flutter-apk/app-release.apk', debugMeta,
+                  DateTime(2026, 1, 3));
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $mapping'),
+              );
+            });
+
+            test(
+                'uploads the mapping of the built flavor, not the newest one '
+                '(R8 was up to date for it)', () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              const freeMapping =
+                  '$buildDir/app/outputs/mapping/freeRelease/mapping.txt';
+              fs.file(freeMapping)
+                ..createSync(recursive: true)
+                ..setLastModifiedSync(DateTime(2026, 1, 3));
+              fs.file('$buildDir/app/outputs/mapping/paidRelease/mapping.txt')
+                ..createSync(recursive: true)
+                ..setLastModifiedSync(DateTime(2026, 1, 4));
+              // The free flavor was rebuilt last, with its mapping unchanged.
+              writeBuilt('flutter-apk/app-free-release.apk', debugMeta,
+                  DateTime(2026, 1, 5));
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $freeMapping'),
+              );
+              expect(commandLog.where((c) => c.contains('upload-proguard')),
+                  hasLength(1));
+            });
+
             test('a later debug build does not consume the injected file',
                 () async {
               final debugMeta = await injectUuid();

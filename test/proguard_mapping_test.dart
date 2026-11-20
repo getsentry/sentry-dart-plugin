@@ -70,6 +70,14 @@ void main() {
       );
     });
 
+    test('lists every variant mapping, the most recent first', () async {
+      createMapping('freeRelease', modified: DateTime(2026, 1, 1));
+      createMapping('paidRelease', modified: DateTime(2026, 1, 2));
+      final lookup = await findProguardMapping(fs: fs, config: config);
+      expect(lookup.candidates.map((m) => m.variant),
+          ['paidRelease', 'freeRelease']);
+    });
+
     test('uses proguard_mapping_path over discovered mappings', () async {
       createMapping('release');
       fs.file('custom/mapping.txt').createSync(recursive: true);
