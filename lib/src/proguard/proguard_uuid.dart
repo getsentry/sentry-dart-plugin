@@ -131,6 +131,8 @@ Future<int> injectProguardUuid({
     Log.info("$source ProGuard UUID $uuid and injected it into "
         "'$debugMetaAssetPath'. Now run flutter build, then "
         'dart run sentry_dart_plugin to upload the mapping.');
+    Log.warn("Add '$debugMetaAssetPath' to your .gitignore so it isn't "
+        'committed by accident. The plugin removes it after the upload.');
     return 0;
   } on FileSystemException catch (e) {
     Log.error('Failed to inject the ProGuard UUID: $e');

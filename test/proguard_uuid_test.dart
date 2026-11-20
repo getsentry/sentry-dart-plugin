@@ -6,6 +6,7 @@ import 'package:sentry_dart_plugin/src/proguard/proguard_uuid.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 import 'package:test/test.dart';
 
+import 'utils/capture_stdout.dart';
 import 'utils/zip_builder.dart';
 
 void main() {
@@ -82,6 +83,22 @@ void main() {
       expect(injected, isNotNull);
       expect(isValidProguardUuid(injected!), isTrue);
       expect(await hasInjectedProguardUuid(fs), isTrue);
+    });
+
+    test('warns to add the injected file to .gitignore', () async {
+      final output = await captureStdout(() async {
+        expect(await injectProguardUuid(fs: fs, config: config), 0);
+      });
+      expect(output, contains('to your .gitignore'));
+      expect(output, contains(debugMetaAssetPath));
+    });
+
+    test('does not warn about .gitignore when nothing was injected', () async {
+      fs.directory('android').deleteSync(recursive: true);
+      final output = await captureStdout(() async {
+        expect(await injectProguardUuid(fs: fs, config: config), 0);
+      });
+      expect(output, isNot(contains('.gitignore')));
     });
 
     test('generates a new UUID on every run', () async {
