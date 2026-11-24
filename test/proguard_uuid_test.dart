@@ -342,7 +342,51 @@ void main() {
         {'base/manifest/AndroidManifest.xml': ''},
         modified: DateTime(2026, 1, 2),
       );
-      expect(await readBuiltAppProguardUuid(fs: fs, config: config), isNull);
+      final built = await readBuiltAppProguardUuid(fs: fs, config: config);
+      expect(built?.artifactPath,
+          'build/app/outputs/bundle/release/app-release.aab');
+      expect(built?.uuid, isNull);
+    });
+
+    test('skips later debug and instrumentation test builds', () async {
+      writeArtifact(
+        'build/app/outputs/flutter-apk/app-release.apk',
+        {
+          'assets/sentry-debug-meta.properties': 'io.sentry.ProguardUuids=$uuid'
+        },
+        modified: DateTime(2026, 1, 1),
+      );
+      writeArtifact('build/app/outputs/flutter-apk/app-debug.apk',
+          {'AndroidManifest.xml': ''},
+          modified: DateTime(2026, 1, 2));
+      writeArtifact(
+          'build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk',
+          {'AndroidManifest.xml': ''},
+          modified: DateTime(2026, 1, 3));
+      final built = await readBuiltAppProguardUuid(fs: fs, config: config);
+      expect(built?.uuid, uuid);
+    });
+
+    test('with a mapping path of a variant, reads that variant only', () async {
+      writeArtifact(
+        'build/app/outputs/flutter-apk/app-free-release.apk',
+        {
+          'assets/sentry-debug-meta.properties': 'io.sentry.ProguardUuids=$uuid'
+        },
+        modified: DateTime(2026, 1, 1),
+      );
+      writeArtifact('build/app/outputs/flutter-apk/app-paid-release.apk',
+          {'AndroidManifest.xml': ''},
+          modified: DateTime(2026, 1, 2));
+      Future<String?> read(String path) async =>
+          (await readBuiltAppProguardUuid(
+                  fs: fs, config: config, mappingPath: path))
+              ?.artifactPath;
+      expect(await read('build/app/outputs/mapping/freeRelease/mapping.txt'),
+          'build/app/outputs/flutter-apk/app-free-release.apk');
+      // Anywhere else: the last release build.
+      expect(await read('custom/mapping.txt'),
+          'build/app/outputs/flutter-apk/app-paid-release.apk');
     });
 
     test('returns null without build outputs or artifacts', () async {
@@ -430,7 +474,50 @@ void main() {
           ..setLastModifiedSync(DateTime(2026, 1, 2));
       }
       expect(await variantsBuiltWithInjectedUuid(fs: fs, config: config),
-          {'app-free-release', 'app-paid-release'});
+          {'freeRelease', 'paidRelease'});
+    });
+
+    test('counts renamed outputs and test APKs of a variant once', () async {
+      fs.directory('android/app').createSync(recursive: true);
+      await injectProguardUuid(fs: fs, config: config, processManager: git);
+      fs.file(debugMetaAssetPath).setLastModifiedSync(DateTime(2026, 1, 1));
+      final meta = {
+        'assets/sentry-debug-meta.properties':
+            fs.file(debugMetaAssetPath).readAsStringSync()
+      };
+      for (final path in [
+        'flutter-apk/app-release.apk',
+        'apk/release/myapp-1.0-release.apk',
+        'apk/androidTest/debug/app-debug-androidTest.apk',
+      ]) {
+        fs.file('build/app/outputs/$path')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(buildZip(meta))
+          ..setLastModifiedSync(DateTime(2026, 1, 2));
+      }
+      expect(await variantsBuiltWithInjectedUuid(fs: fs, config: config),
+          {'release'});
+    });
+
+    test('is empty when the injected file has no UUID any more', () async {
+      fs.directory('android/app').createSync(recursive: true);
+      await injectProguardUuid(fs: fs, config: config, processManager: git);
+      final file = fs.file(debugMetaAssetPath);
+      // Edited by hand: marker kept, UUID line removed.
+      file
+        ..writeAsStringSync(file.readAsLinesSync().first)
+        ..setLastModifiedSync(DateTime(2026, 1, 1));
+      for (final path in [
+        'flutter-apk/app-free-release.apk',
+        'flutter-apk/app-paid-release.apk',
+      ]) {
+        fs.file('build/app/outputs/$path')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(buildZip({'AndroidManifest.xml': ''}))
+          ..setLastModifiedSync(DateTime(2026, 1, 2));
+      }
+      expect(
+          await variantsBuiltWithInjectedUuid(fs: fs, config: config), isEmpty);
     });
 
     test('counts the ABI splits and the unsigned build of a variant once',
@@ -459,51 +546,65 @@ void main() {
           ..setLastModifiedSync(DateTime(2026, 1, 2));
       }
       expect(await variantsBuiltWithInjectedUuid(fs: fs, config: config),
-          {'app-release', 'app-free-release'});
+          {'release', 'freeRelease'});
     });
   });
 
-  group('readBuiltAppProguardUuid with mappings', () {
+  group('findLastReleaseBuild', () {
     ProguardMapping mapping(String variant, DateTime at) => ProguardMapping(
         'build/app/outputs/mapping/$variant/mapping.txt', at, variant);
 
-    void writeArtifact(String path, DateTime at, {String? withUuid}) =>
-        fs.file('build/app/outputs/$path')
-          ..createSync(recursive: true)
-          ..writeAsBytesSync(buildZip({
-            if (withUuid != null)
-              'assets/sentry-debug-meta.properties':
-                  'io.sentry.ProguardUuids=$withUuid',
-          }))
-          ..setLastModifiedSync(at);
+    void writeArtifact(String path, DateTime at, {String? withUuid}) {
+      final entry = path.endsWith('.aab')
+          ? 'base/assets/sentry-debug-meta.properties'
+          : 'assets/sentry-debug-meta.properties';
+      fs.file('build/app/outputs/$path')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(buildZip({
+          'AndroidManifest.xml': '',
+          if (withUuid != null) entry: 'io.sentry.ProguardUuids=$withUuid',
+        }))
+        ..setLastModifiedSync(at);
+    }
 
-    Future<BuiltAppProguardUuid?> read(List<ProguardMapping> mappings) =>
-        readBuiltAppProguardUuid(fs: fs, config: config, mappings: mappings);
+    Future<LastReleaseBuild?> find(List<ProguardMapping> mappings) =>
+        findLastReleaseBuild(fs: fs, config: config, mappings: mappings);
 
-    test('reads the first artifact built after the mapping', () async {
+    test('returns the last release build, its UUID and mapping', () async {
       writeArtifact('flutter-apk/app-release.apk', DateTime(2026, 1, 2),
           withUuid: uuid);
       writeArtifact('flutter-apk/app-debug.apk', DateTime(2026, 1, 3));
-      final built = await read([mapping('release', DateTime(2026, 1, 1))]);
+      final built = await find([mapping('release', DateTime(2026, 1, 1))]);
+      expect(
+          built?.artifactPath, 'build/app/outputs/flutter-apk/app-release.apk');
       expect(built?.uuid, uuid);
       expect(built?.mapping?.variant, 'release');
     });
 
-    test('ignores artifacts older than the mapping', () async {
+    test('returns the mapping even without a UUID (proguard_uuid)', () async {
+      writeArtifact('flutter-apk/app-release.apk', DateTime(2026, 1, 2));
+      final built = await find([mapping('release', DateTime(2026, 1, 1))]);
+      expect(built?.uuid, isNull);
+      expect(built?.mapping?.variant, 'release');
+    });
+
+    test('has no mapping when it is newer than the build', () async {
       writeArtifact('flutter-apk/app-release.apk', DateTime(2026, 1, 1),
           withUuid: uuid);
-      expect(await read([mapping('release', DateTime(2026, 1, 2))]), isNull);
+      final built = await find([mapping('release', DateTime(2026, 1, 2))]);
+      expect(built, isNotNull);
+      expect(built?.mapping, isNull);
+      expect(built?.staleMapping?.variant, 'release');
     });
 
     test('matches the mapping of the artifact variant, not the newest',
         () async {
       writeArtifact('flutter-apk/app-free-release.apk', DateTime(2026, 1, 5),
           withUuid: uuid);
-      final built = await read([
+      final built = await find([
         mapping('paidRelease', DateTime(2026, 1, 4)),
         mapping('freeRelease', DateTime(2026, 1, 3)),
       ]);
-      expect(built?.uuid, uuid);
       expect(built?.mapping?.variant, 'freeRelease');
     });
 
@@ -521,39 +622,84 @@ void main() {
         if (fs.directory('build/app/outputs').existsSync()) {
           fs.directory('build/app/outputs').deleteSync(recursive: true);
         }
-        if (path.endsWith('.aab')) {
-          fs.file('build/app/outputs/$path')
-            ..createSync(recursive: true)
-            ..writeAsBytesSync(buildZip({
-              'base/assets/sentry-debug-meta.properties':
-                  'io.sentry.ProguardUuids=$uuid',
-            }))
-            ..setLastModifiedSync(DateTime(2026, 1, 5));
-        } else {
-          writeArtifact(path, DateTime(2026, 1, 5), withUuid: uuid);
-        }
-        expect((await read(mappings))?.mapping?.variant, 'freeRelease',
-            reason: path);
+        writeArtifact(path, DateTime(2026, 1, 5), withUuid: uuid);
+        final built = await find(mappings);
+        expect(built?.mapping?.variant, 'freeRelease', reason: path);
+        expect(built?.uuid, uuid, reason: path);
       }
     });
 
-    test('skips artifacts of a variant without a mapping', () async {
-      writeArtifact('flutter-apk/app-free-release.apk', DateTime(2026, 1, 5),
-          withUuid: uuid);
-      expect(
-          await read([
-            mapping('paidRelease', DateTime(2026, 1, 1)),
-            mapping('demoRelease', DateTime(2026, 1, 1)),
-          ]),
-          isNull);
+    test('has no mapping for a variant without one, even a single other one',
+        () async {
+      writeArtifact('flutter-apk/app-paid-release.apk', DateTime(2026, 1, 5));
+      for (final mappings in [
+        [mapping('freeRelease', DateTime(2026, 1, 1))],
+        [
+          mapping('freeRelease', DateTime(2026, 1, 1)),
+          mapping('demoRelease', DateTime(2026, 1, 1)),
+        ],
+      ]) {
+        final built = await find(mappings);
+        expect(built?.artifactPath,
+            'build/app/outputs/flutter-apk/app-paid-release.apk');
+        expect(built?.mapping, isNull);
+      }
     });
 
-    test('with a single mapping, the artifact name does not have to match',
-        () async {
-      writeArtifact('flutter-apk/app-custom-name.apk', DateTime(2026, 1, 2),
+    test('does not fall back to an older build of another variant', () async {
+      writeArtifact('flutter-apk/app-free-release.apk', DateTime(2026, 1, 2),
           withUuid: uuid);
-      final built = await read([mapping('release', DateTime(2026, 1, 1))]);
-      expect(built?.uuid, uuid);
+      writeArtifact('flutter-apk/app-paid-release.apk', DateTime(2026, 1, 5));
+      final built = await find([mapping('freeRelease', DateTime(2026, 1, 1))]);
+      expect(built?.artifactPath,
+          'build/app/outputs/flutter-apk/app-paid-release.apk');
+      expect(built?.mapping, isNull);
+    });
+
+    test('matches renamed outputs by their directory', () async {
+      final mappings = [
+        mapping('release', DateTime(2026, 1, 1)),
+        mapping('freeStagingRelease', DateTime(2026, 1, 1)),
+      ];
+      for (final entry in {
+        'bundle/release/myapp-1.0-release.aab': 'release',
+        'apk/release/myapp-1.0.apk': 'release',
+        'apk/freeStaging/release/myapp-free.apk': 'freeStagingRelease',
+        'bundle/freeStagingRelease/custom.aab': 'freeStagingRelease',
+      }.entries) {
+        if (fs.directory('build/app/outputs').existsSync()) {
+          fs.directory('build/app/outputs').deleteSync(recursive: true);
+        }
+        writeArtifact(entry.key, DateTime(2026, 1, 5), withUuid: uuid);
+        expect((await find(mappings))?.mapping?.variant, entry.value,
+            reason: entry.key);
+      }
+    });
+
+    test('ignores instrumentation test APKs', () async {
+      writeArtifact('flutter-apk/app-release.apk', DateTime(2026, 1, 2),
+          withUuid: uuid);
+      writeArtifact('apk/androidTest/debug/app-debug-androidTest.apk',
+          DateTime(2026, 1, 3));
+      writeArtifact(
+          'apk/androidTest/free/release/app-free-release-androidTest.apk',
+          DateTime(2026, 1, 4));
+      final built = await find([mapping('release', DateTime(2026, 1, 1))]);
+      expect(
+          built?.artifactPath, 'build/app/outputs/flutter-apk/app-release.apk');
+      expect(built?.mapping?.variant, 'release');
+    });
+
+    test('ignores APKs whose variant cannot be told', () async {
+      writeArtifact('flutter-apk/app-release.apk', DateTime(2026, 1, 2),
+          withUuid: uuid);
+      writeArtifact('flutter-apk/app.apk', DateTime(2026, 1, 3));
+      writeArtifact('apk/app.apk', DateTime(2026, 1, 3));
+      writeArtifact('flutter-apk/myapp-release.apk', DateTime(2026, 1, 3));
+      final built = await find([mapping('release', DateTime(2026, 1, 1))]);
+      expect(
+          built?.artifactPath, 'build/app/outputs/flutter-apk/app-release.apk');
+      expect(built?.mapping?.variant, 'release');
     });
 
     test('ignores debug and profile builds', () async {
@@ -561,7 +707,7 @@ void main() {
           withUuid: uuid);
       writeArtifact('flutter-apk/app-profile.apk', DateTime(2026, 1, 2),
           withUuid: uuid);
-      expect(await read([mapping('release', DateTime(2026, 1, 1))]), isNull);
+      expect(await find([mapping('release', DateTime(2026, 1, 1))]), isNull);
     });
   });
 }

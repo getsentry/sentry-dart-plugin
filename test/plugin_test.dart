@@ -12,6 +12,7 @@ import 'package:sentry_dart_plugin/src/proguard/proguard_uuid.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 import 'package:test/test.dart';
 
+import 'utils/capture_stdout.dart';
 import 'utils/config_file_type.dart';
 import 'utils/config_formatter.dart';
 import 'utils/config_writer.dart';
@@ -166,7 +167,15 @@ void main() {
             fs.file(mapping).createSync(recursive: true);
           });
 
+          // The release build that wrote [mapping]: without one, a mapping
+          // can't be told from a leftover and isn't uploaded.
+          void writeReleaseBuild() =>
+              fs.file('$buildDir/app/outputs/flutter-apk/app-release.apk')
+                ..createSync(recursive: true)
+                ..writeAsBytesSync(buildZip({'AndroidManifest.xml': ''}));
+
           test('uploads the mapping under proguard_uuid', () async {
+            writeReleaseBuild();
             final commandLog = await runWith(version, 'proguard_uuid: $uuid');
 
             expect(commandLog, [
@@ -179,6 +188,7 @@ void main() {
           });
 
           test('a failed mapping upload does not abort the run', () async {
+            writeReleaseBuild();
             pm.failingCommands.add('upload-proguard');
             final commandLog = await runWith(version, 'proguard_uuid: $uuid');
 
@@ -207,6 +217,7 @@ void main() {
 
           test('uploads the mapping even if upload_debug_symbols is disabled',
               () async {
+            writeReleaseBuild();
             final commandLog = await runWith(version, '''
               proguard_uuid: $uuid
               upload_debug_symbols: false
@@ -390,6 +401,25 @@ void main() {
               expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
             });
 
+            test('uploads once for an output renamed by Gradle', () async {
+              final debugMeta = await injectUuid();
+              final injected = parseProguardUuid(debugMeta)!;
+              writeBuilt('apk/release/myapp-1.0-release.apk', debugMeta,
+                  DateTime(2026, 1, 3));
+              writeBuilt('flutter-apk/app-release.apk', debugMeta,
+                  DateTime(2026, 1, 3));
+
+              final commandLog = await runWith(version, '');
+
+              expect(
+                commandLog.where((c) => c.contains('upload-proguard')),
+                [
+                  '$cli $commonArgs upload-proguard $orgAndProject --uuid $injected $mapping'
+                ],
+              );
+              expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+            });
+
             test('uploads once for an unsigned release build', () async {
               final debugMeta = await injectUuid();
               final injected = parseProguardUuid(debugMeta)!;
@@ -481,6 +511,180 @@ void main() {
                 contains(
                     '$cli $commonArgs upload-proguard $orgAndProject --uuid $builtUuid $mapping'),
               );
+            });
+
+            group('reused build dir with flavors', () {
+              const freeMapping =
+                  '$buildDir/app/outputs/mapping/freeRelease/mapping.txt';
+              const paidMapping =
+                  '$buildDir/app/outputs/mapping/paidRelease/mapping.txt';
+
+              void writeMapping(String path, DateTime at) => fs.file(path)
+                ..createSync(recursive: true)
+                ..setLastModifiedSync(at);
+
+              void writeFlavorApk(String flavor, DateTime at,
+                      {String? debugMeta}) =>
+                  fs.file(
+                      '$buildDir/app/outputs/flutter-apk/app-$flavor-release.apk')
+                    ..createSync(recursive: true)
+                    ..writeAsBytesSync(buildZip({
+                      'AndroidManifest.xml': '',
+                      if (debugMeta != null)
+                        'assets/sentry-debug-meta.properties': debugMeta,
+                    }))
+                    ..setLastModifiedSync(at);
+
+              setUp(() => fs.file(mapping).deleteSync());
+
+              Iterable<String> uploads(Iterable<String> log) =>
+                  log.where((c) => c.contains('upload-proguard'));
+
+              test(
+                  'with proguard_uuid, uploads the mapping of the flavor just '
+                  'built, not of an older APK with a UUID', () async {
+                writeMapping(freeMapping, DateTime(2026, 1, 1));
+                writeFlavorApk('free', DateTime(2026, 1, 2),
+                    debugMeta: 'io.sentry.ProguardUuids=$builtUuid\n');
+                // R8 was up to date for paid: its mapping is older.
+                writeMapping(paidMapping, DateTime(2026, 1, 1));
+                writeFlavorApk('paid', DateTime(2026, 1, 5));
+
+                final commandLog =
+                    await runWith(version, 'proguard_uuid: $uuid');
+
+                expect(uploads(commandLog), [
+                  '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $paidMapping'
+                ]);
+              });
+
+              test(
+                  'with proguard_uuid, skips when the flavor just built has no '
+                  'mapping', () async {
+                writeMapping(freeMapping, DateTime(2026, 1, 3));
+                writeFlavorApk('free', DateTime(2026, 1, 3),
+                    debugMeta: 'io.sentry.ProguardUuids=$builtUuid\n');
+                writeMapping(
+                    '$buildDir/app/outputs/mapping/demoRelease/mapping.txt',
+                    DateTime(2026, 1, 4));
+                writeFlavorApk('paid', DateTime(2026, 1, 5));
+
+                final commandLog =
+                    await runWith(version, 'proguard_uuid: $uuid');
+
+                expect(uploads(commandLog), isEmpty);
+              });
+
+              test(
+                  'skips a single leftover mapping of another flavor '
+                  '(minify off)', () async {
+                writeMapping(freeMapping, DateTime(2026, 1, 1));
+                writeFlavorApk('paid', DateTime(2026, 1, 5));
+
+                final commandLog =
+                    await runWith(version, 'proguard_uuid: $uuid');
+
+                expect(uploads(commandLog), isEmpty);
+              });
+
+              test('skips several mappings without a release APK/AAB',
+                  () async {
+                writeMapping(freeMapping, DateTime(2026, 1, 1));
+                writeMapping(paidMapping, DateTime(2026, 1, 2));
+                fs.file(apk).parent.createSync(recursive: true);
+
+                final commandLog =
+                    await runWith(version, 'proguard_uuid: $uuid');
+
+                expect(uploads(commandLog), isEmpty);
+              });
+
+              test(
+                  'skips several variants sharing the injected UUID even '
+                  'with proguard_mapping_path', () async {
+                final debugMeta = await injectUuid();
+                for (final flavor in ['free', 'paid']) {
+                  writeMapping(
+                      '$buildDir/app/outputs/mapping/${flavor}Release/mapping.txt',
+                      DateTime(2026, 1, 3));
+                  writeFlavorApk(flavor, DateTime(2026, 1, 3),
+                      debugMeta: debugMeta);
+                }
+
+                final commandLog = await runWith(
+                    version, 'proguard_mapping_path: $freeMapping');
+
+                expect(uploads(commandLog), isEmpty);
+              });
+
+              test(
+                  'proguard_mapping_path of a flavor reads the UUID of that '
+                  'flavor, not of the last build', () async {
+                writeMapping(freeMapping, DateTime(2026, 1, 1));
+                writeMapping(paidMapping, DateTime(2026, 1, 1));
+                writeFlavorApk('free', DateTime(2026, 1, 2),
+                    debugMeta: 'io.sentry.ProguardUuids=$builtUuid\n');
+                writeFlavorApk('paid', DateTime(2026, 1, 5),
+                    debugMeta: 'io.sentry.ProguardUuids=$uuid\n');
+
+                final commandLog = await runWith(
+                    version, 'proguard_mapping_path: $freeMapping');
+
+                expect(uploads(commandLog), [
+                  '$cli $commonArgs upload-proguard $orgAndProject --uuid $builtUuid $freeMapping'
+                ]);
+              });
+
+              test('skips a single mapping without a release APK/AAB',
+                  () async {
+                writeMapping(freeMapping, DateTime(2026, 1, 1));
+                fs.file(apk).parent.createSync(recursive: true);
+
+                final commandLog =
+                    await runWith(version, 'proguard_uuid: $uuid');
+
+                expect(uploads(commandLog), isEmpty);
+              });
+
+              test('says when the mapping was rewritten after the build',
+                  () async {
+                writeFlavorApk('free', DateTime(2026, 1, 2),
+                    debugMeta: 'io.sentry.ProguardUuids=$builtUuid\n');
+                writeMapping(freeMapping, DateTime(2026, 1, 3));
+
+                late Iterable<String> commandLog;
+                final output = await captureStdout(
+                    () async => commandLog = await runWith(version, ''));
+
+                expect(uploads(commandLog), isEmpty);
+                expect(output, contains('was rewritten after'));
+              });
+
+              test('says so when there is no release APK/AAB', () async {
+                writeMapping(freeMapping, DateTime(2026, 1, 1));
+                fs.file(apk).parent.createSync(recursive: true);
+
+                late Iterable<String> commandLog;
+                final output = await captureStdout(
+                    () async => commandLog = await runWith(version, ''));
+
+                expect(uploads(commandLog), isEmpty);
+                expect(output, contains('no release APK/AAB under'));
+              });
+
+              test('proguard_mapping_path overrides the check', () async {
+                writeMapping(freeMapping, DateTime(2026, 1, 1));
+                writeFlavorApk('paid', DateTime(2026, 1, 5));
+
+                final commandLog = await runWith(version, '''
+                  proguard_uuid: $uuid
+                  proguard_mapping_path: $freeMapping
+                ''');
+
+                expect(uploads(commandLog), [
+                  '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $freeMapping'
+                ]);
+              });
             });
 
             test('prefers the configured proguard_uuid', () async {

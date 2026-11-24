@@ -27,13 +27,13 @@ class ProguardMapping {
 
 /// The outcome of [findProguardMapping].
 class ProguardMappingLookup {
-  /// The mapping to upload, or null. With several variants this is the most
-  /// recent one, which is only a fallback: see [candidates].
+  /// The mapping to upload, or null. With several variants this is just the
+  /// most recent one: see [candidates].
   final ProguardMapping? mapping;
 
   /// Every discovered mapping, the most recent first. Empty for an explicit
-  /// `proguard_mapping_path`. With several (e.g. flavors), the right one is
-  /// the one of the variant whose APK/AAB carries the UUID.
+  /// `proguard_mapping_path`. The right one is the one written by the build
+  /// of the last release APK/AAB, matched by variant.
   final List<ProguardMapping> candidates;
 
   /// Whether the reason for having no mapping was already logged.
@@ -49,9 +49,9 @@ class ProguardMappingLookup {
 /// `<build_path>/app/outputs/mapping/<variant>/mapping.txt`, which is where
 /// the Android Gradle Plugin writes it for minified Flutter builds. When
 /// several variants have a mapping (e.g. flavors), [ProguardMappingLookup.mapping]
-/// is the most recent one; the caller should prefer the mapping of the variant
-/// that was built (R8 doesn't rewrite a mapping that is up to date, so the
-/// newest one isn't necessarily the one just built).
+/// is the most recent one; the caller must instead use the mapping of the
+/// variant that was built (R8 doesn't rewrite a mapping that is up to date,
+/// so the newest one isn't necessarily the one just built).
 Future<ProguardMappingLookup> findProguardMapping({
   required FileSystem fs,
   required Configuration config,

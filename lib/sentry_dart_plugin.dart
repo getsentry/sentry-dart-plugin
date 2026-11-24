@@ -181,6 +181,9 @@ class SentryDartPlugin {
         return;
       }
 
+      // Even with `proguard_mapping_path`: whichever mapping is uploaded under
+      // the shared UUID, the other variants' events would be deobfuscated
+      // with it.
       final sharedBy =
           await variantsBuiltWithInjectedUuid(fs: fs, config: _configuration);
       if (sharedBy.length > 1) {
@@ -191,23 +194,12 @@ class SentryDartPlugin {
             'each.');
         return;
       }
-      final resolved = await _resolveProguardUuid(fs, configuredUuid, lookup);
-      final uuid = resolved?.uuid;
-      if (resolved == null || uuid == null) {
-        if (injectedAt != null) {
-          Log.warn("'$debugMetaAssetPath' exists, but the built app doesn't "
-              'contain it: --inject-uuid ran after the last flutter build. '
-              'Skipping the ProGuard mapping upload. Run --inject-uuid before '
-              'flutter build; the next build will package the UUID.');
-        } else {
-          Log.info("Found ProGuard mapping '${mapping.path}' but the APK/AAB "
-              'built with it has no ProGuard UUID, skipping. To upload it, run '
-              "'dart run sentry_dart_plugin --inject-uuid' before "
-              "'flutter build', or set 'proguard_uuid' to the UUID the app "
-              'reports.');
-        }
+      final resolved =
+          await _resolveProguardUuid(fs, configuredUuid, lookup, injectedAt);
+      if (resolved == null) {
         return;
       }
+      final uuid = resolved.uuid;
       if (!isValidProguardUuid(uuid)) {
         Log.error("ProGuard UUID '$uuid' is not a valid UUID. Skipping the "
             'ProGuard mapping upload.');
@@ -234,49 +226,111 @@ class SentryDartPlugin {
     }
   }
 
-  /// Returns the configured `proguard_uuid` if set, otherwise the UUID inside
-  /// the APK/AAB built with the mapping, together with the mapping to upload
-  /// under it, or null when there is no UUID.
+  /// Returns the UUID to upload under and the mapping to upload, or null
+  /// (after logging why) to skip the upload.
   ///
-  /// With several mappings (e.g. flavors) the mapping is the one of the
-  /// variant the APK/AAB was built from, not simply the newest: R8 doesn't
-  /// rewrite a mapping that is up to date, so another flavor's may be newer.
-  Future<_ResolvedProguardUuid?> _resolveProguardUuid(FileSystem fs,
-      String configuredUuid, ProguardMappingLookup lookup) async {
-    final built = await readBuiltAppProguardUuid(
-        fs: fs,
-        config: _configuration,
-        mappings: lookup.candidates.isEmpty ? null : lookup.candidates);
-
-    var mapping = lookup.mapping!;
-    final builtMapping = built?.mapping;
-    if (lookup.candidates.length > 1) {
-      if (builtMapping != null) {
-        mapping = builtMapping;
-        Log.info("Using ProGuard mapping '${mapping.path}', the one of "
-            "'${built!.artifactPath}'.");
+  /// The UUID is the configured `proguard_uuid` if set, otherwise the one
+  /// inside the APK/AAB built with the mapping.
+  ///
+  /// For discovered mappings, the mapping must be the one the last release
+  /// build wrote, matched by variant: R8 doesn't rewrite a mapping that is up
+  /// to date, so the newest mapping may be another flavor's, and in a reused
+  /// build directory a leftover mapping may belong to another flavor than the
+  /// one just built. When that can't be told, the upload is skipped: an
+  /// obfuscated stack trace is better than a wrongly deobfuscated one.
+  ///
+  /// `proguard_mapping_path` picks the mapping instead. Its UUID comes from
+  /// the last release build of its variant when it is a mapping under
+  /// `<build_path>/app/outputs/mapping/<variant>/`, otherwise from the last
+  /// release build.
+  Future<_ResolvedProguardUuid?> _resolveProguardUuid(
+      FileSystem fs,
+      String configuredUuid,
+      ProguardMappingLookup lookup,
+      DateTime? injectedAt) async {
+    ProguardMapping mapping;
+    String? builtUuid;
+    String? artifactPath;
+    if (lookup.candidates.isEmpty) {
+      // An explicit `proguard_mapping_path`.
+      mapping = lookup.mapping!;
+      final built = await readBuiltAppProguardUuid(
+          fs: fs, config: _configuration, mappingPath: mapping.path);
+      builtUuid = built?.uuid;
+      artifactPath = built?.artifactPath;
+    } else {
+      final built = await findLastReleaseBuild(
+          fs: fs, config: _configuration, mappings: lookup.candidates);
+      final builtMapping = built?.mapping;
+      final paths = lookup.candidates.map((m) => m.path).join(', ');
+      if (built == null) {
+        final outputs =
+            fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs');
+        Log.warn('Found ProGuard mapping $paths, but no release APK/AAB '
+            "under '$outputs' to tell which build wrote it; it may be left "
+            'over from an earlier build. Skipping the ProGuard mapping '
+            "upload. Check 'build_path', or set 'proguard_mapping_path' to "
+            'upload a specific mapping.');
+        return null;
+      } else if (builtMapping == null) {
+        final stale = built.staleMapping;
+        if (stale != null) {
+          Log.warn("ProGuard mapping '${stale.path}' was rewritten after "
+              "'${built.artifactPath}' was built, so it may not match it (did "
+              'a later build fail?). Skipping the ProGuard mapping upload. '
+              "Rebuild, or set 'proguard_mapping_path' to upload it anyway.");
+        } else {
+          Log.warn('None of the ProGuard mapping files ($paths) was written '
+              "by the build of '${built.artifactPath}', the most recent "
+              'release APK/AAB. They may be left over from another flavor, or '
+              "this build wasn't minified. Skipping the ProGuard mapping "
+              "upload. Set 'proguard_mapping_path' to upload a specific one.");
+        }
+        return null;
       } else {
-        Log.warn('Found multiple ProGuard mapping files: '
-            '${lookup.candidates.map((m) => m.path).join(', ')}. '
-            "Using the most recent one, '${mapping.path}'. "
-            "Set 'proguard_mapping_path' to choose a specific one.");
+        mapping = builtMapping;
+        builtUuid = built.uuid;
+        artifactPath = built.artifactPath;
+        if (lookup.candidates.length > 1) {
+          Log.info("Using ProGuard mapping '${mapping.path}', the one of "
+              "'$artifactPath'.");
+        }
       }
     }
 
     if (configuredUuid.isNotEmpty) {
-      if (built != null &&
-          built.uuid.toLowerCase() != configuredUuid.toLowerCase()) {
+      if (builtUuid != null &&
+          builtUuid.toLowerCase() != configuredUuid.toLowerCase()) {
         Log.warn("The configured 'proguard_uuid' $configuredUuid differs from "
-            "ProGuard UUID ${built.uuid} in '${built.artifactPath}'. Uploading "
-            'under the configured one; make sure the app reports it.');
+            "ProGuard UUID $builtUuid in '$artifactPath'. Uploading under the "
+            'configured one; make sure the app reports it.');
       }
       return _ResolvedProguardUuid(configuredUuid, mapping);
     }
 
-    if (built != null) {
-      Log.info(
-          "Using ProGuard UUID ${built.uuid} from '${built.artifactPath}'.");
-      return _ResolvedProguardUuid(built.uuid, mapping);
+    if (builtUuid != null) {
+      Log.info("Using ProGuard UUID $builtUuid from '$artifactPath'.");
+      return _ResolvedProguardUuid(builtUuid, mapping);
+    }
+
+    if (artifactPath == null) {
+      final outputs =
+          fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs');
+      Log.warn("Found ProGuard mapping '${mapping.path}' but no release "
+          "APK/AAB under '$outputs' to read the ProGuard UUID from. Skipping "
+          "the ProGuard mapping upload. Check 'build_path', or set "
+          "'proguard_uuid' to the UUID the app reports.");
+    } else if (injectedAt != null) {
+      Log.warn("'$debugMetaAssetPath' exists, but the built app doesn't "
+          'contain it: --inject-uuid ran after the last flutter build. '
+          'Skipping the ProGuard mapping upload. Run --inject-uuid before '
+          'flutter build; the next build will package the UUID.');
+    } else {
+      Log.info("Found ProGuard mapping '${mapping.path}' but the APK/AAB "
+          'built with it has no ProGuard UUID, skipping. To upload it, run '
+          "'dart run sentry_dart_plugin --inject-uuid' before "
+          "'flutter build', or set 'proguard_uuid' to the UUID the app "
+          'reports.');
     }
     return null;
   }
