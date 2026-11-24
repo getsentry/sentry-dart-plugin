@@ -372,6 +372,19 @@ void main() {
 
               expect(commandLog.where((c) => c.contains('upload-proguard')),
                   isEmpty);
+              // The first run removed the injected file as consumed.
+              expect(fs.file(debugMetaAssetPath).existsSync(), isFalse);
+
+              // A retry without rebuilding still sees the shared UUID.
+              final retryLog = await runWith(version, '');
+              expect(retryLog.where((c) => c.contains('upload-proguard')),
+                  isEmpty);
+
+              // So does a configured proguard_uuid that both apps contain.
+              final configuredLog = await runWith(
+                  version, 'proguard_uuid: ${parseProguardUuid(debugMeta)}');
+              expect(configuredLog.where((c) => c.contains('upload-proguard')),
+                  isEmpty);
             });
 
             void writeBuilt(String path, String debugMeta, DateTime at) => fs

@@ -181,19 +181,6 @@ class SentryDartPlugin {
         return;
       }
 
-      // Even with `proguard_mapping_path`: whichever mapping is uploaded under
-      // the shared UUID, the other variants' events would be deobfuscated
-      // with it.
-      final sharedBy =
-          await variantsBuiltWithInjectedUuid(fs: fs, config: _configuration);
-      if (sharedBy.length > 1) {
-        Log.warn('Several variants were built after --inject-uuid and all '
-            'contain the same ProGuard UUID: ${sharedBy.join(', ')}. No single '
-            'mapping matches it, so the ProGuard mapping upload is skipped. '
-            'Run --inject-uuid before each flutter build and the plugin after '
-            'each.');
-        return;
-      }
       final resolved =
           await _resolveProguardUuid(fs, configuredUuid, lookup, injectedAt);
       if (resolved == null) {
@@ -203,6 +190,21 @@ class SentryDartPlugin {
       if (!isValidProguardUuid(uuid)) {
         Log.error("ProGuard UUID '$uuid' is not a valid UUID. Skipping the "
             'ProGuard mapping upload.');
+        return;
+      }
+
+      // Checked on the built apps, not the injected file: that is removed
+      // after the first run, and a retry without rebuilding must still skip.
+      // Even with `proguard_mapping_path`: whichever mapping is uploaded under
+      // the shared UUID, the other variants' events would be deobfuscated
+      // with it.
+      final sharedBy = await variantsWithProguardUuid(
+          fs: fs, config: _configuration, uuid: uuid);
+      if (sharedBy.length > 1) {
+        Log.warn('Several variants were built with the same ProGuard UUID '
+            '$uuid: ${sharedBy.join(', ')}. No single mapping matches it, so '
+            'the ProGuard mapping upload is skipped. Run --inject-uuid before '
+            'each flutter build and the plugin after each, then rebuild.');
         return;
       }
 

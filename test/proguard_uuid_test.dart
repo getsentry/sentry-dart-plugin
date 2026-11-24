@@ -396,6 +396,43 @@ void main() {
     });
   });
 
+  group('variantsWithProguardUuid', () {
+    void write(String path, String? withUuid, DateTime at) =>
+        fs.file('build/app/outputs/$path')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(buildZip({
+            'AndroidManifest.xml': '',
+            if (withUuid != null)
+              'assets/sentry-debug-meta.properties':
+                  'io.sentry.ProguardUuids=$withUuid',
+          }))
+          ..setLastModifiedSync(at);
+
+    const other = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
+
+    test(
+        'lists the release variants containing the UUID, without the '
+        'injected file', () async {
+      write('flutter-apk/app-free-release.apk', uuid, DateTime(2026, 1, 1));
+      write('flutter-apk/app-arm64-v8a-free-release.apk', uuid,
+          DateTime(2026, 1, 1));
+      write('flutter-apk/app-paid-release.apk', uuid.toUpperCase(),
+          DateTime(2026, 1, 2));
+      write('flutter-apk/app-demo-release.apk', other, DateTime(2026, 1, 2));
+      write('flutter-apk/app-debug.apk', uuid, DateTime(2026, 1, 3));
+      write('flutter-apk/app-release.apk', null, DateTime(2026, 1, 3));
+      expect(await variantsWithProguardUuid(fs: fs, config: config, uuid: uuid),
+          {'freeRelease', 'paidRelease'});
+      expect(
+          await variantsWithProguardUuid(
+              fs: fs,
+              config: config,
+              uuid: uuid,
+              builtAfter: DateTime(2026, 1, 1)),
+          {'paidRelease'});
+    });
+  });
+
   group('removeConsumedInjectedProguardUuid', () {
     Future<String> inject({required DateTime at}) async {
       fs.directory('android/app').createSync(recursive: true);

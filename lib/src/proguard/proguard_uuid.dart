@@ -297,15 +297,35 @@ Future<Set<String>> variantsBuiltWithInjectedUuid({
     // Edited by hand: no build can be told to have packaged it.
     return {};
   }
+  return variantsWithProguardUuid(
+      fs: fs, config: config, uuid: injected, builtAfter: injectedAt);
+}
+
+/// The release-type variants (e.g. `freeRelease`) whose APK/AAB under
+/// `<build_path>/app/outputs` contains the ProGuard [uuid], only counting
+/// builds after [builtAfter] if given. More than one means several variants
+/// report the UUID, so no single mapping matches it. The ABI splits of a
+/// variant (`--split-per-abi`) and its unsigned build share one mapping, so
+/// they count as one.
+///
+/// Unlike [variantsBuiltWithInjectedUuid], this doesn't need the injected
+/// file, which is removed after the first run: a retry without rebuilding
+/// still sees that the variants share the UUID.
+Future<Set<String>> variantsWithProguardUuid({
+  required FileSystem fs,
+  required Configuration config,
+  required String uuid,
+  DateTime? builtAfter,
+}) async {
   final variants = <String>{};
   for (final artifact in await _listArtifacts(fs, config)) {
-    if (!artifact.modified.isAfter(injectedAt)) {
+    if (builtAfter != null && !artifact.modified.isAfter(builtAfter)) {
       break;
     }
     if (artifact.isUnminified) {
       continue;
     }
-    if ((await artifact.uuid())?.toLowerCase() == injected.toLowerCase()) {
+    if ((await artifact.uuid())?.toLowerCase() == uuid.toLowerCase()) {
       if (!variants
           .any((v) => v.toLowerCase() == artifact.variant.toLowerCase())) {
         variants.add(artifact.variant);
