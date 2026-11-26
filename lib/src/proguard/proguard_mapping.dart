@@ -44,36 +44,25 @@ Future<String?> readProguardMapId(FileSystem fs, String path) async {
   return null;
 }
 
-/// The namespace for [proguardUuidFromMapId]: the one sentry-cli uses for
-/// ProGuard UUIDs, uuid5(NAMESPACE_DNS, "guardsquare.com").
-final _proguardNamespace = _uuid5(
-  _uuidBytes('6ba7b810-9dad-11d1-80b4-00c04fd430c8'), // NAMESPACE_DNS
-  'guardsquare.com',
-);
-
-/// The ProGuard UUID a mapping is uploaded under, derived from its R8 map ID:
-/// uuid5(uuid5(NAMESPACE_DNS, "guardsquare.com"), mapId).
+/// The ProGuard UUID a mapping is uploaded under, derived from its R8 map ID
+/// the way Java's `UUID.nameUUIDFromBytes(mapId.getBytes())` does (UUIDv3:
+/// MD5 of the ID, no namespace).
+///
+/// This matches the Sentry Android Gradle Plugin, which uploads under
+/// `UUID.nameUUIDFromBytes(pg_map_hash)`. With current R8 the map ID is that
+/// same 64 character hash, so both tools agree on the UUID for a mapping.
 ///
 /// The SDK must derive the same UUID from the `pg-map-id` it reads at
 /// runtime, so this must not change. [mapId] is used as written by R8
 /// (lowercase hex, 7 or 64 characters).
 String proguardUuidFromMapId(String mapId) =>
-    _formatUuid(_uuid5(_proguardNamespace, mapId.toLowerCase()));
+    _formatUuid(_uuid3(mapId.toLowerCase()));
 
-Uint8List _uuid5(Uint8List namespace, String name) {
-  final hash = sha1.convert([...namespace, ...utf8.encode(name)]).bytes;
-  final bytes = Uint8List.fromList(hash.sublist(0, 16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x50; // version 5
+Uint8List _uuid3(String name) {
+  final bytes = Uint8List.fromList(md5.convert(utf8.encode(name)).bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x30; // version 3
   bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC 4122 variant
   return bytes;
-}
-
-Uint8List _uuidBytes(String uuid) {
-  final hex = uuid.replaceAll('-', '');
-  return Uint8List.fromList([
-    for (var i = 0; i < 32; i += 2)
-      int.parse(hex.substring(i, i + 2), radix: 16)
-  ]);
 }
 
 String _formatUuid(Uint8List bytes) {

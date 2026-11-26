@@ -157,8 +157,8 @@ void main() {
           const uuid = 'c9fb2840-1f9c-4f08-81fe-6880753f345b';
           const mapping = '$buildDir/app/outputs/mapping/release/mapping.txt';
           const mapId = '1bab4a8';
-          // uuid5(uuid5(NAMESPACE_DNS, 'guardsquare.com'), '1bab4a8')
-          const mapIdUuid = 'd2308b16-5de0-58b3-8060-f7c84ada0269';
+          // UUID.nameUUIDFromBytes('1bab4a8'.getBytes())
+          const mapIdUuid = '6b578c6e-74aa-3dc4-88ce-0d13d6802d5b';
           const version = '1.0.0';
           const release = '$name@$version';
 
@@ -205,7 +205,7 @@ void main() {
             final commandLog = await runWith(version, '');
 
             expect(uploads(commandLog), [
-              '$cli $commonArgs upload-proguard $orgAndProject --uuid 62de09e0-8af4-50c3-832a-b3871ba834c8 $free',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid 072e7281-9c81-34d3-8619-c4ae24deb47b $free',
               '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping',
             ]);
           });
@@ -293,7 +293,7 @@ void main() {
                 version, 'proguard_mapping_path: custom/mapping.txt');
 
             expect(uploads(commandLog), [
-              '$cli $commonArgs upload-proguard $orgAndProject --uuid 62de09e0-8af4-50c3-832a-b3871ba834c8 custom/mapping.txt',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid 072e7281-9c81-34d3-8619-c4ae24deb47b custom/mapping.txt',
             ]);
           });
 

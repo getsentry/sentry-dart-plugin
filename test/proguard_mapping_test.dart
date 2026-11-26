@@ -156,19 +156,20 @@ _COROUTINE.ArtificialStackFrames -> R8\$\$REMOVED\$\$CLASS\$\$0:
   });
 
   group('proguardUuidFromMapId', () {
-    // Reference values from Python:
-    // uuid.uuid5(uuid.uuid5(uuid.NAMESPACE_DNS, 'guardsquare.com'), map_id)
-    test('derives a stable UUIDv5 from a full map ID', () {
+    // Reference values match Java's UUID.nameUUIDFromBytes(mapId.getBytes()),
+    // which the Sentry Android Gradle Plugin uses. From Python:
+    // uuid.UUID(bytes=hashlib.md5(map_id.encode()).digest(), version=3)
+    test('derives a stable UUIDv3 from a full map ID', () {
       expect(
         proguardUuidFromMapId(
             'f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605'),
-        '62de09e0-8af4-50c3-832a-b3871ba834c8',
+        '072e7281-9c81-34d3-8619-c4ae24deb47b',
       );
     });
 
-    test('derives a stable UUIDv5 from a short map ID', () {
+    test('derives a stable UUIDv3 from a short map ID', () {
       expect(proguardUuidFromMapId('1bab4a8'),
-          'd2308b16-5de0-58b3-8060-f7c84ada0269');
+          '6b578c6e-74aa-3dc4-88ce-0d13d6802d5b');
     });
 
     test('is case-insensitive', () {
