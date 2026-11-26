@@ -128,6 +128,19 @@ class SentryDartPlugin {
     const taskName = 'uploading ProGuard mapping';
     Log.startingTask(taskName);
 
+    // Like the Dart symbol map, the mapping upload is a side task: an
+    // unreadable build output or a failed upload must not stop the release
+    // from being created.
+    try {
+      await _uploadProguardMappings();
+    } on Exception catch (e) {
+      Log.warn('Skipping the ProGuard mapping upload: $e');
+    } finally {
+      Log.taskCompleted(taskName);
+    }
+  }
+
+  Future<void> _uploadProguardMappings() async {
     final fs = injector.get<FileSystem>();
     final mappings = await findProguardMappings(fs: fs, config: _configuration);
     final configuredUuid = _configuration.proguardUuid?.trim() ?? '';
@@ -153,18 +166,28 @@ class SentryDartPlugin {
       // SDK derives from the same ID in the app's DEX at runtime.
       final uploadedIds = <String>{};
       for (final mapping in mappings) {
-        final mapId = await readProguardMapId(fs, mapping);
+        final String? mapId;
+        try {
+          mapId = await readProguardMapId(fs, mapping);
+        } on Exception catch (e) {
+          // Unreadable or not text (FileSystemException, FormatException):
+          // skip it, the other variants may still be fine.
+          Log.warn("Skipping ProGuard mapping '$mapping': $e");
+          continue;
+        }
         if (mapId == null) {
           Log.info("ProGuard mapping '$mapping' has no '# pg_map_id' (not "
               'written by R8?), skipping. Set proguard_uuid to upload it, or '
               'use the Sentry Android Gradle Plugin.');
-        } else if (uploadedIds.add(mapId)) {
-          await _uploadProguardMapping(mapping, proguardUuidFromMapId(mapId));
+        } else if (!uploadedIds.contains(mapId) &&
+            await _uploadProguardMapping(
+                mapping, proguardUuidFromMapId(mapId))) {
+          // Only once it's on the server: if the upload failed, another
+          // mapping with the same map ID still gets a try.
+          uploadedIds.add(mapId);
         }
       }
     }
-
-    Log.taskCompleted(taskName);
   }
 
   /// Uploads one mapping under the configured UUID, which the app must also
@@ -187,13 +210,20 @@ class SentryDartPlugin {
     await _uploadProguardMapping(mappings.first, uuid);
   }
 
-  Future<void> _uploadProguardMapping(String mapping, String uuid) async {
+  /// Returns whether the upload succeeded.
+  Future<bool> _uploadProguardMapping(String mapping, String uuid) async {
     final params = <String>[];
     _setUrlAndTokenAndLog(params);
     params.add('upload-proguard');
     _addOrgAndProject(params);
     params.addAll(['--uuid', uuid, mapping]);
-    await _executeAndLog('Failed to upload ProGuard mapping', params);
+    try {
+      return await _executeAndLog('Failed to upload ProGuard mapping', params);
+    } on ExitError catch (e) {
+      Log.error("Uploading ProGuard mapping '$mapping' failed with exit code "
+          '${e.code}, continuing.');
+      return false;
+    }
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {

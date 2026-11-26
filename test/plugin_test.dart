@@ -230,6 +230,62 @@ void main() {
             expect(uploads(commandLog), isEmpty);
           });
 
+          test(
+              'a failed upload does not stop the other mappings or the release',
+              () async {
+            const free =
+                '$buildDir/app/outputs/mapping/freeRelease/mapping.txt';
+            writeMapping(free,
+                'f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605',
+                modified: DateTime(2026, 1, 2));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 1));
+            pm.failCommandsContaining = 'upload-proguard';
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), hasLength(2));
+            expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs releases $orgAndProject finalize $release'));
+          });
+
+          test('retries a shared map ID with the next mapping after a failure',
+              () async {
+            const copy = '$buildDir/app/outputs/mapping/copy/mapping.txt';
+            writeMapping(copy, mapId, modified: DateTime(2020));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026));
+            pm.failCommandsContaining = 'mapping/release/';
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $copy',
+            ]);
+          });
+
+          test('skips a mapping that is not text and uploads the others',
+              () async {
+            const broken = '$buildDir/app/outputs/mapping/broken/mapping.txt';
+            fs.file(broken)
+              ..createSync(recursive: true)
+              ..writeAsBytesSync(
+                  [0x23, 0x20, 0xff, 0xfe, 0x0a]); // '# ' + invalid UTF-8
+            fs.file(broken).setLastModifiedSync(DateTime(2026, 1, 2));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 1));
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping',
+            ]);
+            expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs releases $orgAndProject finalize $release'));
+          });
+
           test('uploads the mapping at proguard_mapping_path', () async {
             writeMapping('custom/mapping.txt',
                 'f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605');
@@ -673,6 +729,9 @@ class MockProcessManager implements ProcessManager {
   final commandLog = <String>[];
   final commandEnvironmentLog = <Map<String, String>?>[];
 
+  /// Started commands containing this exit with code 1.
+  String? failCommandsContaining;
+
   @override
   bool canRun(executable, {String? workingDirectory}) => true;
 
@@ -714,13 +773,19 @@ class MockProcessManager implements ProcessManager {
     commandLog.add(command.join(' '));
     commandEnvironmentLog.add(
         environment == null ? null : Map<String, String>.from(environment));
-    return Future.value(MockProcess());
+    final fail = failCommandsContaining != null &&
+        command.join(' ').contains(failCommandsContaining!);
+    return Future.value(MockProcess(fail ? 1 : 0));
   }
 }
 
 class MockProcess implements Process {
+  final int _exitCode;
+
+  MockProcess([this._exitCode = 0]);
+
   @override
-  Future<int> get exitCode => Future.value(0);
+  Future<int> get exitCode => Future.value(_exitCode);
 
   @override
   bool kill([ProcessSignal signal = ProcessSignal.sigterm]) {
