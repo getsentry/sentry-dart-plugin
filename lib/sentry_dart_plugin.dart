@@ -5,6 +5,7 @@ import 'package:glob/glob.dart';
 import 'package:process/process.dart';
 
 import 'src/configuration.dart';
+import 'src/proguard/proguard_mapping.dart';
 import 'src/utils/flutter_debug_files.dart';
 import 'src/symbol_maps/dart_symbol_map.dart';
 import 'src/utils/injector.dart';
@@ -37,6 +38,12 @@ class SentryDartPlugin {
         await _executeCliForDebugSymbols();
       } else {
         Log.info('uploadNativeSymbols is disabled.');
+      }
+
+      if (_configuration.uploadProguard) {
+        await _executeCliForProguardMapping();
+      } else {
+        Log.info('uploadProguard is disabled.');
       }
 
       final release = _release;
@@ -108,6 +115,121 @@ class SentryDartPlugin {
     await _tryUploadDartSymbolMap();
 
     Log.taskCompleted(taskName);
+  }
+
+  /// Uploads the Android ProGuard/R8 mappings.
+  ///
+  /// Each mapping is uploaded under the UUID derived from the R8 map ID in its
+  /// header ([proguardUuidFromMapId]). R8 writes the same ID into the app's
+  /// DEX, where the SDK reads it at runtime, so nothing has to be embedded
+  /// into the app before the build. With [Configuration.proguardUuid] set, a
+  /// single mapping is uploaded under that UUID instead.
+  Future<void> _executeCliForProguardMapping() async {
+    const taskName = 'uploading ProGuard mapping';
+    Log.startingTask(taskName);
+
+    // Like the Dart symbol map, the mapping upload is a side task: an
+    // unreadable build output or a failed upload must not stop the release
+    // from being created.
+    try {
+      await _uploadProguardMappings();
+    } on Exception catch (e) {
+      Log.warn('Skipping the ProGuard mapping upload: $e');
+    } finally {
+      Log.taskCompleted(taskName);
+    }
+  }
+
+  Future<void> _uploadProguardMappings() async {
+    final fs = injector.get<FileSystem>();
+    final mappings = await findProguardMappings(fs: fs, config: _configuration);
+    final configuredUuid = _configuration.proguardUuid?.trim() ?? '';
+
+    if (mappings.isEmpty) {
+      // Only an Android build is expected to produce a mapping; the same UUID
+      // may well be configured for every platform a CI job builds.
+      final isAndroidBuild = await fs
+          .directory(
+              fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs'))
+          .exists();
+      if (configuredUuid.isNotEmpty && isAndroidBuild) {
+        Log.warn(
+            "'proguard_uuid' is set but no ProGuard mapping file was found. "
+            'Is minification enabled for this build?');
+      } else {
+        Log.info('No ProGuard mapping file found, skipping.');
+      }
+    } else if (configuredUuid.isNotEmpty) {
+      await _uploadProguardMappingWithConfiguredUuid(mappings, configuredUuid);
+    } else {
+      // Each mapping goes up under the UUID of its own R8 map ID, which the
+      // SDK derives from the same ID in the app's DEX at runtime.
+      final uploadedIds = <String>{};
+      for (final mapping in mappings) {
+        final String? mapId;
+        try {
+          mapId = await readProguardMapId(fs, mapping);
+        } on Exception catch (e) {
+          // Unreadable or not text (FileSystemException, FormatException):
+          // skip it, the other variants may still be fine.
+          Log.warn("Skipping ProGuard mapping '$mapping': $e");
+          continue;
+        }
+        if (mapId == null) {
+          Log.info("ProGuard mapping '$mapping' has no '# pg_map_id' (not "
+              'written by R8?), skipping. Set proguard_uuid to upload it, or '
+              'use the Sentry Android Gradle Plugin.');
+        } else if (!uploadedIds.contains(mapId) &&
+            await _uploadProguardMapping(
+                mapping, proguardUuidFromMapId(mapId))) {
+          // Only once it's on the server: if the upload failed, another
+          // mapping with the same map ID still gets a try.
+          uploadedIds.add(mapId);
+        }
+      }
+    }
+  }
+
+  /// Uploads one mapping under the configured UUID, which the app must also
+  /// report at runtime: the only one found, or `proguard_mapping_path`.
+  ///
+  /// With several mappings there's no telling which one belongs to the app
+  /// that reports this UUID (the newest isn't necessarily the one just built),
+  /// and a wrong mapping is worse than none, so nothing is uploaded.
+  Future<void> _uploadProguardMappingWithConfiguredUuid(
+      List<String> mappings, String uuid) async {
+    if (!isValidProguardUuid(uuid)) {
+      Log.error(
+          "'proguard_uuid' is not a valid UUID: '$uuid'. Skipping the ProGuard mapping upload.");
+      return;
+    }
+    if (mappings.length > 1) {
+      Log.error(
+        'Found multiple ProGuard mapping files: ${mappings.join(', ')}. '
+        "Can't tell which one belongs to 'proguard_uuid', skipping the "
+        "ProGuard mapping upload. Set 'proguard_mapping_path' to the mapping "
+        "of this build, or unset 'proguard_uuid' to upload each under its R8 "
+        'map ID.',
+      );
+      return;
+    }
+    await _uploadProguardMapping(mappings.single, uuid);
+  }
+
+  /// Returns whether the upload succeeded.
+  Future<bool> _uploadProguardMapping(String mapping, String uuid) async {
+    final params = <String>[];
+    _setUrlAndTokenAndLog(params);
+    params.add('upload-proguard');
+    _addOrgAndProject(params);
+    params.addAll(['--uuid', uuid, mapping]);
+    try {
+      return await _executeAndLog('Failed to upload ProGuard mapping', params);
+    } on ExitError catch (e) {
+      Log.error("Uploading ProGuard mapping '$mapping' failed with exit code "
+          '${e.code}, continuing.');
+      return false;
+    }
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {

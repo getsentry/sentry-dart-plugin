@@ -25,16 +25,19 @@ void main() {
         release: 'release-platformEnv-config',
         dist: 'dist-platformEnv-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-platformEnv-config',
+        proguardUuid: 'proguardUuid-platformEnv-config',
       );
       final argsConfig = ConfigurationValues(
         release: 'release-args-config',
         dist: 'dist-args-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-args-config',
+        proguardUuid: 'proguardUuid-args-config',
       );
       final fileConfig = ConfigurationValues(
         release: 'release-file-config',
         dist: 'dist-file-config',
         sentryCliCdnUrl: 'sentryCliCdnUrl-file-config',
+        proguardUuid: 'proguardUuid-file-config',
       );
 
       final sut = fixture.getSut(
@@ -46,6 +49,7 @@ void main() {
       expect(sut.release, 'release-platformEnv-config');
       expect(sut.dist, 'dist-platformEnv-config');
       expect(sut.sentryCliCdnUrl, 'sentryCliCdnUrl-platformEnv-config');
+      expect(sut.proguardUuid, 'proguardUuid-platformEnv-config');
     });
 
     // env config
@@ -63,6 +67,9 @@ void main() {
         authToken: 'auth_token-args-config',
         url: 'url-args-config',
         dartSymbolMapPath: 'args-dart-symbol-map.json',
+        uploadProguard: false,
+        proguardUuid: 'proguardUuid-args-config',
+        proguardMappingPath: 'proguardMappingPath-args-config',
         urlPrefix: 'url-prefix-args-config',
         waitForProcessing: true,
         logLevel: 'warning',
@@ -92,6 +99,9 @@ void main() {
         authToken: 'auth_token-file-config',
         url: 'url-file-config',
         dartSymbolMapPath: 'file-dart-symbol-map.json',
+        uploadProguard: true,
+        proguardUuid: 'proguardUuid-file-config',
+        proguardMappingPath: 'proguardMappingPath-file-config',
         urlPrefix: 'url-prefix-file-config',
         waitForProcessing: false,
         logLevel: 'debug',
@@ -127,6 +137,9 @@ void main() {
       expect(sut.authToken, 'auth_token-args-config');
       expect(sut.url, 'url-args-config');
       expect(sut.dartSymbolMapPath, 'args-dart-symbol-map.json');
+      expect(sut.uploadProguard, isFalse);
+      expect(sut.proguardUuid, 'proguardUuid-args-config');
+      expect(sut.proguardMappingPath, 'proguardMappingPath-args-config');
       expect(sut.urlPrefix, 'url-prefix-args-config');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'warning');
@@ -166,6 +179,9 @@ void main() {
         authToken: 'auth_token-file-config',
         url: 'url-file-config',
         dartSymbolMapPath: 'file-dart-symbol-map.json',
+        uploadProguard: false,
+        proguardUuid: 'proguardUuid-file-config',
+        proguardMappingPath: 'proguardMappingPath-file-config',
         urlPrefix: 'url-prefix-file-config',
         waitForProcessing: true,
         logLevel: 'debug',
@@ -202,6 +218,9 @@ void main() {
       expect(sut.authToken, 'auth_token-file-config');
       expect(sut.url, 'url-file-config');
       expect(sut.dartSymbolMapPath, 'file-dart-symbol-map.json');
+      expect(sut.uploadProguard, isFalse);
+      expect(sut.proguardUuid, 'proguardUuid-file-config');
+      expect(sut.proguardMappingPath, 'proguardMappingPath-file-config');
       expect(sut.urlPrefix, 'url-prefix-file-config');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'debug');
@@ -242,6 +261,9 @@ void main() {
       expect(sut.uploadSourceMaps, isFalse);
       expect(sut.uploadSources, isFalse);
       expect(sut.dartSymbolMapPath, isNull);
+      expect(sut.uploadProguard, isTrue);
+      expect(sut.proguardUuid, isNull);
+      expect(sut.proguardMappingPath, isNull);
       expect(sut.commits, 'auto');
       expect(sut.ignoreMissing, isFalse);
       expect(sut.finalizeRelease, isTrue);

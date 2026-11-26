@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Upload the Android ProGuard/R8 mapping, so Java/Kotlin stack traces are deobfuscated without the Sentry Android Gradle Plugin ([#426](https://github.com/getsentry/sentry-dart-plugin/pull/426))
+  - Each `mapping.txt` is uploaded under a UUID derived from the R8 map ID in its header (`# pg_map_id`). R8 writes the same ID into the app, where the SDK reads it at runtime, so no build step is needed.
+  - Mappings without an R8 map ID (ProGuard, DexGuard) are skipped; use the Sentry Android Gradle Plugin for those.
+  - New options: `upload_proguard` (default `true`), `proguard_mapping_path`, and `proguard_uuid` (or `SENTRY_PROGUARD_UUID`) to upload under a fixed UUID instead.
+
 ## 3.6.0
 
 > [!IMPORTANT]

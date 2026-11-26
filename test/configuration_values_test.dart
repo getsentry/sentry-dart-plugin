@@ -24,6 +24,9 @@ void main() {
         "--sentry-define=auth_token=fixture-auth_token",
         "--sentry-define=url=fixture-url",
         "--sentry-define=dart_symbol_map_path=fixture-dart-symbol-map.json",
+        "--sentry-define=upload_proguard=false",
+        "--sentry-define=proguard_uuid=fixture-proguard_uuid",
+        "--sentry-define=proguard_mapping_path=fixture-mapping.txt",
         "--sentry-define=wait_for_processing=true",
         "--sentry-define=log_level=fixture-log_level",
         "--sentry-define=release=fixture-release",
@@ -51,6 +54,9 @@ void main() {
       expect(sut.authToken, 'fixture-auth_token');
       expect(sut.url, 'fixture-url');
       expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
+      expect(sut.uploadProguard, isFalse);
+      expect(sut.proguardUuid, 'fixture-proguard_uuid');
+      expect(sut.proguardMappingPath, 'fixture-mapping.txt');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -97,6 +103,9 @@ void main() {
       upload_sources: true
       url: fixture-url
       dart_symbol_map_path: fixture-dart-symbol-map.json
+      upload_proguard: false
+      proguard_uuid: fixture-proguard_uuid
+      proguard_mapping_path: fixture-mapping.txt
       wait_for_processing: true
       log_level: fixture-log_level
       release: fixture-release
@@ -145,6 +154,9 @@ void main() {
       expect(sut.authToken, 't');
       expect(sut.url, 'fixture-url');
       expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
+      expect(sut.uploadProguard, isFalse);
+      expect(sut.proguardUuid, 'fixture-proguard_uuid');
+      expect(sut.proguardMappingPath, 'fixture-mapping.txt');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -170,6 +182,9 @@ void main() {
       upload_sources=true
       url=fixture-url
       dart_symbol_map_path=fixture-dart-symbol-map.json
+      upload_proguard=false
+      proguard_uuid=fixture-proguard_uuid
+      proguard_mapping_path=fixture-mapping.txt
       wait_for_processing=true
       log_level=fixture-log_level
       release=fixture-release
@@ -215,6 +230,9 @@ void main() {
       expect(sut.authToken, 't');
       expect(sut.url, 'fixture-url');
       expect(sut.dartSymbolMapPath, 'fixture-dart-symbol-map.json');
+      expect(sut.uploadProguard, isFalse);
+      expect(sut.proguardUuid, 'fixture-proguard_uuid');
+      expect(sut.proguardMappingPath, 'fixture-mapping.txt');
       expect(sut.waitForProcessing, isTrue);
       expect(sut.logLevel, 'fixture-log_level');
       expect(sut.release, 'fixture-release');
@@ -296,6 +314,7 @@ void main() {
         'SENTRY_DIST': 'fixture-dist',
         'SENTRYCLI_CDNURL': 'fixture-sentry_cli_cdn_url',
         'SENTRY_LOG_LEVEL': 'debug',
+        'SENTRY_PROGUARD_UUID': 'fixture-proguard_uuid',
       };
 
       final sut = ConfigurationValues.fromPlatformEnvironment(arguments);
@@ -303,6 +322,13 @@ void main() {
       expect(sut.dist, 'fixture-dist');
       expect(sut.sentryCliCdnUrl, 'fixture-sentry_cli_cdn_url');
       expect(sut.logLevel, 'debug');
+      expect(sut.proguardUuid, 'fixture-proguard_uuid');
+    });
+
+    test("fromPlatformEnvironment handles empty SENTRY_PROGUARD_UUID", () {
+      final sut = ConfigurationValues.fromPlatformEnvironment(
+          {'SENTRY_PROGUARD_UUID': ''});
+      expect(sut.proguardUuid, isNull);
     });
 
     test("fromPlatformEnvironment handles empty SENTRY_LOG_LEVEL", () {

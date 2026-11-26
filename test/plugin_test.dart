@@ -153,6 +153,208 @@ void main() {
           ]);
         });
 
+        group('proguard', () {
+          const uuid = 'c9fb2840-1f9c-4f08-81fe-6880753f345b';
+          const mapping = '$buildDir/app/outputs/mapping/release/mapping.txt';
+          const mapId = '1bab4a8';
+          // UUID.nameUUIDFromBytes('1bab4a8'.getBytes())
+          const mapIdUuid = '6b578c6e-74aa-3dc4-88ce-0d13d6802d5b';
+          const version = '1.0.0';
+          const release = '$name@$version';
+
+          void writeMapping(String path, String? id, {DateTime? modified}) {
+            final file = fs.file(path)
+              ..createSync(recursive: true)
+              ..writeAsStringSync([
+                '# compiler: R8',
+                if (id != null) '# pg_map_id: $id',
+                'com.example.Foo -> a.a:',
+              ].join('\n'));
+            if (modified != null) {
+              file.setLastModifiedSync(modified);
+            }
+          }
+
+          Iterable<String> uploads(Iterable<String> commandLog) =>
+              commandLog.where((c) => c.contains('upload-proguard'));
+
+          setUp(() {
+            writeMapping(mapping, mapId);
+          });
+
+          test('uploads the mapping under the UUID of its R8 map ID', () async {
+            final commandLog = await runWith(version, '');
+
+            expect(commandLog, [
+              '$cli $commonArgs debug-files upload $orgAndProject $buildDir/app/outputs',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping',
+              '$cli $commonArgs releases $orgAndProject new $release',
+              '$cli $commonArgs releases $orgAndProject set-commits $release --auto',
+              '$cli $commonArgs releases $orgAndProject finalize $release'
+            ]);
+          });
+
+          test('uploads every variant under its own map ID', () async {
+            const free =
+                '$buildDir/app/outputs/mapping/freeRelease/mapping.txt';
+            writeMapping(free,
+                'f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605',
+                modified: DateTime(2026, 1, 2));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 1));
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid 072e7281-9c81-34d3-8619-c4ae24deb47b $free',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping',
+            ]);
+          });
+
+          test('uploads a map ID shared by two mappings once', () async {
+            const copy = '$buildDir/app/outputs/mapping/copy/mapping.txt';
+            writeMapping(copy, mapId, modified: DateTime(2020));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026));
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping',
+            ]);
+          });
+
+          test('skips a mapping without a map ID', () async {
+            writeMapping(mapping, null);
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), isEmpty);
+          });
+
+          test(
+              'a failed upload does not stop the other mappings or the release',
+              () async {
+            const free =
+                '$buildDir/app/outputs/mapping/freeRelease/mapping.txt';
+            writeMapping(free,
+                'f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605',
+                modified: DateTime(2026, 1, 2));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 1));
+            pm.failCommandsContaining = 'upload-proguard';
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), hasLength(2));
+            expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs releases $orgAndProject finalize $release'));
+          });
+
+          test('retries a shared map ID with the next mapping after a failure',
+              () async {
+            const copy = '$buildDir/app/outputs/mapping/copy/mapping.txt';
+            writeMapping(copy, mapId, modified: DateTime(2020));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026));
+            pm.failCommandsContaining = 'mapping/release/';
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping',
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $copy',
+            ]);
+          });
+
+          test('skips a mapping that is not text and uploads the others',
+              () async {
+            const broken = '$buildDir/app/outputs/mapping/broken/mapping.txt';
+            fs.file(broken)
+              ..createSync(recursive: true)
+              ..writeAsBytesSync(
+                  [0x23, 0x20, 0xff, 0xfe, 0x0a]); // '# ' + invalid UTF-8
+            fs.file(broken).setLastModifiedSync(DateTime(2026, 1, 2));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 1));
+
+            final commandLog = await runWith(version, '');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping',
+            ]);
+            expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs releases $orgAndProject finalize $release'));
+          });
+
+          test('uploads the mapping at proguard_mapping_path', () async {
+            writeMapping('custom/mapping.txt',
+                'f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605');
+            final commandLog = await runWith(
+                version, 'proguard_mapping_path: custom/mapping.txt');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid 072e7281-9c81-34d3-8619-c4ae24deb47b custom/mapping.txt',
+            ]);
+          });
+
+          test('uploads the only mapping under proguard_uuid', () async {
+            final commandLog = await runWith(version, 'proguard_uuid: $uuid');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping',
+            ]);
+          });
+
+          test('skips proguard_uuid when several mappings are found', () async {
+            const free =
+                '$buildDir/app/outputs/mapping/freeRelease/mapping.txt';
+            writeMapping(free, null, modified: DateTime(2026, 1, 2));
+            fs.file(mapping).setLastModifiedSync(DateTime(2026, 1, 1));
+
+            final commandLog = await runWith(version, 'proguard_uuid: $uuid');
+
+            expect(uploads(commandLog), isEmpty);
+            // The release is still created.
+            expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs releases $orgAndProject new $release'));
+          });
+
+          test('uploads proguard_mapping_path under proguard_uuid', () async {
+            writeMapping('custom/mapping.txt', null);
+            final commandLog = await runWith(version, '''
+              proguard_uuid: $uuid
+              proguard_mapping_path: custom/mapping.txt
+            ''');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid custom/mapping.txt',
+            ]);
+          });
+
+          test('uploads the mapping even if upload_debug_symbols is disabled',
+              () async {
+            final commandLog =
+                await runWith(version, 'upload_debug_symbols: false');
+
+            expect(commandLog.first,
+                '$cli $commonArgs upload-proguard $orgAndProject --uuid $mapIdUuid $mapping');
+          });
+
+          for (final config in [
+            'proguard_uuid: not-a-uuid',
+            'upload_proguard: false',
+            'proguard_uuid: $uuid\nupload_proguard: false',
+          ]) {
+            test('skips the upload with config "$config"', () async {
+              final commandLog = await runWith(version, config);
+
+              expect(uploads(commandLog), isEmpty);
+            });
+          }
+        });
+
         test('takes cli-path from binPath arg', () async {
           const version = '1.0.0';
           const customCliPath = './custom/path/sentry-local-cli';
@@ -538,6 +740,9 @@ class MockProcessManager implements ProcessManager {
   final commandLog = <String>[];
   final commandEnvironmentLog = <Map<String, String>?>[];
 
+  /// Started commands containing this exit with code 1.
+  String? failCommandsContaining;
+
   @override
   bool canRun(executable, {String? workingDirectory}) => true;
 
@@ -579,13 +784,19 @@ class MockProcessManager implements ProcessManager {
     commandLog.add(command.join(' '));
     commandEnvironmentLog.add(
         environment == null ? null : Map<String, String>.from(environment));
-    return Future.value(MockProcess());
+    final fail = failCommandsContaining != null &&
+        command.join(' ').contains(failCommandsContaining!);
+    return Future.value(MockProcess(fail ? 1 : 0));
   }
 }
 
 class MockProcess implements Process {
+  final int _exitCode;
+
+  MockProcess([this._exitCode = 0]);
+
   @override
-  Future<int> get exitCode => Future.value(0);
+  Future<int> get exitCode => Future.value(_exitCode);
 
   @override
   bool kill([ProcessSignal signal = ProcessSignal.sigterm]) {

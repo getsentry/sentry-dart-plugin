@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'package:sentry_dart_plugin/src/proguard/proguard_mapping.dart';
 import 'package:test/test.dart';
 
 const appName = 'testapp';
@@ -102,6 +103,15 @@ void main() async {
                 'libflutter.so'
               ]));
           expect(debugSymbols, anyElement(matches(RegExp('^(lib)?app.so\$'))));
+          // Release builds are minified by R8, so the mapping must be found
+          // and uploaded under the UUID of the R8 map ID in its header.
+          final mapping = File(
+              '${appDir.path}/build/app/outputs/mapping/release/mapping.txt');
+          final mapId = RegExp(r'^# pg_map_id: ([0-9a-f]+)$', multiLine: true)
+              .firstMatch(await mapping.readAsString())!
+              .group(1)!;
+          expect(debugSymbols,
+              contains('/proguard/${proguardUuidFromMapId(mapId)}.txt'));
           break;
         case 'ios':
         case 'ipa':
@@ -194,7 +204,11 @@ Future<Iterable<String>> _flutter(List<String> arguments, {String? cwd}) =>
 
 Future<Iterable<String>> _runPlugin(Directory cwd) => _exec(
       'dart',
-      ['run', 'sentry_dart_plugin', '--sentry-define=url=$serverUri'],
+      [
+        'run',
+        'sentry_dart_plugin',
+        '--sentry-define=url=$serverUri',
+      ],
       cwd: cwd.path,
     );
 
