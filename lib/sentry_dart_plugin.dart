@@ -191,7 +191,11 @@ class SentryDartPlugin {
   }
 
   /// Uploads one mapping under the configured UUID, which the app must also
-  /// report at runtime: the most recent one, or `proguard_mapping_path`.
+  /// report at runtime: the only one found, or `proguard_mapping_path`.
+  ///
+  /// With several mappings there's no telling which one belongs to the app
+  /// that reports this UUID (the newest isn't necessarily the one just built),
+  /// and a wrong mapping is worse than none, so nothing is uploaded.
   Future<void> _uploadProguardMappingWithConfiguredUuid(
       List<String> mappings, String uuid) async {
     if (!isValidProguardUuid(uuid)) {
@@ -200,14 +204,16 @@ class SentryDartPlugin {
       return;
     }
     if (mappings.length > 1) {
-      Log.warn(
+      Log.error(
         'Found multiple ProGuard mapping files: ${mappings.join(', ')}. '
-        "Uploading the most recent one, '${mappings.first}', under "
-        "'proguard_uuid'. Set 'proguard_mapping_path' to choose a specific "
-        "one, or unset 'proguard_uuid' to upload each under its R8 map ID.",
+        "Can't tell which one belongs to 'proguard_uuid', skipping the "
+        "ProGuard mapping upload. Set 'proguard_mapping_path' to the mapping "
+        "of this build, or unset 'proguard_uuid' to upload each under its R8 "
+        'map ID.',
       );
+      return;
     }
-    await _uploadProguardMapping(mappings.first, uuid);
+    await _uploadProguardMapping(mappings.single, uuid);
   }
 
   /// Returns whether the upload succeeded.

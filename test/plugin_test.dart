@@ -297,7 +297,15 @@ void main() {
             ]);
           });
 
-          test('uploads the most recent mapping under proguard_uuid', () async {
+          test('uploads the only mapping under proguard_uuid', () async {
+            final commandLog = await runWith(version, 'proguard_uuid: $uuid');
+
+            expect(uploads(commandLog), [
+              '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $mapping',
+            ]);
+          });
+
+          test('skips proguard_uuid when several mappings are found', () async {
             const free =
                 '$buildDir/app/outputs/mapping/freeRelease/mapping.txt';
             writeMapping(free, null, modified: DateTime(2026, 1, 2));
@@ -305,9 +313,12 @@ void main() {
 
             final commandLog = await runWith(version, 'proguard_uuid: $uuid');
 
-            expect(uploads(commandLog), [
-              '$cli $commonArgs upload-proguard $orgAndProject --uuid $uuid $free',
-            ]);
+            expect(uploads(commandLog), isEmpty);
+            // The release is still created.
+            expect(
+                commandLog,
+                contains(
+                    '$cli $commonArgs releases $orgAndProject new $release'));
           });
 
           test('uploads proguard_mapping_path under proguard_uuid', () async {
