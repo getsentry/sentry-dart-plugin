@@ -5,6 +5,17 @@ import 'package:sentry_dart_plugin/src/proguard/proguard_mapping.dart';
 import 'package:sentry_dart_plugin/src/utils/injector.dart';
 import 'package:test/test.dart';
 
+/// Header of a mapping written by R8 9.1 (full map ID).
+const r8Header = '''
+# compiler: R8
+# compiler_version: 9.1.31
+# min_api: 24
+# common_typos_disable
+# {"id":"com.android.tools.r8.mapping","version":"2.2"}
+# pg_map_id: f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605
+com.example.Foo -> a.a:
+''';
+
 void main() {
   late FileSystem fs;
   late Configuration config;
@@ -26,25 +37,23 @@ void main() {
     return file;
   }
 
-  group('findProguardMapping', () {
-    test('returns null when there is no mapping directory', () async {
-      expect((await findProguardMapping(fs: fs, config: config)).mapping?.path,
-          isNull);
+  group('findProguardMappings', () {
+    test('returns nothing when there is no mapping directory', () async {
+      expect(await findProguardMappings(fs: fs, config: config), isEmpty);
     });
 
-    test('returns null when no variant has a mapping.txt', () async {
+    test('returns nothing when no variant has a mapping.txt', () async {
       fs
           .directory('build/app/outputs/mapping/release')
           .createSync(recursive: true);
-      expect((await findProguardMapping(fs: fs, config: config)).mapping?.path,
-          isNull);
+      expect(await findProguardMappings(fs: fs, config: config), isEmpty);
     });
 
     test('finds the mapping of the single variant', () async {
       createMapping('release');
       expect(
-        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
-        'build/app/outputs/mapping/release/mapping.txt',
+        await findProguardMappings(fs: fs, config: config),
+        ['build/app/outputs/mapping/release/mapping.txt'],
       );
     });
 
@@ -54,54 +63,121 @@ void main() {
           .file('out/app/outputs/mapping/release/mapping.txt')
           .createSync(recursive: true);
       expect(
-        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
-        'out/app/outputs/mapping/release/mapping.txt',
+        await findProguardMappings(fs: fs, config: config),
+        ['out/app/outputs/mapping/release/mapping.txt'],
       );
     });
 
-    test('picks the most recent mapping when several variants have one',
-        () async {
+    test('returns every variant, the most recent first', () async {
       createMapping('freeRelease', modified: DateTime(2026, 1, 1));
       createMapping('paidRelease', modified: DateTime(2026, 1, 2));
       createMapping('release', modified: DateTime(2025, 12, 31));
-      expect(
-        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
+      expect(await findProguardMappings(fs: fs, config: config), [
         'build/app/outputs/mapping/paidRelease/mapping.txt',
-      );
+        'build/app/outputs/mapping/freeRelease/mapping.txt',
+        'build/app/outputs/mapping/release/mapping.txt',
+      ]);
     });
 
-    test('lists every variant mapping, the most recent first', () async {
-      createMapping('freeRelease', modified: DateTime(2026, 1, 1));
-      createMapping('paidRelease', modified: DateTime(2026, 1, 2));
-      final lookup = await findProguardMapping(fs: fs, config: config);
-      expect(lookup.candidates.map((m) => m.variant),
-          ['paidRelease', 'freeRelease']);
-    });
-
-    test('uses proguard_mapping_path over discovered mappings', () async {
+    test('uses only proguard_mapping_path when set', () async {
       createMapping('release');
       fs.file('custom/mapping.txt').createSync(recursive: true);
       config.proguardMappingPath = 'custom/mapping.txt';
       expect(
-        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
-        'custom/mapping.txt',
+        await findProguardMappings(fs: fs, config: config),
+        ['custom/mapping.txt'],
       );
     });
 
-    test('returns null when proguard_mapping_path does not exist', () async {
+    test('returns nothing when proguard_mapping_path does not exist', () async {
       createMapping('release');
       config.proguardMappingPath = 'missing/mapping.txt';
-      expect((await findProguardMapping(fs: fs, config: config)).mapping?.path,
-          isNull);
+      expect(await findProguardMappings(fs: fs, config: config), isEmpty);
     });
 
     test('ignores a blank proguard_mapping_path', () async {
       createMapping('release');
       config.proguardMappingPath = '  ';
       expect(
-        (await findProguardMapping(fs: fs, config: config)).mapping?.path,
-        'build/app/outputs/mapping/release/mapping.txt',
+        await findProguardMappings(fs: fs, config: config),
+        ['build/app/outputs/mapping/release/mapping.txt'],
       );
+    });
+  });
+
+  group('readProguardMapId', () {
+    Future<String?> read(String content) async {
+      fs.file('mapping.txt').writeAsStringSync(content);
+      return readProguardMapId(fs, 'mapping.txt');
+    }
+
+    test('reads the full map ID of newer R8', () async {
+      expect(
+        await read(r8Header),
+        'f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605',
+      );
+    });
+
+    test('reads the 7 character map ID of older R8, not pg_map_hash', () async {
+      // Written by R8 8.6.17 (AGP 8.6.0). The DEX marker has the same 7 chars.
+      expect(await read('''
+# compiler: R8
+# compiler_version: 8.6.17
+# min_api: 24
+# common_typos_disable
+# {"id":"com.android.tools.r8.mapping","version":"2.2"}
+# pg_map_id: 1bab4a8
+# pg_map_hash: SHA-256 1bab4a8cdcebada781486a41042bc2b9b6ad9960c51eaf668ca5d39456b5923d
+_COROUTINE.ArtificialStackFrames -> R8\$\$REMOVED\$\$CLASS\$\$0:
+'''), '1bab4a8');
+    });
+
+    test('lowercases the map ID', () async {
+      expect(await read('# compiler: R8\n# pg_map_id: 1BAB4A8\n'), '1bab4a8');
+    });
+
+    test('returns null for a mapping without a map ID', () async {
+      // ProGuard and DexGuard mappings have no R8 header.
+      expect(
+          await read('com.example.Foo -> a.a:\n    void bar() -> a\n'), isNull);
+    });
+
+    test('ignores a map ID line after the header', () async {
+      expect(
+        await read('# compiler: R8\ncom.example.Foo -> a.a:\n'
+            '# pg_map_id: 1bab4a8\n'),
+        isNull,
+      );
+    });
+
+    test('returns null for an empty file', () async {
+      expect(await read(''), isNull);
+    });
+  });
+
+  group('proguardUuidFromMapId', () {
+    // Reference values from Python:
+    // uuid.uuid5(uuid.uuid5(uuid.NAMESPACE_DNS, 'guardsquare.com'), map_id)
+    test('derives a stable UUIDv5 from a full map ID', () {
+      expect(
+        proguardUuidFromMapId(
+            'f9245ea8f32c0d479b2e12eac7d01f87792e3464ee8d263e8a365d7651196605'),
+        '62de09e0-8af4-50c3-832a-b3871ba834c8',
+      );
+    });
+
+    test('derives a stable UUIDv5 from a short map ID', () {
+      expect(proguardUuidFromMapId('1bab4a8'),
+          'd2308b16-5de0-58b3-8060-f7c84ada0269');
+    });
+
+    test('is case-insensitive', () {
+      expect(
+          proguardUuidFromMapId('1BAB4A8'), proguardUuidFromMapId('1bab4a8'));
+    });
+
+    test('produces a UUID sentry-cli accepts', () {
+      expect(isValidProguardUuid(proguardUuidFromMapId('1bab4a8')), isTrue);
     });
   });
 

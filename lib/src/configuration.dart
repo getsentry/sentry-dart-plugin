@@ -78,18 +78,18 @@ class Configuration {
   /// Explicit path to the Dart obfuscation map file. Optional.
   late String? dartSymbolMapPath;
 
-  /// Whether to upload the Android ProGuard/R8 mapping file, defaults to true.
-  /// The upload needs a ProGuard UUID: [proguardUuid] if set, otherwise the
-  /// one `--inject-uuid` packaged into the built APK/AAB.
+  /// Whether to upload the Android ProGuard/R8 mapping files, defaults to true.
+  /// Each one is uploaded under the UUID of its R8 map ID (`# pg_map_id`).
   late bool uploadProguard;
 
-  /// The UUID the ProGuard/R8 mapping file is uploaded under, or set via env.
-  /// var. SENTRY_PROGUARD_UUID. It must match the UUID the app reports at
-  /// runtime (`SentryFlutterOptions.proguardUuid`), so it has to be chosen
-  /// before the build.
+  /// A UUID to upload the ProGuard/R8 mapping under instead of the one derived
+  /// from its R8 map ID, or set via env. var. SENTRY_PROGUARD_UUID. Optional.
+  /// It must match the UUID the app reports at runtime
+  /// (`SentryFlutterOptions.proguardUuid`), so it has to be chosen before the
+  /// build.
   late String? proguardUuid;
 
-  /// Explicit path to the ProGuard/R8 mapping file. Optional. Defaults to the
+  /// Explicit path to the ProGuard/R8 mapping file. Optional. Defaults to every
   /// `mapping.txt` found under `<build_path>/app/outputs/mapping/`.
   late String? proguardMappingPath;
 
@@ -135,12 +135,8 @@ class Configuration {
   /// Defaults to an empty list (no paths ignored).
   late List<String> ignoreWebSourcePaths;
 
-  /// Loads the configuration values. With [setupCli] false, sentry-cli is not
-  /// downloaded or located, for modes that make no CLI calls.
-  Future<void> getConfigValues(
-    List<String> cliArguments, {
-    bool setupCli = true,
-  }) async {
+  /// Loads the configuration values
+  Future<void> getConfigValues(List<String> cliArguments) async {
     const taskName = 'reading config values';
     Log.startingTask(taskName);
 
@@ -152,9 +148,7 @@ class Configuration {
       ),
     );
 
-    if (setupCli) {
-      await _findAndSetCliPath();
-    }
+    await _findAndSetCliPath();
 
     Log.taskCompleted(taskName);
   }

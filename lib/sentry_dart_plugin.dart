@@ -6,7 +6,6 @@ import 'package:process/process.dart';
 
 import 'src/configuration.dart';
 import 'src/proguard/proguard_mapping.dart';
-import 'src/proguard/proguard_uuid.dart';
 import 'src/utils/flutter_debug_files.dart';
 import 'src/symbol_maps/dart_symbol_map.dart';
 import 'src/utils/injector.dart';
@@ -29,21 +28,8 @@ class SentryDartPlugin {
   Future<int> run(List<String> cliArguments) async {
     _configuration = injector.get<Configuration>();
 
-    // Pre-build mode: only writes the ProGuard UUID into the Android assets,
-    // so it needs neither sentry-cli nor credentials.
-    if (cliArguments.contains('--inject-uuid')) {
-      await _configuration.getConfigValues(cliArguments, setupCli: false);
-      return injectProguardUuid(
-        fs: injector.get<FileSystem>(),
-        config: _configuration,
-        processManager: injector.get<ProcessManager>(),
-      );
-    }
-
-    var configLoaded = false;
     try {
       await _configuration.getConfigValues(cliArguments);
-      configLoaded = true;
       if (!_configuration.validateConfigValues()) {
         return 1;
       }
@@ -88,15 +74,6 @@ class SentryDartPlugin {
       }
     } on ExitError catch (e) {
       return e.code;
-    } finally {
-      // Also on failed runs: once an Android build packaged the injected
-      // UUID, the file must not be reused by the next build.
-      if (configLoaded) {
-        await removeConsumedInjectedProguardUuid(
-          fs: injector.get<FileSystem>(),
-          config: _configuration,
-        );
-      }
     }
     return 0;
   }
@@ -140,201 +117,83 @@ class SentryDartPlugin {
     Log.taskCompleted(taskName);
   }
 
-  /// Uploads the Android ProGuard/R8 mapping under the UUID the app reports.
+  /// Uploads the Android ProGuard/R8 mappings.
   ///
-  /// The UUID is the configured `proguard_uuid` if set, otherwise the one
-  /// packaged into the newest built APK/AAB (written by `--inject-uuid` before
-  /// the build). Without either, the upload is skipped: a mapping uploaded
-  /// under any other UUID would never match an event.
-  ///
-  /// The file written by `--inject-uuid` is removed at the end of [run] once
-  /// an Android build has packaged it (see
-  /// [removeConsumedInjectedProguardUuid]).
+  /// Each mapping is uploaded under the UUID derived from the R8 map ID in its
+  /// header ([proguardUuidFromMapId]). R8 writes the same ID into the app's
+  /// DEX, where the SDK reads it at runtime, so nothing has to be embedded
+  /// into the app before the build. With [Configuration.proguardUuid] set, a
+  /// single mapping is uploaded under that UUID instead.
   Future<void> _executeCliForProguardMapping() async {
     const taskName = 'uploading ProGuard mapping';
     Log.startingTask(taskName);
 
     final fs = injector.get<FileSystem>();
-    try {
-      final injectedAt = await injectedProguardUuidTime(fs);
-      final lookup = await findProguardMapping(fs: fs, config: _configuration);
-      final configuredUuid = _configuration.proguardUuid?.trim() ?? '';
+    final mappings = await findProguardMappings(fs: fs, config: _configuration);
+    final configuredUuid = _configuration.proguardUuid?.trim() ?? '';
 
-      final mapping = lookup.mapping;
-      if (mapping == null) {
-        if (lookup.reported) {
-          return;
+    if (mappings.isEmpty) {
+      // Only an Android build is expected to produce a mapping; the same UUID
+      // may well be configured for every platform a CI job builds.
+      final isAndroidBuild = await fs
+          .directory(
+              fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs'))
+          .exists();
+      if (configuredUuid.isNotEmpty && isAndroidBuild) {
+        Log.warn(
+            "'proguard_uuid' is set but no ProGuard mapping file was found. "
+            'Is minification enabled for this build?');
+      } else {
+        Log.info('No ProGuard mapping file found, skipping.');
+      }
+    } else if (configuredUuid.isNotEmpty) {
+      await _uploadProguardMappingWithConfiguredUuid(mappings, configuredUuid);
+    } else {
+      // Each mapping goes up under the UUID of its own R8 map ID, which the
+      // SDK derives from the same ID in the app's DEX at runtime.
+      final uploadedIds = <String>{};
+      for (final mapping in mappings) {
+        final mapId = await readProguardMapId(fs, mapping);
+        if (mapId == null) {
+          Log.info("ProGuard mapping '$mapping' has no '# pg_map_id' (not "
+              'written by R8?), skipping. Set proguard_uuid to upload it, or '
+              'use the Sentry Android Gradle Plugin.');
+        } else if (uploadedIds.add(mapId)) {
+          await _uploadProguardMapping(mapping, proguardUuidFromMapId(mapId));
         }
-        // Only an Android build is expected to produce a mapping; the same
-        // UUID may well be configured for every platform a CI job builds.
-        final isAndroidBuild = await fs
-            .directory(
-                fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs'))
-            .exists();
-        final expectsMapping = configuredUuid.isNotEmpty || injectedAt != null;
-        if (expectsMapping && isAndroidBuild) {
-          Log.warn('A ProGuard UUID is set but no ProGuard mapping file was '
-              'found. Is minification enabled for this build?');
-        } else {
-          Log.info('No ProGuard mapping file found, skipping.');
-        }
-        return;
       }
-
-      final resolved =
-          await _resolveProguardUuid(fs, configuredUuid, lookup, injectedAt);
-      if (resolved == null) {
-        return;
-      }
-      final uuid = resolved.uuid;
-      if (!isValidProguardUuid(uuid)) {
-        Log.error("ProGuard UUID '$uuid' is not a valid UUID. Skipping the "
-            'ProGuard mapping upload.');
-        return;
-      }
-
-      // Checked on the built apps, not the injected file: that is removed
-      // after the first run, and a retry without rebuilding must still skip.
-      // Even with `proguard_mapping_path`: whichever mapping is uploaded under
-      // the shared UUID, the other variants' events would be deobfuscated
-      // with it.
-      final sharedBy = await variantsWithProguardUuid(
-          fs: fs, config: _configuration, uuid: uuid);
-      if (sharedBy.length > 1) {
-        Log.warn('Several variants were built with the same ProGuard UUID '
-            '$uuid: ${sharedBy.join(', ')}. No single mapping matches it, so '
-            'the ProGuard mapping upload is skipped. Run --inject-uuid before '
-            'each flutter build and the plugin after each, then rebuild.');
-        return;
-      }
-
-      final params = <String>[];
-      _setUrlAndTokenAndLog(params);
-      params.add('upload-proguard');
-      _addOrgAndProject(params);
-      params.addAll(['--uuid', uuid, resolved.mapping.path]);
-      await _executeAndLog('Failed to upload ProGuard mapping', params);
-    } on ExitError catch (e) {
-      // Like the Dart symbol map, a failed mapping upload must not stop the
-      // release from being created.
-      Log.error('ProGuard mapping upload failed with exit code ${e.code}, '
-          'continuing.');
-    } on FileSystemException catch (e) {
-      // Unreadable build outputs must not abort the rest of the run
-      // (release creation, source maps, commits).
-      Log.warn('Skipping the ProGuard mapping upload: $e');
-    } finally {
-      Log.taskCompleted(taskName);
     }
+
+    Log.taskCompleted(taskName);
   }
 
-  /// Returns the UUID to upload under and the mapping to upload, or null
-  /// (after logging why) to skip the upload.
-  ///
-  /// The UUID is the configured `proguard_uuid` if set, otherwise the one
-  /// inside the APK/AAB built with the mapping.
-  ///
-  /// For discovered mappings, the mapping must be the one the last release
-  /// build wrote, matched by variant: R8 doesn't rewrite a mapping that is up
-  /// to date, so the newest mapping may be another flavor's, and in a reused
-  /// build directory a leftover mapping may belong to another flavor than the
-  /// one just built. When that can't be told, the upload is skipped: an
-  /// obfuscated stack trace is better than a wrongly deobfuscated one.
-  ///
-  /// `proguard_mapping_path` picks the mapping instead. Its UUID comes from
-  /// the last release build of its variant when it is a mapping under
-  /// `<build_path>/app/outputs/mapping/<variant>/`, otherwise from the last
-  /// release build.
-  Future<_ResolvedProguardUuid?> _resolveProguardUuid(
-      FileSystem fs,
-      String configuredUuid,
-      ProguardMappingLookup lookup,
-      DateTime? injectedAt) async {
-    ProguardMapping mapping;
-    String? builtUuid;
-    String? artifactPath;
-    if (lookup.candidates.isEmpty) {
-      // An explicit `proguard_mapping_path`.
-      mapping = lookup.mapping!;
-      final built = await readBuiltAppProguardUuid(
-          fs: fs, config: _configuration, mappingPath: mapping.path);
-      builtUuid = built?.uuid;
-      artifactPath = built?.artifactPath;
-    } else {
-      final built = await findLastReleaseBuild(
-          fs: fs, config: _configuration, mappings: lookup.candidates);
-      final builtMapping = built?.mapping;
-      final paths = lookup.candidates.map((m) => m.path).join(', ');
-      if (built == null) {
-        final outputs =
-            fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs');
-        Log.warn('Found ProGuard mapping $paths, but no release APK/AAB '
-            "under '$outputs' to tell which build wrote it; it may be left "
-            'over from an earlier build. Skipping the ProGuard mapping '
-            "upload. Check 'build_path', or set 'proguard_mapping_path' to "
-            'upload a specific mapping.');
-        return null;
-      } else if (builtMapping == null) {
-        final stale = built.staleMapping;
-        if (stale != null) {
-          Log.warn("ProGuard mapping '${stale.path}' was rewritten after "
-              "'${built.artifactPath}' was built, so it may not match it (did "
-              'a later build fail?). Skipping the ProGuard mapping upload. '
-              "Rebuild, or set 'proguard_mapping_path' to upload it anyway.");
-        } else {
-          Log.warn('None of the ProGuard mapping files ($paths) was written '
-              "by the build of '${built.artifactPath}', the most recent "
-              'release APK/AAB. They may be left over from another flavor, or '
-              "this build wasn't minified. Skipping the ProGuard mapping "
-              "upload. Set 'proguard_mapping_path' to upload a specific one.");
-        }
-        return null;
-      } else {
-        mapping = builtMapping;
-        builtUuid = built.uuid;
-        artifactPath = built.artifactPath;
-        if (lookup.candidates.length > 1) {
-          Log.info("Using ProGuard mapping '${mapping.path}', the one of "
-              "'$artifactPath'.");
-        }
-      }
+  /// Uploads one mapping under the configured UUID, which the app must also
+  /// report at runtime: the most recent one, or `proguard_mapping_path`.
+  Future<void> _uploadProguardMappingWithConfiguredUuid(
+      List<String> mappings, String uuid) async {
+    if (!isValidProguardUuid(uuid)) {
+      Log.error(
+          "'proguard_uuid' is not a valid UUID: '$uuid'. Skipping the ProGuard mapping upload.");
+      return;
     }
+    if (mappings.length > 1) {
+      Log.warn(
+        'Found multiple ProGuard mapping files: ${mappings.join(', ')}. '
+        "Uploading the most recent one, '${mappings.first}', under "
+        "'proguard_uuid'. Set 'proguard_mapping_path' to choose a specific "
+        "one, or unset 'proguard_uuid' to upload each under its R8 map ID.",
+      );
+    }
+    await _uploadProguardMapping(mappings.first, uuid);
+  }
 
-    if (configuredUuid.isNotEmpty) {
-      if (builtUuid != null &&
-          builtUuid.toLowerCase() != configuredUuid.toLowerCase()) {
-        Log.warn("The configured 'proguard_uuid' $configuredUuid differs from "
-            "ProGuard UUID $builtUuid in '$artifactPath'. Uploading under the "
-            'configured one; make sure the app reports it.');
-      }
-      return _ResolvedProguardUuid(configuredUuid, mapping);
-    }
-
-    if (builtUuid != null) {
-      Log.info("Using ProGuard UUID $builtUuid from '$artifactPath'.");
-      return _ResolvedProguardUuid(builtUuid, mapping);
-    }
-
-    if (artifactPath == null) {
-      final outputs =
-          fs.path.join(_configuration.buildFilesFolder, 'app', 'outputs');
-      Log.warn("Found ProGuard mapping '${mapping.path}' but no release "
-          "APK/AAB under '$outputs' to read the ProGuard UUID from. Skipping "
-          "the ProGuard mapping upload. Check 'build_path', or set "
-          "'proguard_uuid' to the UUID the app reports.");
-    } else if (injectedAt != null) {
-      Log.warn("'$debugMetaAssetPath' exists, but the built app doesn't "
-          'contain it: --inject-uuid ran after the last flutter build. '
-          'Skipping the ProGuard mapping upload. Run --inject-uuid before '
-          'flutter build; the next build will package the UUID.');
-    } else {
-      Log.info("Found ProGuard mapping '${mapping.path}' but the APK/AAB "
-          'built with it has no ProGuard UUID, skipping. To upload it, run '
-          "'dart run sentry_dart_plugin --inject-uuid' before "
-          "'flutter build', or set 'proguard_uuid' to the UUID the app "
-          'reports.');
-    }
-    return null;
+  Future<void> _uploadProguardMapping(String mapping, String uuid) async {
+    final params = <String>[];
+    _setUrlAndTokenAndLog(params);
+    params.add('upload-proguard');
+    _addOrgAndProject(params);
+    params.addAll(['--uuid', uuid, mapping]);
+    await _executeAndLog('Failed to upload ProGuard mapping', params);
   }
 
   Future<Set<String>> _enumerateSymbolFiles() async {
@@ -831,12 +690,4 @@ class SentryDartPlugin {
       params.add(_configuration.project!);
     }
   }
-}
-
-/// The UUID to upload a ProGuard mapping under, and the mapping for it.
-class _ResolvedProguardUuid {
-  final String uuid;
-  final ProguardMapping mapping;
-
-  _ResolvedProguardUuid(this.uuid, this.mapping);
 }
